@@ -1076,13 +1076,6 @@ body[data-route-mode="demo"] .cta--secondary {
   animation: hero-reveal-up 0.82s var(--ease-out) both;
 }
 
-/* Inside .hero-title lines we use a different keyframe (bigger y offset)
-   and rely on the parent .hero-line to clip */
-.hero-title .hero-reveal {
-  animation-name: hero-reveal-line;
-  animation-duration: 0.92s;
-}
-
 .hero-visual--reveal {
   opacity: 0;
   animation: hero-visual-reveal 1.08s var(--ease-out) 160ms both;
@@ -1098,18 +1091,45 @@ body[data-route-mode="demo"] .cta--secondary {
   color: var(--accent);
 }
 
-/* Wave-distortion filter for hero title — animated SVG feTurbulence +
-   feDisplacementMap giving a subtle "text seen through moving water"
-   effect. Disabled for reduced-motion users (filter removed).
-   will-change hints the compositor to cache the filter result. */
-.hero-title--wave {
-  filter: url(#hero-wave);
-  will-change: filter;
+/* Wave-emerge keyframe — opacity fade synchronized with the SMIL
+   displacement animation. Starts at 0 so the chaotic-letters stage
+   is barely visible, lifts fast during the displacement decay, and
+   settles clean at 1. Combined with filter: url(#hero-wave-N) and
+   the SMIL animate inside, this gives "letters assemble from water".
+
+   Container .hero-line has overflow:hidden — keep it, the wave
+   stays inside the line box. */
+@keyframes hero-wave-emerge {
+  0% {
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.18;
+  }
+  42% {
+    opacity: 0.56;
+  }
+  72% {
+    opacity: 0.88;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Elements using the wave effect need will-change on filter for
+   compositor fast-path. */
+.hero-wave-line {
+  display: block;
+  will-change: filter, opacity;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-title--wave {
-    filter: none;
+  .hero-wave-line {
+    filter: none !important;
+    animation: none !important;
+    opacity: 1 !important;
+    will-change: auto;
   }
 }
 
