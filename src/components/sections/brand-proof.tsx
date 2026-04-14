@@ -12,11 +12,11 @@ export function BrandProof() {
         <div className="manifesto-block">
           <span className="text-eyebrow">{QUALITY_PROOF.eyebrow}</span>
 
-          <p className="manifesto-text">
+          <h2 className="manifesto-text">
             {QUALITY_PROOF.lead}{" "}
             <em className="manifesto-italic">{QUALITY_PROOF.italic}</em>{" "}
             {QUALITY_PROOF.tail}
-          </p>
+          </h2>
 
           <div className="manifesto-aside">
             <Image

@@ -28,11 +28,11 @@ export function ProductTheatre() {
 
           <div className="experience-block__copy">
             <span className="text-eyebrow">{PRODUCT_THEATRE.eyebrow}</span>
-            <p className="experience-text">
+            <h2 className="experience-text">
               {PRODUCT_THEATRE.lead}{" "}
               <em className="experience-italic">{PRODUCT_THEATRE.italic}</em>{" "}
               {PRODUCT_THEATRE.tail}
-            </p>
+            </h2>
           </div>
         </div>
       </div>
