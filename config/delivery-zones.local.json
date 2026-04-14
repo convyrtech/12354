@@ -1,0 +1,48 @@
+[
+  {
+    "zoneId": "zone_center_msk",
+    "label": "Центр Москвы",
+    "priority": 10,
+    "deliveryEnabled": true,
+    "kitchenId": "loc_lesnoy_01",
+    "servicePointId": "sp_lesnoy_dispatch_01",
+    "legalEntityId": "le_raki_core",
+    "acceptingOrdersUntil": "22:00",
+    "resolverNote": "Локальный шаблон центра Москвы для настройки боевой карты.",
+    "polygon": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [37.3, 55.61],
+          [37.67, 55.61],
+          [37.67, 55.79],
+          [37.3, 55.79],
+          [37.3, 55.61]
+        ]
+      ]
+    }
+  },
+  {
+    "zoneId": "zone_rublevka",
+    "label": "Рублевка",
+    "priority": 20,
+    "deliveryEnabled": true,
+    "kitchenId": "loc_lesnoy_01",
+    "servicePointId": "sp_lesnoy_dispatch_01",
+    "legalEntityId": "le_raki_core",
+    "acceptingOrdersUntil": "21:30",
+    "resolverNote": "Локальный шаблон премиальной западной зоны.",
+    "polygon": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [37.23, 55.71],
+          [37.35, 55.71],
+          [37.35, 55.77],
+          [37.23, 55.77],
+          [37.23, 55.71]
+        ]
+      ]
+    }
+  }
+]
