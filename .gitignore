@@ -56,6 +56,10 @@ the-raki-preview.html
 refs/
 king-crab-full.png
 
+# playwright/session screenshots (belong in .playwright-mcp or trash, not root)
+raki-*.png
+raki-*.jpg
+
 # editor
 .vscode/
 .idea/
