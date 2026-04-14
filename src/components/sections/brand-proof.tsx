@@ -1,10 +1,5 @@
-"use client";
-
 import Image from "next/image";
-import { motion } from "framer-motion";
 import { QUALITY_PROOF } from "@/lib/homepage-data";
-
-const EASE = [0.22, 1, 0.36, 1] as const;
 
 export function BrandProof() {
   return (
@@ -15,35 +10,15 @@ export function BrandProof() {
     >
       <div className="home-shell">
         <div className="manifesto-block">
-          <motion.span
-            className="text-eyebrow"
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.54, ease: EASE }}
-          >
-            {QUALITY_PROOF.eyebrow}
-          </motion.span>
+          <span className="text-eyebrow">{QUALITY_PROOF.eyebrow}</span>
 
-          <motion.p
-            className="manifesto-text"
-            initial={{ opacity: 0, y: 28 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.25 }}
-            transition={{ duration: 0.92, ease: EASE }}
-          >
+          <p className="manifesto-text">
             {QUALITY_PROOF.lead}{" "}
             <em className="manifesto-italic">{QUALITY_PROOF.italic}</em>{" "}
             {QUALITY_PROOF.tail}
-          </motion.p>
+          </p>
 
-          <motion.div
-            className="manifesto-aside"
-            initial={{ opacity: 0, scale: 0.98 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ delay: 0.18, duration: 1, ease: EASE }}
-          >
+          <div className="manifesto-aside">
             <Image
               src={QUALITY_PROOF.image}
               alt="The Raki — философия"
@@ -52,7 +27,7 @@ export function BrandProof() {
               style={{ objectFit: "cover", objectPosition: "50% 50%" }}
             />
             <div className="manifesto-aside__veil" aria-hidden />
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

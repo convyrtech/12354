@@ -1033,8 +1033,80 @@ body[data-route-mode="demo"] .cta--secondary {
 }
 
 /* ============================================================
-   A1.c · Marine-adjacent section blocks
+   Marine-adjacent section blocks
    ============================================================ */
+
+/* CSS-only entrance animation — bulletproof, no framer-motion dependency.
+   Initial state renders visibly on SSR (no opacity 0), then animates in. */
+@keyframes hero-reveal-up {
+  0% {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-reveal-line {
+  0% {
+    opacity: 0;
+    transform: translateY(110%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-visual-reveal {
+  0% {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.hero-reveal {
+  opacity: 0;
+  animation: hero-reveal-up 0.82s var(--ease-out) both;
+}
+
+/* Inside .hero-title lines we use a different keyframe (bigger y offset)
+   and rely on the parent .hero-line to clip */
+.hero-title .hero-reveal {
+  animation-name: hero-reveal-line;
+  animation-duration: 0.92s;
+}
+
+.hero-visual--reveal {
+  opacity: 0;
+  animation: hero-visual-reveal 1.08s var(--ease-out) 160ms both;
+}
+
+.hero-title {
+  margin-top: 28px;
+}
+
+.hero-title__italic {
+  display: block;
+  font-style: italic;
+  color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-reveal,
+  .hero-visual--reveal,
+  .hero-title .hero-reveal {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
 
 /* Nav wordmark — Cormorant italic signature (replaces logo image) */
 .nav-brand__wordmark {
