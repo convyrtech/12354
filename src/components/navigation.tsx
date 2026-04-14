@@ -1,7 +1,6 @@
 "use client";
 
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -59,10 +58,8 @@ function getServiceChip(input: {
 function BrandLockup() {
   return (
     <Link href="/" aria-label="The Raki home" className="nav-brand">
-      <Image src="/brand/logo.png" alt="The Raki" width={86} height={58} priority style={{ height: "auto", width: "72px" }} />
-      <span className="nav-brand__meta">
-        <strong>The Raki</strong>
-        <span>Moscow / since 2017</span>
+      <span className="nav-brand__wordmark">
+        The <em>Raki</em>
       </span>
     </Link>
   );

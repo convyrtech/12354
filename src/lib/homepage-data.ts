@@ -1,55 +1,65 @@
+/**
+ * Homepage content — Marine-adjacent lyrical structure.
+ * Per design doc P3/P7: each block uses lead/italic/tail pattern
+ * so italic accents stay rendered as <em> in JSX.
+ * Regenerated 2026-04-14 in Tranche A1.c.
+ */
+
 export const HERO_SCENE = {
   image: "/editorial/hero-crawfish.png",
-  eyebrow: "The Raki • Moscow",
-  title: ["Свежие раки и краб.", "Точная подача."],
-  summary: "Private service по Москве и МО.",
-  facts: ["с 2017", "москва и мо", "живой продукт", "горячая подача"],
+  eyebrow: "Moscow · с 2017",
+  titleLead: "Раки, краб",
+  titleItalic: "и море —",
+  titleTail: "ровно тогда, когда нужно.",
+  summary:
+    "Своя кухня, свои курьеры, свой темп. Мы не торопим ужин — мы не опаздываем к нему.",
 } as const;
 
-export const PRODUCT_THEATRE = {
-  eyebrow: "Подача",
-  title: "Живой продукт. Чистая подача.",
-  summary: "Никакого шума. Только фактура, температура и вкус, собранные как дорогой private service.",
-  image: "/editorial/boiling-crawfish.png",
-  points: ["лёд и холод", "бульон и пар", "лимон и фарфор"],
-} as const;
-
+/**
+ * MANIFESTO block — replaces former QUALITY_PROOF chip grid.
+ * Single lyrical serif manifesto, no items, no bullets.
+ */
 export const QUALITY_PROOF = {
-  eyebrow: "Качество",
-  title: "Серьёзное обращение с продуктом.",
-  summary: "The Raki держит спокойный, точный уровень сервиса с 2017 года.",
+  eyebrow: "Философия",
+  lead: "The Raki — это",
+  italic: "не доставка еды,",
+  tail: "а доставленный момент: живой, точный, настоящий. Тот самый, который нельзя повторить, если хоть что-то пошло не так.",
   image: "/editorial/cold-crawfish.png",
-  items: [
-    { value: "2017", label: "работаем в Москве" },
-    { value: "fresh", label: "живой продукт и холод" },
-    { value: "hot", label: "горячая подача и бульон" },
-    { value: "service", label: "private-service тон" },
-  ],
 } as const;
 
-export const SERVICE_STAGE = {
-  eyebrow: "Сервис",
-  title: ["Быстро.", "Спокойно.", "Без компромиссов."],
-  summary: "Привозим в идеальном состоянии и без лишнего шума вокруг заказа.",
-  truths: ["Москва и МО", "идеальное состояние", "точная подача"],
-  image: "/editorial/service-broth.png",
+/**
+ * EXPERIENCE block — replaces former PRODUCT_THEATRE chip points.
+ * Operational truth folded into lyrical serif, not bullets.
+ */
+export const PRODUCT_THEATRE = {
+  eyebrow: "Опыт и доверие",
+  lead: "С 2017 года мы держим одно правило:",
+  italic: "всё решают минуты.",
+  tail: "Свои курьеры учат продукт, не маршрут. Своя кухня работает только на доставку. Мы контролируем каждый метр пути — от бульона до вашего стола.",
+  image: "/editorial/boiling-crawfish.png",
 } as const;
 
+/**
+ * MENU_ENTRY — Marine-style CTA block.
+ * Centered display serif with italic accent on key word + single CTA.
+ */
 export const MENU_ENTRY = {
   eyebrow: "Меню",
-  title: "Меню как аккуратный вход, а не вторая главная.",
-  summary: "Один спокойный переход в каталог без таксономии на первом экране.",
-  links: [
-    { label: "Смотреть меню", href: "/menu?fulfillment=delivery" },
-    { label: "К столу", href: "/menu?fulfillment=delivery" },
-    { label: "Подарки и деликатесы", href: "/menu?fulfillment=delivery" },
-  ],
+  lead: "Ваш стол",
+  italic: "начинается здесь.",
+  summary:
+    "Раки, камчатский краб и деликатесы — в спокойном каталоге без лишних решений.",
+  cta: { label: "Открыть меню", href: "/menu?fulfillment=delivery" },
 } as const;
 
 export const HOME_CONTACT_LINES = [
   { label: "Телефон", value: "+7 (980) 888-05-88", href: "tel:+79808880588" },
   { label: "Telegram", value: "@The_raki", href: "https://t.me/The_raki" },
-  { label: "Instagram", value: "@the_raki_moscow", href: "https://www.instagram.com/the_raki_moscow/" },
+  {
+    label: "Instagram",
+    value: "@the_raki_moscow",
+    href: "https://www.instagram.com/the_raki_moscow/",
+  },
 ] as const;
 
 export function getResetPatch(

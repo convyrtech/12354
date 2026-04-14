@@ -1032,6 +1032,267 @@ body[data-route-mode="demo"] .cta--secondary {
   transform-origin: bottom left;
 }
 
+/* ============================================================
+   A1.c · Marine-adjacent section blocks
+   ============================================================ */
+
+/* Nav wordmark — Cormorant italic signature (replaces logo image) */
+.nav-brand__wordmark {
+  font-family: var(--font-display), serif;
+  font-size: clamp(26px, 2.1vw, 34px);
+  line-height: 1;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.nav-brand__wordmark em {
+  font-style: italic;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Hero mega typography — Marine tier serif impact */
+.text-mega {
+  font-family: var(--font-display), serif;
+  font-size: clamp(72px, 10.4vw, 184px);
+  line-height: 0.9;
+  letter-spacing: -0.055em;
+  font-weight: 500;
+}
+
+.text-mega em {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+/* Stretch hero layout — text column takes priority, image bleeds right */
+.hero-layout {
+  display: grid;
+  gap: clamp(36px, 4vw, 72px);
+  align-items: center;
+  min-height: inherit;
+}
+
+@media (min-width: 1024px) {
+  .hero-layout {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  }
+}
+
+.hero-copy {
+  max-width: 760px;
+}
+
+.hero-summary {
+  max-width: 38ch;
+  margin-top: 28px;
+  color: var(--text-muted);
+  font-size: clamp(17px, 1.3vw, 20px);
+  line-height: 1.5;
+}
+
+.hero-visual {
+  min-height: clamp(520px, 56vw, 820px);
+}
+
+.hero-image-tint {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(110deg, rgba(11, 50, 55, 0.52) 0%, rgba(11, 50, 55, 0.12) 42%, rgba(11, 50, 55, 0) 100%),
+    linear-gradient(180deg, rgba(11, 50, 55, 0.08) 0%, rgba(11, 50, 55, 0.18) 100%);
+}
+
+/* ============================================================
+   MANIFESTO block (replaces BrandProof chip-grid)
+   Single large italic-accented serif manifesto
+   ============================================================ */
+.manifesto-section {
+  position: relative;
+}
+
+.manifesto-block {
+  position: relative;
+  display: grid;
+  gap: clamp(32px, 4vw, 64px);
+  padding-top: clamp(48px, 6vw, 96px);
+}
+
+.manifesto-block .text-eyebrow {
+  z-index: 1;
+}
+
+.manifesto-text {
+  font-family: var(--font-display), serif;
+  font-size: clamp(38px, 5.4vw, 92px);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  color: var(--text-primary);
+  font-weight: 500;
+  max-width: 19ch;
+  position: relative;
+  z-index: 1;
+}
+
+.manifesto-italic {
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.manifesto-aside {
+  position: relative;
+  align-self: end;
+  justify-self: end;
+  width: min(48vw, 520px);
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-strong);
+  margin-top: -clamp(48px, 8vw, 128px);
+}
+
+.manifesto-aside__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(11, 50, 55, 0.08) 0%, rgba(11, 50, 55, 0.34) 100%),
+    radial-gradient(circle at 26% 22%, rgba(81, 168, 175, 0.24) 0%, transparent 32%);
+}
+
+@media (max-width: 900px) {
+  .manifesto-aside {
+    width: 100%;
+    max-width: none;
+    margin-top: 0;
+    justify-self: stretch;
+    aspect-ratio: 4 / 3;
+  }
+}
+
+/* ============================================================
+   EXPERIENCE block (replaces ProductTheatre chip-points)
+   Large editorial image + lyrical serif text
+   ============================================================ */
+.experience-section {
+  position: relative;
+}
+
+.experience-block {
+  display: grid;
+  gap: clamp(36px, 4vw, 72px);
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .experience-block {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr);
+  }
+}
+
+.experience-block__media {
+  position: relative;
+  overflow: hidden;
+  min-height: clamp(420px, 48vw, 680px);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-strong);
+}
+
+.experience-block__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(11, 50, 55, 0.06) 0%, rgba(11, 50, 55, 0.28) 100%),
+    radial-gradient(circle at 84% 18%, rgba(81, 168, 175, 0.22) 0%, transparent 26%);
+}
+
+.experience-block__copy {
+  max-width: 520px;
+}
+
+.experience-text {
+  font-family: var(--font-display), serif;
+  font-size: clamp(28px, 3.6vw, 56px);
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  font-weight: 500;
+  margin-top: 28px;
+}
+
+.experience-italic {
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ============================================================
+   MENU CTA block (Marine-style: centered serif + single CTA)
+   ============================================================ */
+.menu-cta-section {
+  position: relative;
+}
+
+.menu-cta-block {
+  position: relative;
+  display: grid;
+  gap: clamp(24px, 2.6vw, 40px);
+  place-items: center;
+  text-align: center;
+  padding: clamp(88px, 10vw, 148px) clamp(24px, 4vw, 72px);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid var(--border);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(81, 168, 175, 0.18) 0%, transparent 48%),
+    radial-gradient(ellipse at 50% 100%, rgba(190, 150, 103, 0.12) 0%, transparent 52%),
+    linear-gradient(180deg, rgba(18, 64, 70, 0.72) 0%, rgba(11, 50, 55, 0.92) 100%);
+  box-shadow: var(--shadow-soft);
+}
+
+.menu-cta-block__backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(242, 232, 213, 0.04) 0%, transparent 40%);
+}
+
+.menu-cta-block__eyebrow {
+  color: rgba(242, 232, 213, 0.62);
+}
+
+.menu-cta-block__headline {
+  font-family: var(--font-display), serif;
+  font-size: clamp(44px, 6.2vw, 108px);
+  line-height: 0.96;
+  letter-spacing: -0.045em;
+  color: var(--text-primary);
+  font-weight: 500;
+  max-width: 14ch;
+}
+
+.menu-cta-block__italic {
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.menu-cta-block__summary {
+  max-width: 42ch;
+  color: var(--text-muted);
+  font-size: clamp(15px, 1.1vw, 17px);
+  line-height: 1.6;
+}
+
+.menu-cta-block__cta {
+  margin-top: 8px;
+}
+
 .home-panel {
   border: 1px solid var(--border);
   background: var(--bg-panel);
