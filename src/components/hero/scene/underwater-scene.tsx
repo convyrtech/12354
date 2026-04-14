@@ -3,11 +3,13 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Mesh } from "three";
+import { BubbleField } from "./bubble-field";
 
 /**
- * Minimal MVP scene — dark underwater plane fills the canvas with a
- * vertical gradient (darker deep, slightly lighter up). Subsequent
- * milestones add bubbles, caustic rays, text distortion overlay.
+ * Marine atmospheric scene — composed of:
+ *   1. Background plane (ShaderMaterial) — vertical gradient + noise
+ *   2. BubbleField (instanced mesh) — 42 physics-driven glass bubbles
+ * Future milestones: caustic rays, wave-distorted text overlay.
  */
 export function UnderwaterScene() {
   const planeRef = useRef<Mesh | null>(null);
@@ -79,6 +81,8 @@ export function UnderwaterScene() {
           `}
         />
       </mesh>
+
+      <BubbleField />
     </>
   );
 }
