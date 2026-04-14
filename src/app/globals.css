@@ -1233,18 +1233,26 @@ body[data-route-mode="demo"] .cta--secondary {
 .manifesto-aside {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 16 / 10;
+  max-height: 520px;
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-strong);
+}
+
+@media (min-width: 1024px) {
+  .manifesto-aside {
+    aspect-ratio: 4 / 5;
+    max-height: 640px;
+  }
 }
 
 .manifesto-aside__veil {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(11, 50, 55, 0.08) 0%, rgba(11, 50, 55, 0.34) 100%),
-    radial-gradient(circle at 26% 22%, rgba(81, 168, 175, 0.24) 0%, transparent 32%);
+    linear-gradient(180deg, rgba(11, 50, 55, 0.04) 0%, rgba(11, 50, 55, 0.22) 100%),
+    radial-gradient(circle at 26% 22%, rgba(81, 168, 175, 0.18) 0%, transparent 32%);
 }
 
 @media (min-width: 1024px) {
