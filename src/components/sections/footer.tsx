@@ -24,7 +24,7 @@ export function Footer() {
       <div className="home-shell footer-outro__shell">
         <div className="footer-outro__top">
           <div className="footer-outro__nav">
-            <span className="text-eyebrow" style={{ color: "rgba(247, 246, 241, 0.56)" }}>
+            <span className="text-eyebrow">
               The Raki
             </span>
 
@@ -42,7 +42,7 @@ export function Footer() {
           </div>
 
           <div className="footer-outro__contact">
-            <span className="text-eyebrow" style={{ color: "rgba(247, 246, 241, 0.56)" }}>
+            <span className="text-eyebrow">
               Private service
             </span>
 
@@ -52,7 +52,7 @@ export function Footer() {
             <p className="footer-outro__note">Свежий продукт, точная подача и спокойный сервис без ресторанного шума.</p>
 
             <div className="footer-outro__actions">
-              <Link href="/menu?fulfillment=delivery" className="editorial-link" style={{ color: "#f7f6f1" }}>
+              <Link href="/menu?fulfillment=delivery" className="editorial-link">
                 Открыть меню
               </Link>
               <Link
@@ -60,7 +60,6 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="editorial-link"
-                style={{ color: "#f7f6f1" }}
               >
                 Telegram
               </Link>
