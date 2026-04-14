@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Manrope } from "next/font/google";
+import { Cormorant_Garamond, JetBrains_Mono, Manrope } from "next/font/google";
 import { AppProviders } from "@/components/app-providers";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
@@ -12,15 +12,23 @@ const manrope = Manrope({
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin", "cyrillic"],
-  weight: ["500", "600"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
   variable: "--font-display",
   display: "swap",
 });
 
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "500"],
+  variable: "--font-mono",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "The Raki — свежие раки и краб с private service по Москве",
+  title: "The Raki — раки, краб и морепродукты с private service по Москве",
   description:
-    "The Raki — premium seafood delivery brand: свежие раки, краб, точная подача и private service по Москве и МО.",
+    "Раки, камчатский краб и дикие креветки, доставленные вовремя. Своя кухня, свои курьеры, Москва с 2017.",
   icons: {
     icon: "/favicon.svg",
   },
@@ -32,7 +40,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" className={`${manrope.variable} ${cormorant.variable}`}>
+    <html
+      lang="ru"
+      className={`${manrope.variable} ${cormorant.variable} ${jetbrainsMono.variable}`}
+    >
       <body>
         <AppProviders>{children}</AppProviders>
       </body>
