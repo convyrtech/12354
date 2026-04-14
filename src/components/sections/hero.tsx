@@ -24,6 +24,55 @@ export function Hero() {
       }}
     >
       <HeroCanvas />
+
+      {/*
+        SVG filter def for hero-title wave distortion.
+        Zero-size absolute container so it doesn't affect layout.
+        feTurbulence generates animated noise, feDisplacementMap warps
+        the source graphic (the h1) based on that noise.
+        scale controls distortion strength — tuned so text stays readable.
+      */}
+      <svg
+        aria-hidden
+        focusable="false"
+        width="0"
+        height="0"
+        style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}
+      >
+        <defs>
+          <filter
+            id="hero-wave"
+            x="-8%"
+            y="-8%"
+            width="116%"
+            height="116%"
+            colorInterpolationFilters="sRGB"
+          >
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.009 0.018"
+              numOctaves={2}
+              seed={4}
+              result="noise"
+            >
+              <animate
+                attributeName="baseFrequency"
+                dur="18s"
+                values="0.009 0.018; 0.012 0.022; 0.008 0.016; 0.011 0.020; 0.009 0.018"
+                repeatCount="indefinite"
+              />
+            </feTurbulence>
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="noise"
+              scale="7"
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
+          </filter>
+        </defs>
+      </svg>
+
       <div className="home-shell" style={{ position: "relative", zIndex: 1 }}>
         <div className="hero-layout">
           <div className="hero-copy">
@@ -31,7 +80,7 @@ export function Hero() {
               {HERO_SCENE.eyebrow}
             </span>
 
-            <h1 className="text-mega hero-title">
+            <h1 className="text-mega hero-title hero-title--wave">
               <span className="hero-line">
                 <span className="hero-reveal" style={{ animationDelay: "160ms" }}>
                   {HERO_SCENE.titleLead}

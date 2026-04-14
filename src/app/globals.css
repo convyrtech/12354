@@ -1098,6 +1098,21 @@ body[data-route-mode="demo"] .cta--secondary {
   color: var(--accent);
 }
 
+/* Wave-distortion filter for hero title — animated SVG feTurbulence +
+   feDisplacementMap giving a subtle "text seen through moving water"
+   effect. Disabled for reduced-motion users (filter removed).
+   will-change hints the compositor to cache the filter result. */
+.hero-title--wave {
+  filter: url(#hero-wave);
+  will-change: filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-title--wave {
+    filter: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-reveal,
   .hero-visual--reveal,
