@@ -5,8 +5,11 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "build:clean": "node -e \"require('node:fs').rmSync('.next', { recursive: true, force: true })\" && next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "verify": "npm run lint && npm run build:clean",
     "geo:doctor": "node scripts/geo-doctor.mjs",
     "iiko:bindings-template": "node scripts/generate-iiko-bindings-template.mjs",
     "iiko:bindings-validate": "node scripts/validate-iiko-bindings.mjs"

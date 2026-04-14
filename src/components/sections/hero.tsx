@@ -33,14 +33,16 @@ export function Hero() {
                   {HERO_SCENE.titleItalic}
                 </em>
               </span>
-              <span className="hero-line">
-                <span className="hero-reveal" style={{ animationDelay: "360ms" }}>
-                  {HERO_SCENE.titleTail}
-                </span>
-              </span>
             </h1>
 
-            <p className="hero-summary hero-reveal" style={{ animationDelay: "480ms" }}>
+            <p
+              className="hero-strapline hero-reveal"
+              style={{ animationDelay: "400ms" }}
+            >
+              {HERO_SCENE.strapline}
+            </p>
+
+            <p className="hero-summary hero-reveal" style={{ animationDelay: "520ms" }}>
               {HERO_SCENE.summary}
             </p>
 

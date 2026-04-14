@@ -9,8 +9,8 @@ export const HERO_SCENE = {
   image: "/editorial/hero-crawfish.png",
   eyebrow: "Moscow · с 2017",
   titleLead: "Раки, краб",
-  titleItalic: "и море —",
-  titleTail: "ровно тогда, когда нужно.",
+  titleItalic: "и море.",
+  strapline: "Ровно тогда, когда нужно.",
   summary:
     "Своя кухня, свои курьеры, свой темп. Мы не торопим ужин — мы не опаздываем к нему.",
 } as const;

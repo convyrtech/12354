@@ -116,7 +116,7 @@ export async function writeCourierLocation(
     throw new CourierNotFoundError("Courier was not found.");
   }
 
-  let assignmentId: string | null = input.assignmentId?.trim() || null;
+  const assignmentId: string | null = input.assignmentId?.trim() || null;
 
   if (assignmentId) {
     const assignment = await repositories.assignments.getById(assignmentId);
