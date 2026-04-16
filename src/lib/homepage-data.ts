@@ -5,14 +5,22 @@
  * Regenerated 2026-04-14 in Tranche A1.c.
  */
 
+/**
+ * HERO copy is intentionally minimal — only factual elements that
+ * have been explicitly confirmed by the brand owner. All prior
+ * "lyrical" placeholders (Ровно тогда когда нужно..., Своя кухня
+ * свои курьеры..., etc) were invented by the implementer and got
+ * rejected. Strapline/summary/CTA intentionally absent until the
+ * owner supplies real brand voice copy.
+ *
+ * Structure: eyebrow (city + year) + 2-line wordmark title.
+ * Minimum luxury layout (Hermès / Goyard pattern).
+ */
 export const HERO_SCENE = {
   image: "/editorial/hero-crawfish.png",
-  eyebrow: "Moscow · с 2017",
-  titleLead: "Раки, краб",
-  titleItalic: "и море.",
-  strapline: "Ровно тогда, когда нужно.",
-  summary:
-    "Своя кухня, свои курьеры, свой темп. Мы не торопим ужин — мы не опаздываем к нему.",
+  eyebrow: "Москва · с 2017",
+  titleLead: "THE",
+  titleItalic: "Raki",
 } as const;
 
 /**

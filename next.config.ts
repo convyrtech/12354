@@ -4,8 +4,6 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
-  // three.js ships untranspiled ESM — required by @react-three/fiber
-  transpilePackages: ["three"],
   images: {
     remotePatterns: [
       {
