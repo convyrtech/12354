@@ -169,7 +169,6 @@ function HomeNavigation({ scrolled }: { scrolled: boolean }) {
           }}
           transition={{ duration: 0.28, ease: EASE }}
         >
-          <BrandLockup />
           <LinkRow links={links} />
           <div className="nav-actions">
             <Link href="/menu?fulfillment=delivery" className="nav-action-link hidden sm:inline-flex">

@@ -1741,12 +1741,35 @@ body[data-route-mode="demo"] .home-panel {
   isolation: isolate;
 }
 
+.hero-poster-title {
+  position: absolute;
+  top: clamp(60px, 18vh, 240px);
+  left: 48%;
+  transform: translateX(-50%);
+  font-family: var(--font-poster), "Cormorant Garamond", serif;
+  font-weight: 400;
+  font-size: clamp(140px, 17vw, 520px);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  white-space: nowrap;
+  z-index: 1;
+  pointer-events: none;
+  will-change: opacity, filter;
+}
+
+.hero-poster-title em {
+  font-style: italic;
+  font-weight: 400;
+}
+
 .hero-poster {
   position: absolute;
   inset: auto 0 0 0;
   z-index: 4;
-  padding-inline: clamp(28px, 4.2vw, 120px);
-  padding-bottom: clamp(44px, 6vh, 96px);
+  padding-left: clamp(120px, 16vw, 260px);
+  padding-right: clamp(28px, 4.2vw, 120px);
+  padding-bottom: clamp(80px, 12vh, 140px);
   pointer-events: none;
 }
 
@@ -1803,6 +1826,10 @@ body[data-route-mode="demo"] .home-panel {
   margin-left: clamp(8px, 1.2vw, 32px);
 }
 
+.hero-line--bottom {
+  margin-left: clamp(48px, 9vw, 200px);
+}
+
 .hero-title__word {
   position: relative;
   z-index: 1;
@@ -1816,7 +1843,7 @@ body[data-route-mode="demo"] .home-panel {
 }
 
 .hero-title__word--top {
-  font-size: clamp(34px, 2.6vw, 56px);
+  font-size: clamp(44px, 5vw, 72px);
   line-height: 1;
   letter-spacing: -0.028em;
   font-style: italic;
@@ -1826,7 +1853,7 @@ body[data-route-mode="demo"] .home-panel {
 }
 
 .hero-title__word--bottom {
-  font-size: clamp(96px, 9.6vw, 200px);
+  font-size: clamp(44px, 5.7vw, 260px);
   line-height: 0.86;
   letter-spacing: -0.052em;
   text-shadow: 0 0 24px rgba(246, 239, 228, 0.06);
@@ -1956,15 +1983,15 @@ body[data-route-mode="demo"] .home-panel {
   filter: blur(60px);
 }
 
-/* Crayfish is the anchor of the composition — big, centred,
-   shifted slightly left of middle so the text mass can run
-   through its lower half instead of next to it. */
+/* Crayfish suspended in the water volume — ~10% smaller than the original
+   poster size, horizontal centre shifted rightwards to ~58vw. Claws still
+   cross the headline by z-layering. */
 .hero-crayfish-entrance {
   position: absolute;
-  top: clamp(-20px, -1vh, 20px);
-  left: clamp(80px, 7vw, 200px);
+  top: clamp(10px, 2vh, 40px);
+  left: clamp(160px, 35vw, 960px);
   width: clamp(640px, 54vw, 1360px);
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 1 / 1;
   will-change: transform, opacity;
   z-index: 2;
 }
@@ -2128,8 +2155,8 @@ body[data-route-mode="demo"] .home-panel {
   }
 
   .hero-crayfish-entrance {
-    top: clamp(-40px, -3vh, 10px);
-    left: clamp(36px, 4vw, 108px);
+    top: clamp(10px, 2vh, 40px);
+    left: clamp(220px, 33vw, 520px);
     width: clamp(580px, 58vw, 760px);
   }
 
@@ -2151,8 +2178,8 @@ body[data-route-mode="demo"] .home-panel {
   }
 
   .hero-crayfish-entrance {
-    top: clamp(-40px, -2vh, 30px);
-    left: clamp(120px, 9vw, 280px);
+    top: clamp(20px, 3vh, 80px);
+    left: clamp(540px, 34vw, 1160px);
     width: clamp(960px, 56vw, 1520px);
   }
 
@@ -2166,8 +2193,9 @@ body[data-route-mode="demo"] .home-panel {
   }
 
   .hero-poster {
-    padding-inline: clamp(48px, 5vw, 160px);
-    padding-bottom: clamp(56px, 6.8vh, 120px);
+    padding-left: clamp(140px, 16vw, 320px);
+    padding-right: clamp(48px, 5vw, 160px);
+    padding-bottom: clamp(100px, 12vh, 180px);
   }
 }
 

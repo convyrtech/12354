@@ -20,7 +20,7 @@ const FIRST_LINE_DELAY = 0.1;
 const FIRST_LINE_WORDS = ["Вкус,", "после", "которого"] as const;
 
 const CRAYFISH_ENTRANCE_DELAY = 0.6;
-const CRAYFISH_ENTRANCE_DURATION = 1.4;
+const CRAYFISH_ENTRANCE_DURATION = 1.8;
 
 const SECOND_LINE_DELAY = 0.8;
 const SECOND_LINE_WORDS = ["всё", "остальное", "звучит"] as const;
@@ -70,6 +70,24 @@ export function Hero() {
         <div className="hero-water__falloff" />
         <div className="hero-water__noise" />
       </div>
+
+      <motion.div
+        className="hero-poster-title"
+        aria-hidden
+        initial={
+          prefersReduced
+            ? { opacity: 1, filter: "blur(0px)" }
+            : { opacity: 0, filter: "blur(24px)" }
+        }
+        animate={{ opacity: 1, filter: "blur(0px)" }}
+        transition={{
+          duration: prefersReduced ? 0 : 1.6,
+          delay: 0,
+          ease: [0.16, 1, 0.3, 1],
+        }}
+      >
+        The <em>Raki</em>
+      </motion.div>
 
       <HeroCrayfishStage
         entranceDelay={CRAYFISH_ENTRANCE_DELAY}

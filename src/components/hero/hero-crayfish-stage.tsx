@@ -3,7 +3,9 @@
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 
-const EXPO_OUT = [0.16, 1, 0.3, 1] as const;
+// Viscous-out — no springy front-load, steady deceleration through the whole
+// duration so the crayfish slows down as if settling into a fluid medium.
+const VISCOUS_OUT = [0.22, 0.61, 0.36, 1] as const;
 
 // Offsets relative to entranceEnd (when the crayfish lands). Claw zone ≈ x 40-58%, y 70-86%.
 const CLAW_BUBBLES = [
@@ -48,7 +50,7 @@ export function HeroCrayfishStage({
         initial={
           prefersReduced
             ? { opacity: 1, y: 0, rotate: 0, scale: 1 }
-            : { opacity: 0, y: "-45vh", rotate: -8, scale: 0.88 }
+            : { opacity: 0.3, y: "-130vh", rotate: -8, scale: 0.88 }
         }
         animate={
           prefersReduced
@@ -58,9 +60,10 @@ export function HeroCrayfishStage({
         transition={{
           duration: prefersReduced ? 0.2 : entranceDuration,
           delay: prefersReduced ? 0 : entranceDelay,
-          ease: EXPO_OUT,
-          // Opacity fades in linearly so the crayfish is visibly falling into frame,
-          // not popping in already-placed.
+          ease: VISCOUS_OUT,
+          // Opacity fades in linearly from a partially-visible start so the
+          // crayfish reads as already in motion when it enters the frame,
+          // not as a stop-frame that only starts translating later.
           opacity: {
             duration: prefersReduced ? 0.2 : entranceDuration,
             delay: prefersReduced ? 0 : entranceDelay,
@@ -73,13 +76,16 @@ export function HeroCrayfishStage({
           animate={
             prefersReduced
               ? undefined
-              : { y: [0, -8, 0] }
+              : {
+                  y: [0, -12, 0],
+                  rotate: [0, 0.5, -0.3, 0],
+                }
           }
           transition={
             prefersReduced
               ? undefined
               : {
-                  duration: 6,
+                  duration: 8.5,
                   delay: idleDelay,
                   ease: "easeInOut",
                   repeat: Number.POSITIVE_INFINITY,
