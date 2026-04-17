@@ -50,6 +50,19 @@
   --duration-short: 220ms;
   --duration-medium: 360ms;
   --duration-long: 860ms;
+
+  /* ------------------------------------------------------------
+     Dual-theme tokens: home stays dark (existing --bg/--text-primary),
+     internal cream-editorial pages use the *-on-cream set.
+     These are additive — do not replace existing marine tokens.
+     ------------------------------------------------------------ */
+  --color-bg-dark: #0a1619;
+  --color-bg-cream: #f2e8d5;
+  --color-bg-cream-alt: #ece3ce;
+  --text-on-dark: var(--text-primary);
+  --text-on-cream: #101c1e;
+  --text-on-cream-muted: rgba(16, 28, 30, 0.6);
+  --accent-cream: #8fb3b0;
 }
 
 * {
@@ -68,6 +81,7 @@ body {
 html {
   scroll-behavior: smooth;
   background: var(--bg);
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -1951,6 +1965,24 @@ body[data-route-mode="demo"] .home-panel {
   opacity: 0.3;
 }
 
+.hero-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background-image: url("/textures/grain.png");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+  mix-blend-mode: overlay;
+  opacity: 0.18;
+}
+
+@media (max-width: 767px) {
+  .hero-grain {
+    opacity: 0.12;
+  }
+}
+
 .hero-crayfish-scene {
   position: absolute;
   inset: 0;
@@ -2278,5 +2310,500 @@ body[data-route-mode="demo"] .home-panel {
   .hero-water__caustic--a,
   .hero-water__caustic--b {
     animation: none;
+  }
+}
+
+/* ============================================================
+   HOME MENU PANEL — trigger, overlay, cream side panel, tilt
+   Home-only. Non-home routes still use .nav-root / .nav-shell.
+   ============================================================ */
+
+/* Dedicated perspective container — wraps only home-main. Panel,
+   overlay and trigger render as siblings outside this wrapper (see
+   AppProviders), so panel's fixed positioning is not affected by the
+   3D containing block. */
+.perspective-wrapper {
+  perspective: 1600px;
+  perspective-origin: left center;
+  position: relative;
+  z-index: 1;
+}
+
+body[data-menu-open="true"] .perspective-wrapper {
+  z-index: 36;
+}
+
+.home-main {
+  position: relative;
+  transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+  transform-origin: center center;
+  backface-visibility: hidden;
+}
+
+/* CCW rotation around CENTER: top-right corner moves UP and LEFT,
+   bottom-right moves DOWN and LEFT — hero reads as a tilted poster
+   with its right edge slanting DOWN-LEFT top→bottom. Matches your
+   verbal spec "правый верхний угол должен подняться и сместиться
+   левее". 8deg for clear visibility. */
+body[data-menu-open="true"] .home-main {
+  transform: translateY(var(--menu-scroll-y, 0px)) rotate(-8deg) translateX(-200px);
+  background: var(--color-bg-dark);
+  z-index: 36;
+  box-shadow:
+    48px 0 90px -12px rgba(0, 0, 0, 0.5),
+    20px 0 36px -6px rgba(0, 0, 0, 0.32);
+}
+
+@media (max-width: 767px) {
+  body[data-menu-open="true"] .home-main {
+    transform: translateX(-25%);
+    box-shadow: 24px 0 56px -12px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* While the panel is open, paint the surrounding viewport in the dark
+   backdrop so the tilted home sits on a deliberate page-margin, not
+   black void. */
+body[data-menu-open="true"] {
+  background: var(--color-bg-dark);
+}
+
+body[data-menu-open="true"]::before {
+  opacity: 0;
+}
+
+body[data-menu-open="true"] button[aria-label="Открыть заказ"] {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 240ms var(--ease-out);
+}
+
+.home-menu-trigger {
+  position: fixed;
+  top: clamp(16px, 2vh, 32px);
+  right: clamp(24px, 4vw, 64px);
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  color: rgba(242, 232, 213, 0.8);
+  font-family: var(--font-poster), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(16px, 1.2vw, 20px);
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: color 200ms var(--ease-out), border-color 200ms var(--ease-out);
+}
+
+.home-menu-trigger:hover,
+.home-menu-trigger:focus-visible {
+  color: rgba(242, 232, 213, 1);
+  border-bottom-color: rgba(242, 232, 213, 0.6);
+  outline: none;
+}
+
+.home-menu-trigger__arrow {
+  position: relative;
+  display: inline-block;
+  width: 1em;
+  text-align: center;
+}
+
+.home-menu-trigger__arrow > span {
+  position: absolute;
+  inset: 0;
+  display: inline-block;
+  transition: opacity 200ms var(--ease-out);
+}
+
+.home-menu-trigger__arrow > span[data-visible="false"] {
+  opacity: 0;
+}
+
+.home-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 32;
+  background: rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 500ms var(--ease-out);
+}
+
+.home-menu-overlay[data-open="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.home-menu-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  height: 100dvh;
+  width: clamp(420px, 36vw, 580px);
+  z-index: 35;
+  padding: clamp(48px, 6vw, 96px);
+  background: var(--color-bg-cream);
+  color: var(--text-on-cream);
+  transform: translateX(100%);
+  transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow-y: auto;
+  box-shadow: -40px 0 120px rgba(0, 0, 0, 0.18);
+}
+
+@media (max-width: 767px) {
+  .home-menu-panel {
+    width: clamp(280px, 85vw, 400px);
+    padding: clamp(32px, 6vw, 56px);
+  }
+}
+
+.home-menu-panel[data-open="true"] {
+  transform: translateX(0);
+}
+
+.home-menu-panel__links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: clamp(16px, 2vh, 28px);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.home-menu-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  font-family: var(--font-poster), "Cormorant Garamond", serif;
+  font-weight: 400;
+  font-size: clamp(26px, 3.1vw, 44px);
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-on-cream);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 250ms ease, transform 250ms ease;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.home-menu-link:hover,
+.home-menu-link:focus-visible {
+  color: var(--accent-cream);
+  transform: translateX(-8px);
+  outline: none;
+}
+
+.home-menu-panel__divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(16, 28, 30, 0.1);
+  margin: clamp(32px, 4vh, 56px) 0 clamp(16px, 2vh, 28px);
+  border: 0;
+}
+
+.home-menu-contacts {
+  margin-top: clamp(48px, 6vh, 96px);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: clamp(11px, 0.85vw, 13px);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.8;
+  color: rgba(16, 28, 30, 0.55);
+  text-align: right;
+}
+
+.home-menu-contacts a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 200ms ease;
+}
+
+.home-menu-contacts a:hover {
+  color: var(--text-on-cream);
+}
+
+.home-menu-contacts p {
+  margin: 0;
+}
+
+.home-menu-track {
+  position: absolute;
+  inset: 0;
+  background: var(--color-bg-cream);
+  z-index: 1;
+  padding: clamp(48px, 6vw, 96px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(24px, 3vh, 36px);
+  justify-content: center;
+}
+
+@media (max-width: 767px) {
+  .home-menu-track {
+    padding: clamp(32px, 6vw, 56px);
+  }
+}
+
+.home-menu-track__title {
+  font-family: var(--font-poster), "Cormorant Garamond", serif;
+  font-weight: 400;
+  font-size: clamp(32px, 3.4vw, 44px);
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-on-cream);
+  margin: 0;
+}
+
+.home-menu-track__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-menu-track__input {
+  appearance: none;
+  width: 100%;
+  padding: 14px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(16, 28, 30, 0.18);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 16px;
+  color: var(--text-on-cream);
+  outline: none;
+  transition: border-color 200ms ease;
+}
+
+.home-menu-track__input::placeholder {
+  color: rgba(16, 28, 30, 0.35);
+}
+
+.home-menu-track__input:focus {
+  border-bottom-color: var(--accent-cream);
+}
+
+.home-menu-track__actions {
+  display: flex;
+  gap: clamp(12px, 1.5vw, 24px);
+  align-items: center;
+  margin-top: clamp(8px, 1vh, 16px);
+}
+
+.home-menu-track__submit {
+  padding: 14px clamp(24px, 3vw, 36px);
+  border: 1px solid var(--text-on-cream);
+  background: var(--text-on-cream);
+  color: var(--color-bg-cream);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 200ms ease, color 200ms ease;
+}
+
+.home-menu-track__submit:hover {
+  background: transparent;
+  color: var(--text-on-cream);
+}
+
+.home-menu-track__cancel {
+  background: transparent;
+  border: 0;
+  padding: 14px 0;
+  color: rgba(16, 28, 30, 0.55);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 200ms ease;
+}
+
+.home-menu-track__cancel:hover {
+  color: var(--text-on-cream);
+}
+
+/* ------------------------------------------------------------
+   Cream-editorial page base — /account, /pickup, /contact.
+   ------------------------------------------------------------ */
+.cream-page {
+  min-height: 100vh;
+  background: var(--color-bg-cream);
+  color: var(--text-on-cream);
+  padding: clamp(96px, 12vh, 144px) clamp(24px, 6vw, 96px)
+    clamp(64px, 10vh, 120px);
+}
+
+.cream-page__shell {
+  max-width: 780px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(32px, 5vh, 56px);
+}
+
+.cream-page__eyebrow {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-on-cream-muted);
+  margin: 0;
+}
+
+.cream-page__title {
+  font-family: var(--font-poster), "Cormorant Garamond", serif;
+  font-weight: 400;
+  font-size: clamp(48px, 6.5vw, 96px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: var(--text-on-cream);
+  margin: 0;
+}
+
+.cream-page__lead {
+  font-family: var(--font-display), "Cormorant Garamond", serif;
+  font-weight: 400;
+  font-size: clamp(20px, 2vw, 26px);
+  line-height: 1.5;
+  color: var(--text-on-cream);
+  max-width: 56ch;
+  margin: 0;
+}
+
+.cream-page__section {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 1.6vh, 20px);
+  padding: clamp(24px, 3vh, 40px) 0;
+  border-top: 1px solid rgba(16, 28, 30, 0.08);
+}
+
+.cream-page__section-title {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-on-cream-muted);
+  margin: 0;
+}
+
+.cream-page__section-value {
+  font-family: var(--font-poster), "Cormorant Garamond", serif;
+  font-weight: 400;
+  font-size: clamp(28px, 3vw, 44px);
+  line-height: 1.2;
+  color: var(--text-on-cream);
+  margin: 0;
+}
+
+.cream-page__section-value a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(16, 28, 30, 0.18);
+  transition: border-color 200ms ease;
+}
+
+.cream-page__section-value a:hover {
+  border-bottom-color: var(--text-on-cream);
+}
+
+.cream-page__note {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-on-cream-muted);
+  max-width: 56ch;
+  margin: 0;
+}
+
+.cream-page__cta {
+  align-self: flex-start;
+  padding: 16px clamp(28px, 3vw, 40px);
+  background: var(--text-on-cream);
+  color: var(--color-bg-cream);
+  border: 1px solid var(--text-on-cream);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 200ms ease, color 200ms ease;
+}
+
+.cream-page__cta:hover {
+  background: transparent;
+  color: var(--text-on-cream);
+}
+
+.cream-page__cta--ghost {
+  background: transparent;
+  color: var(--text-on-cream);
+}
+
+.cream-page__cta--ghost:hover {
+  background: var(--text-on-cream);
+  color: var(--color-bg-cream);
+}
+
+.cream-page__input {
+  appearance: none;
+  width: 100%;
+  padding: 14px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(16, 28, 30, 0.18);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 16px;
+  color: var(--text-on-cream);
+  outline: none;
+  transition: border-color 200ms ease;
+}
+
+.cream-page__input::placeholder {
+  color: rgba(16, 28, 30, 0.35);
+}
+
+.cream-page__input:focus {
+  border-bottom-color: var(--accent-cream);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    perspective: none;
+    transform-style: flat;
+  }
+  .home-main,
+  body[data-menu-open="true"] .home-main {
+    transition: none;
+  }
+  body[data-menu-open="true"] .home-main {
+    transform: translateY(var(--menu-scroll-y, 0px)) translateX(-4%);
+  }
+  .home-menu-panel,
+  .home-menu-overlay,
+  .home-menu-trigger,
+  .home-menu-trigger__arrow > span {
+    transition: none;
   }
 }

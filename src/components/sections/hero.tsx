@@ -21,7 +21,12 @@ const FIRST_LINE_DELAY = 0.1;
 const FIRST_LINE_WORDS = ["Вкус,", "после", "которого"] as const;
 
 const CRAYFISH_ENTRANCE_DELAY = 0.6;
-const CRAYFISH_ENTRANCE_DURATION = 1.8;
+const CRAYFISH_ENTRANCE_DURATION = 2.4;
+const CRAYFISH_SETTLED_AT = CRAYFISH_ENTRANCE_DELAY + CRAYFISH_ENTRANCE_DURATION;
+// Idle breathing kicks in just after the body finishes its damped settle.
+const CRAYFISH_IDLE_DELAY = CRAYFISH_SETTLED_AT + 0.2;
+// Phase-3 bubbles start after the post-landing tail-off (+0.7s) plus a breath.
+const BUBBLES_PHASE3_DELAY = CRAYFISH_SETTLED_AT + 0.9;
 
 const SECOND_LINE_DELAY = 0.8;
 const SECOND_LINE_WORDS = ["всё", "остальное", "звучит"] as const;
@@ -33,7 +38,6 @@ const LAST_WORD_DELAY = SECOND_LINE_DELAY + ACCENT_INDEX * WORD_STAGGER;
 // the expanding wavefront.
 const RIPPLE_TRIGGER = LAST_WORD_DELAY - 0.1;
 const RIPPLE_DURATION = 1.2;
-const IDLE_BREATHING_DELAY = RIPPLE_TRIGGER + RIPPLE_DURATION;
 
 export function Hero() {
   const prefersReduced = useReducedMotion();
@@ -93,12 +97,12 @@ export function Hero() {
       <HeroCrayfishStage
         entranceDelay={CRAYFISH_ENTRANCE_DELAY}
         entranceDuration={CRAYFISH_ENTRANCE_DURATION}
-        idleDelay={IDLE_BREATHING_DELAY}
+        idleDelay={CRAYFISH_IDLE_DELAY}
         frontOverlay={
           <HeroBubbles
             entranceDelay={CRAYFISH_ENTRANCE_DELAY}
             entranceDuration={CRAYFISH_ENTRANCE_DURATION}
-            idleStartDelay={IDLE_BREATHING_DELAY}
+            idleStartDelay={BUBBLES_PHASE3_DELAY}
             density={0.25}
             variant="front"
           />
@@ -107,10 +111,12 @@ export function Hero() {
         <HeroBubbles
           entranceDelay={CRAYFISH_ENTRANCE_DELAY}
           entranceDuration={CRAYFISH_ENTRANCE_DURATION}
-          idleStartDelay={IDLE_BREATHING_DELAY}
+          idleStartDelay={BUBBLES_PHASE3_DELAY}
           variant="back"
         />
       </HeroCrayfishStage>
+
+      <div className="hero-grain" aria-hidden />
 
       <div className="hero-poster">
         <div className="hero-title-stage">
