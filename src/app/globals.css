@@ -1730,198 +1730,118 @@ body[data-route-mode="demo"] .home-panel {
 }
 
 /* ============================================================
-   HERO RESET 2026-04-15
-   Rebuild the first viewport as one full-bleed underwater poster.
-   Constrain only the text column; never the whole composition.
+   HERO POSTER 2026-04-16
+   One full-bleed underwater scene. The crayfish is the subject;
+   text hangs under it as poster mass; bubbles live with the claws.
+   No split layout, no column boundaries, no generic hero block.
    ============================================================ */
 .hero-stage {
   height: 100svh;
-  min-height: 760px;
+  min-height: 820px;
   isolation: isolate;
 }
 
-.hero-copy-shell {
-  position: relative;
+.hero-poster {
+  position: absolute;
+  inset: auto 0 0 0;
   z-index: 4;
-  width: 100%;
-  min-height: inherit;
-  padding-inline: clamp(28px, 4vw, 82px);
-  padding-block: clamp(118px, 11vh, 152px) clamp(56px, 6vh, 96px);
-  display: grid;
-  align-items: center;
+  padding-inline: clamp(28px, 4.2vw, 120px);
+  padding-bottom: clamp(44px, 6vh, 96px);
+  pointer-events: none;
 }
 
-.hero-copy {
-  position: relative;
-  display: grid;
-  gap: clamp(10px, 0.95vw, 18px);
-  max-width: min(118rem, 96vw);
-  padding-bottom: clamp(22px, 2.4vh, 42px);
-  align-self: center;
-}
-
-.hero-eyebrow {
-  position: relative;
-  z-index: 4;
-  width: fit-content;
-  margin-left: clamp(10px, 1.4vw, 30px);
-}
-
-.hero-title-wrap {
-  position: relative;
-  width: min(100%, 112rem);
-  max-width: min(100%, 112rem);
-  margin-top: clamp(176px, 15vh, 248px);
-  min-height: clamp(250px, 29vh, 350px);
+.hero-poster__wash {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: clamp(260px, 42vh, 540px);
+  background:
+    radial-gradient(
+      ellipse 68% 80% at 38% 100%,
+      rgba(2, 10, 12, 0.56) 0%,
+      rgba(2, 10, 12, 0.24) 46%,
+      rgba(2, 10, 12, 0) 82%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(2, 10, 12, 0) 0%,
+      rgba(2, 10, 12, 0.22) 56%,
+      rgba(2, 10, 12, 0.44) 100%
+    );
+  filter: blur(12px);
+  transform-origin: 50% 100%;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .hero-title {
   position: relative;
   z-index: 4;
   margin: 0;
-  max-width: none;
-  display: block;
-  min-height: inherit;
+  display: grid;
+  gap: clamp(6px, 0.6vh, 18px);
+  max-width: min(148rem, 100%);
 }
 
-.hero-title__line-wrap,
-.hero-title__wave,
-.hero-title__wave--top,
-.hero-title__wave--bottom,
+.hero-title-stage {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+}
+
 .hero-line {
+  position: relative;
   display: block;
   overflow: visible;
-}
-
-.hero-title__line-wrap,
-.hero-title__wave--top,
-.hero-title__wave--bottom {
-  will-change: transform, opacity, filter;
-  transform-origin: 50% 100%;
-}
-
-.hero-title__wave {
-  transform-origin: 50% 100%;
-}
-
-.hero-break {
-  display: none;
-}
-
-.hero-break--stack {
-  display: block;
+  line-height: 0.88;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .hero-line--top {
-  position: absolute;
-  top: 0;
-  left: clamp(240px, 12vw, 340px);
-  width: max-content;
-  max-width: min(52rem, 40vw);
-  white-space: nowrap;
+  margin-left: clamp(8px, 1.2vw, 32px);
 }
 
-.hero-line--bottom {
-  position: absolute;
-  top: clamp(102px, 10.2vh, 154px);
-  left: clamp(560px, 27vw, 760px);
-  width: max-content;
-  max-width: min(116rem, 66vw);
-  white-space: nowrap;
-}
-
-.hero-title__wave--top,
-.hero-title__wave--bottom {
+.hero-title__word {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  will-change: transform, opacity, filter;
   font-family: var(--font-display), serif;
   font-weight: 500;
-  line-height: 0.9;
-  letter-spacing: -0.048em;
   color: rgba(247, 240, 228, 0.97);
-  text-wrap: balance;
-  white-space: nowrap;
-  padding-inline-end: 0.03em;
-  margin-inline-end: -0.03em;
+  letter-spacing: -0.048em;
+  white-space: pre;
 }
 
-.hero-title__wave--top {
-  font-size: clamp(74px, 3.95vw, 94px);
-  line-height: 0.9;
-  color: rgba(243, 236, 224, 0.94);
-  text-shadow: 0 0 16px rgba(246, 239, 228, 0.024);
+.hero-title__word--top {
+  font-size: clamp(34px, 2.6vw, 56px);
+  line-height: 1;
+  letter-spacing: -0.028em;
+  font-style: italic;
+  font-weight: 400;
+  color: rgba(238, 226, 204, 0.78);
+  text-shadow: 0 0 16px rgba(246, 239, 228, 0.06);
 }
 
-.hero-title__wave--bottom {
-  font-size: clamp(100px, 5.25vw, 132px);
-  line-height: 0.88;
-  text-shadow: 0 0 18px rgba(246, 239, 228, 0.04);
+.hero-title__word--bottom {
+  font-size: clamp(96px, 9.6vw, 200px);
+  line-height: 0.86;
+  letter-spacing: -0.052em;
+  text-shadow: 0 0 24px rgba(246, 239, 228, 0.06);
 }
 
 .hero-title__accent {
   display: inline-block;
-  padding-inline-start: 0.02em;
-  color: rgba(243, 236, 224, 0.9);
+  padding-inline-start: 0.04em;
+  color: rgba(236, 227, 206, 0.92);
   font-style: italic;
   font-weight: 500;
-  font-size: 0.975em;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.014em;
   text-shadow:
-    0 0 10px rgba(246, 239, 228, 0.014),
-    0 0 18px rgba(246, 239, 228, 0.004);
-}
-
-.hero-title-ripple {
-  position: absolute;
-  pointer-events: none;
-  transform-origin: 50% 50%;
-  z-index: 1;
-  mix-blend-mode: screen;
-  border-radius: 999px;
-  border: none;
-}
-
-.hero-title-ripple--primary {
-  left: clamp(242px, 12.2vw, 344px);
-  top: 26%;
-  width: min(34rem, 22vw);
-  height: clamp(22px, 1.7vw, 34px);
-  background:
-    radial-gradient(
-      ellipse at 50% 54%,
-      rgba(182, 236, 243, 0.16) 0%,
-      rgba(182, 236, 243, 0.055) 22%,
-      rgba(182, 236, 243, 0) 76%
-    );
-  filter: blur(8px);
-}
-
-.hero-title-ripple--secondary {
-  left: clamp(562px, 27.4vw, 768px);
-  top: 72%;
-  width: min(66rem, 42vw);
-  height: clamp(18px, 1.4vw, 24px);
-  background:
-    radial-gradient(
-      ellipse at 50% 54%,
-      rgba(182, 236, 243, 0.12) 0%,
-      rgba(182, 236, 243, 0.035) 34%,
-      rgba(182, 236, 243, 0) 78%
-    );
-  filter: blur(9px);
-}
-
-.hero-title-sheen {
-  position: absolute;
-  inset: 22% -4% 2% 18%;
-  background: radial-gradient(
-    ellipse at 48% 50%,
-    rgba(168, 230, 238, 0.1) 0%,
-    rgba(168, 230, 238, 0.04) 32%,
-    transparent 72%
-  );
-  filter: blur(36px);
-  mix-blend-mode: screen;
-  pointer-events: none;
-  z-index: 1;
+    0 0 14px rgba(246, 239, 228, 0.08),
+    0 0 24px rgba(182, 236, 243, 0.04);
 }
 
 .hero-water__base {
@@ -2013,35 +1933,38 @@ body[data-route-mode="demo"] .home-panel {
 
 .hero-crayfish-light {
   position: absolute;
-  inset: 14% -14% -18% 2%;
+  inset: 8% -10% -22% -8%;
   background: radial-gradient(
-    ellipse at 42% 48%,
-    rgba(88, 200, 210, 0.22) 0%,
-    rgba(88, 200, 210, 0.1) 36%,
-    transparent 72%
+    ellipse at 40% 46%,
+    rgba(104, 210, 220, 0.22) 0%,
+    rgba(104, 210, 220, 0.1) 38%,
+    transparent 74%
   );
-  filter: blur(72px);
-  opacity: 0.8;
+  filter: blur(88px);
+  opacity: 0.85;
 }
 
 .hero-crayfish-depth {
   position: absolute;
-  inset: 36% -20% -38% -6%;
+  inset: 44% -14% -36% -14%;
   background: radial-gradient(
-    ellipse at 40% 68%,
-    rgba(2, 11, 13, 0.8) 0%,
-    rgba(2, 11, 13, 0.42) 42%,
-    rgba(2, 11, 13, 0) 74%
+    ellipse at 38% 68%,
+    rgba(2, 11, 13, 0.82) 0%,
+    rgba(2, 11, 13, 0.4) 44%,
+    rgba(2, 11, 13, 0) 76%
   );
-  filter: blur(52px);
+  filter: blur(60px);
 }
 
+/* Crayfish is the anchor of the composition — big, centred,
+   shifted slightly left of middle so the text mass can run
+   through its lower half instead of next to it. */
 .hero-crayfish-entrance {
   position: absolute;
-  top: clamp(122px, 11vh, 176px);
-  right: clamp(48px, 3vw, 96px);
-  width: clamp(620px, 31vw, 760px);
-  aspect-ratio: 1;
+  top: clamp(-20px, -1vh, 20px);
+  left: clamp(80px, 7vw, 200px);
+  width: clamp(640px, 54vw, 1360px);
+  aspect-ratio: 3 / 4;
   will-change: transform, opacity;
   z-index: 2;
 }
@@ -2053,120 +1976,108 @@ body[data-route-mode="demo"] .home-panel {
 }
 
 .hero-crayfish-asset {
-  position: relative;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
 }
 
 .hero-crayfish-image {
   object-fit: contain;
-  transform: translateX(-34px) translateY(34px) scale(1.08);
-  transform-origin: 58% 34%;
-  filter: drop-shadow(0 38px 96px rgba(2, 10, 12, 0.56))
-    drop-shadow(0 12px 34px rgba(2, 10, 12, 0.26));
+  object-position: 50% 46%;
+  transform: scale(1.05);
+  transform-origin: 50% 46%;
+  filter: drop-shadow(0 44px 110px rgba(2, 10, 12, 0.6))
+    drop-shadow(0 14px 38px rgba(2, 10, 12, 0.3));
 }
 
 .hero-crayfish-veil {
   position: absolute;
-  inset: 14% -18% -12% 0%;
+  inset: 10% -16% -10% -6%;
   background:
     radial-gradient(
-      ellipse at 34% 48%,
-      rgba(184, 235, 241, 0.13) 0%,
-      rgba(184, 235, 241, 0.055) 28%,
-      rgba(184, 235, 241, 0) 64%
+      ellipse at 36% 48%,
+      rgba(184, 235, 241, 0.12) 0%,
+      rgba(184, 235, 241, 0.05) 30%,
+      rgba(184, 235, 241, 0) 66%
     ),
     linear-gradient(
       180deg,
       rgba(3, 14, 17, 0) 0%,
-      rgba(3, 14, 17, 0.08) 48%,
-      rgba(3, 14, 17, 0.22) 100%
+      rgba(3, 14, 17, 0.06) 48%,
+      rgba(3, 14, 17, 0.2) 100%
     );
-  filter: blur(16px);
-  opacity: 0.7;
+  filter: blur(18px);
+  opacity: 0.72;
   z-index: 3;
 }
 
-.hero-impact {
+/* Soft underwater wash blooming from the claw zone when the
+   crayfish settles — anchors the bubble cluster visually. */
+.hero-claw-wash {
   position: absolute;
-  left: 58%;
-  top: 84%;
-  width: 22%;
-  height: 10%;
-  transform: translate(-50%, -50%);
-  z-index: 1;
-}
-
-.hero-impact__wash,
-.hero-impact__ring {
-  position: absolute;
-  inset: 0;
+  left: 30%;
+  top: 64%;
+  width: 42%;
+  height: 30%;
   border-radius: 999px;
-}
-
-.hero-impact__wash {
   background: radial-gradient(
     ellipse at 50% 50%,
-    rgba(182, 238, 245, 0.26) 0%,
-    rgba(182, 238, 245, 0.1) 36%,
-    rgba(182, 238, 245, 0) 78%
+    rgba(186, 238, 246, 0.3) 0%,
+    rgba(186, 238, 246, 0.12) 38%,
+    rgba(186, 238, 246, 0) 78%
   );
-  filter: blur(22px);
+  filter: blur(28px);
+  pointer-events: none;
+  z-index: 1;
+  transform-origin: 50% 50%;
 }
 
-.hero-impact__ring {
-  border: 1px solid rgba(198, 238, 244, 0.28);
-  mix-blend-mode: screen;
-}
-
-.hero-impact__ring--inner {
-  inset: 16% 10%;
-  border-color: rgba(198, 238, 244, 0.18);
-}
-
-.hero-bubble-column {
-  display: none;
-}
-
-.hero-impact-bubbles {
+/* Bubble containers live inside .hero-crayfish-drift, so they
+   inherit every transform that moves the crayfish — idle drift,
+   entrance, everything. Positions are in asset %. */
+.hero-claw-bubbles {
   position: absolute;
   inset: 0;
   z-index: 3;
   pointer-events: none;
+  mix-blend-mode: screen;
 }
 
-.hero-bubble-stream {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 2;
-  mix-blend-mode: screen;
+.hero-claw-bubbles--impact {
+  z-index: 4;
 }
 
 .hero-bubble {
   position: absolute;
   border-radius: 50%;
-  border: 1px solid rgba(226, 248, 252, 0.88);
+  border: 1px solid rgba(234, 250, 254, 0.96);
   background: radial-gradient(
-    circle at 32% 30%,
-    rgba(248, 253, 255, 0.92) 0%,
-    rgba(232, 249, 252, 0.68) 34%,
-    rgba(160, 220, 228, 0.34) 72%,
-    rgba(160, 220, 228, 0) 100%
+    circle at 30% 28%,
+    rgba(252, 255, 255, 1) 0%,
+    rgba(236, 251, 254, 0.78) 32%,
+    rgba(176, 230, 238, 0.4) 70%,
+    rgba(176, 230, 238, 0) 100%
   );
   box-shadow:
-    inset -1px -1px 12px rgba(255, 255, 255, 0.3),
-    0 0 34px rgba(180, 236, 244, 0.34);
+    inset -1px -1px 12px rgba(255, 255, 255, 0.4),
+    0 0 18px rgba(198, 242, 250, 0.6),
+    0 0 44px rgba(160, 228, 240, 0.32);
   will-change: transform, opacity;
 }
 
 .hero-bubble--impact {
-  border-color: rgba(226, 248, 252, 0.8);
+  border-color: rgba(234, 250, 254, 0.88);
   box-shadow:
-    inset -1px -1px 10px rgba(255, 255, 255, 0.28),
-    0 0 28px rgba(190, 240, 247, 0.26);
+    inset -1px -1px 10px rgba(255, 255, 255, 0.3),
+    0 0 14px rgba(198, 242, 250, 0.52),
+    0 0 34px rgba(190, 240, 247, 0.3);
+}
+
+.hero-bubble--claw {
+  border-color: rgba(238, 252, 255, 1);
+  box-shadow:
+    inset -1.5px -1.5px 14px rgba(255, 255, 255, 0.46),
+    0 0 22px rgba(208, 246, 252, 0.72),
+    0 0 58px rgba(172, 234, 244, 0.38);
 }
 
 .nav-shell--home .nav-action-link {
@@ -2208,277 +2119,151 @@ body[data-route-mode="demo"] .home-panel {
   transform: translateX(2px);
 }
 
+/* Laptop / small desktop — keep the poster cohesive, shrink the
+   subject only enough that the bottom line still crosses through
+   the claw zone. No split layout at any breakpoint. */
 @media (min-width: 1024px) and (max-width: 1279px) {
-  .hero-copy {
-    max-width: min(92rem, 94vw);
+  .hero-stage {
+    min-height: 760px;
   }
 
   .hero-crayfish-entrance {
-    top: clamp(140px, 15vh, 198px);
-    right: clamp(28px, 2vw, 68px);
-    width: clamp(500px, 40vw, 620px);
+    top: clamp(-40px, -3vh, 10px);
+    left: clamp(36px, 4vw, 108px);
+    width: clamp(580px, 58vw, 760px);
   }
 
-  .hero-line--top {
-    top: 0;
-    left: clamp(136px, 10vw, 218px);
-    max-width: min(34rem, 36vw);
+  .hero-title__reveal--top {
+    font-size: clamp(28px, 2.6vw, 42px);
   }
 
-  .hero-line--bottom {
-    top: clamp(92px, 8.8vh, 138px);
-    left: clamp(324px, 26vw, 450px);
-    max-width: min(82rem, 68vw);
-  }
-
-  .hero-title__wave--top {
-    font-size: clamp(48px, 3.6vw, 62px);
-  }
-
-  .hero-title__wave--bottom {
-    font-size: clamp(82px, 5.6vw, 102px);
-  }
-
-  .hero-impact {
-    left: 58%;
-    top: 84%;
-    width: 22%;
-    height: 10%;
-  }
-
-  .hero-bubble-stream {
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
+  .hero-title__reveal--bottom {
+    font-size: clamp(84px, 9vw, 140px);
+    letter-spacing: -0.046em;
   }
 }
 
+/* Big desktop — make the subject really large so it reads as the
+   anchor, not a thumbnail sitting next to the text. */
 @media (min-width: 1600px) {
-  .hero-copy {
-    max-width: min(122rem, 97vw);
-  }
-
-  .hero-title-wrap {
-    margin-top: clamp(220px, 19vh, 310px);
-  }
-
-  .hero-line--top {
-    top: 0;
-    left: clamp(252px, 12vw, 352px);
-    max-width: min(46rem, 34vw);
-  }
-
-  .hero-line--bottom {
-    top: clamp(98px, 9.8vh, 152px);
-    left: clamp(620px, 29vw, 820px);
-    max-width: min(118rem, 62vw);
-  }
-
-  .hero-title__wave--top {
-    font-size: clamp(68px, 3vw, 84px);
-  }
-
-  .hero-title__wave--bottom {
-    font-size: clamp(110px, 5.15vw, 140px);
-    line-height: 0.88;
+  .hero-stage {
+    min-height: 900px;
   }
 
   .hero-crayfish-entrance {
-    top: clamp(112px, 10vh, 164px);
-    right: clamp(54px, 3vw, 104px);
-    width: clamp(700px, 34vw, 860px);
+    top: clamp(-40px, -2vh, 30px);
+    left: clamp(120px, 9vw, 280px);
+    width: clamp(960px, 56vw, 1520px);
   }
 
-  .hero-impact {
-    left: 58%;
-    top: 84%;
-    width: 22%;
-    height: 10%;
+  .hero-title__reveal--top {
+    font-size: clamp(40px, 2.6vw, 58px);
   }
 
-  .hero-bubble-stream {
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
+  .hero-title__reveal--bottom {
+    font-size: clamp(140px, 10.2vw, 220px);
+    letter-spacing: -0.054em;
+  }
+
+  .hero-poster {
+    padding-inline: clamp(48px, 5vw, 160px);
+    padding-bottom: clamp(56px, 6.8vh, 120px);
   }
 }
 
+/* Tablet — crayfish sinks into the upper half, text fills the
+   lower half. The composition stays one piece, just denser. */
 @media (max-width: 1023px) {
   .hero-stage {
     height: auto;
-    min-height: 860px;
+    min-height: 880px;
   }
 
-  .hero-copy {
-    max-width: min(78rem, 92vw);
-    padding-bottom: clamp(120px, 16vh, 180px);
-    align-self: end;
+  .hero-crayfish-scene {
+    overflow: visible;
   }
 
   .hero-crayfish-light {
-    inset: 28% -24% -14% 8%;
+    inset: 4% -14% -22% -10%;
   }
 
   .hero-crayfish-depth {
-    inset: 54% -28% -24% 2%;
+    inset: 44% -18% -32% -14%;
   }
 
   .hero-crayfish-entrance {
-    top: clamp(174px, 20vh, 236px);
-    right: clamp(24px, 3vw, 72px);
-    width: clamp(420px, 44vw, 580px);
+    top: clamp(40px, 4vh, 96px);
+    left: clamp(-20px, -1vw, 24px);
+    width: clamp(520px, 76vw, 780px);
   }
 
   .hero-crayfish-veil {
-    inset: 28% -28% -10% 6%;
+    inset: 8% -18% -10% -6%;
   }
 
-  .hero-impact {
-    left: 54%;
-    top: 84%;
-    width: 24%;
-    height: 10%;
+  .hero-poster {
+    padding-inline: clamp(28px, 4vw, 56px);
+    padding-bottom: clamp(48px, 6vh, 88px);
   }
 
-  .hero-line--top {
-    top: 0;
-    left: clamp(60px, 7vw, 126px);
-    max-width: min(28rem, 34vw);
+  .hero-title__reveal--top {
+    font-size: clamp(24px, 3.4vw, 40px);
   }
 
-  .hero-line--bottom {
-    top: clamp(78px, 7.6vh, 122px);
-    left: clamp(210px, 22vw, 320px);
-    max-width: min(62rem, 68vw);
-  }
-
-  .hero-title__wave--top {
-    font-size: clamp(40px, 4vw, 50px);
-  }
-
-  .hero-title__wave--bottom {
-    font-size: clamp(70px, 6.8vw, 90px);
-    line-height: 0.92;
-  }
-
-  .hero-bubble-stream {
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
+  .hero-title__reveal--bottom {
+    font-size: clamp(72px, 10.2vw, 132px);
+    letter-spacing: -0.04em;
   }
 }
 
+/* Phone — stack gets tighter. Crayfish hovers in the upper half,
+   text slams along the bottom, bubbles ride up through the middle. */
 @media (max-width: 767px) {
   .hero-stage {
-    min-height: 780px;
-  }
-
-  .hero-copy-shell {
-    padding-inline: clamp(20px, 5vw, 28px);
-    align-items: end;
-  }
-
-  .hero-copy {
-    max-width: 100%;
-    padding-bottom: clamp(170px, 26vh, 240px);
-  }
-
-  .hero-break--stack {
-    display: block;
-  }
-
-  .hero-title-wrap {
-    max-width: 100%;
-  }
-
-  .hero-title {
-    max-width: 100%;
-  }
-
-  .hero-title-ripple--primary {
-    left: 0;
-    top: 66%;
-    width: 88%;
-    height: clamp(18px, 5vw, 28px);
-  }
-
-  .hero-title-ripple--secondary {
-    left: 18%;
-    top: 78%;
-    width: 60%;
-    height: clamp(14px, 3.6vw, 20px);
+    min-height: 760px;
   }
 
   .hero-crayfish-entrance {
-    top: clamp(238px, 31vh, 308px);
-    right: clamp(4px, 2vw, 28px);
-    width: clamp(220px, 54vw, 280px);
+    top: clamp(60px, 8vh, 140px);
+    left: clamp(-10px, 1vw, 22px);
+    width: clamp(340px, 96vw, 480px);
   }
 
   .hero-crayfish-light {
-    inset: 38% -34% -12% 10%;
+    inset: 10% -26% -14% -14%;
   }
 
   .hero-crayfish-depth {
-    inset: 60% -38% -22% -4%;
+    inset: 52% -28% -22% -16%;
   }
 
   .hero-crayfish-veil {
-    inset: 34% -34% -12% 8%;
+    inset: 18% -28% -14% -10%;
   }
 
-  .hero-impact {
-    left: 38%;
-    top: 84%;
-    width: 18%;
-    height: 8%;
+  .hero-poster {
+    padding-inline: clamp(22px, 6vw, 32px);
+    padding-bottom: clamp(38px, 6vh, 68px);
   }
 
-  .hero-title__wave--top {
-    font-size: clamp(36px, 8.6vw, 46px);
-    line-height: 0.96;
+  .hero-title__reveal--top {
+    font-size: clamp(20px, 5.6vw, 32px);
+    line-height: 1.08;
   }
 
-  .hero-title__wave--bottom {
-    font-size: clamp(44px, 10.4vw, 56px);
-    line-height: 0.9;
-  }
-
-  .hero-line--top,
-  .hero-line--bottom {
-    position: relative;
-    top: auto;
-    left: 0;
-    width: auto;
-    max-width: 100%;
-    white-space: normal;
-    margin-left: 0;
-  }
-
-  .hero-title__wave--top,
-  .hero-title__wave--bottom {
+  .hero-title__reveal--bottom {
+    font-size: clamp(46px, 12vw, 74px);
+    line-height: 0.94;
+    letter-spacing: -0.038em;
     white-space: normal;
   }
 
-  .hero-break--mobile {
-    display: block;
+  .hero-title {
+    gap: 10px;
   }
 
   .hero-water__caustic {
     filter: blur(54px);
-  }
-
-  .hero-bubble-stream {
-    left: 34%;
-    top: 20%;
-    width: 18%;
-    height: 68%;
-    transform: scale(0.96);
-    transform-origin: top left;
-    opacity: 0.98;
   }
 }
 
