@@ -1824,6 +1824,7 @@ body[data-route-mode="demo"] .home-panel {
 
 .hero-line--top {
   margin-left: clamp(-32px, -1.5vw, -8px);
+  transform: translateY(clamp(12px, 2vh, 36px));
 }
 
 .hero-line--bottom {
@@ -2058,53 +2059,31 @@ body[data-route-mode="demo"] .home-panel {
   transform-origin: 50% 50%;
 }
 
-/* Bubble containers live inside .hero-crayfish-drift, so they
-   inherit every transform that moves the crayfish — idle drift,
-   entrance, everything. Positions are in asset %. */
-.hero-claw-bubbles {
+/* Bubble stage — child of .hero-crayfish-entrance, inherits its rect and
+   falling transform so bubbles spawn relative to the crayfish body as it
+   descends. DOM-ordered before .hero-crayfish-idle so it stacks under the
+   image. */
+.hero-bubbles {
   position: absolute;
   inset: 0;
-  z-index: 3;
   pointer-events: none;
-  mix-blend-mode: screen;
+  overflow: visible;
 }
 
-.hero-claw-bubbles--impact {
-  z-index: 4;
-}
-
+/* Real-bubble visual: readable by its rim + a small specular, center stays
+   transparent so the water behind shows through. No cyan glow, no jelly. */
 .hero-bubble {
   position: absolute;
   border-radius: 50%;
-  border: 1px solid rgba(234, 250, 254, 0.96);
-  background: radial-gradient(
-    circle at 30% 28%,
-    rgba(252, 255, 255, 1) 0%,
-    rgba(236, 251, 254, 0.78) 32%,
-    rgba(176, 230, 238, 0.4) 70%,
-    rgba(176, 230, 238, 0) 100%
-  );
-  box-shadow:
-    inset -1px -1px 12px rgba(255, 255, 255, 0.4),
-    0 0 18px rgba(198, 242, 250, 0.6),
-    0 0 44px rgba(160, 228, 240, 0.32);
+  background:
+    radial-gradient(
+      circle at 30% 25%,
+      rgba(255, 255, 255, 0.3) 0%,
+      rgba(255, 255, 255, 0) 30%
+    ),
+    rgba(232, 228, 217, 0.03);
+  box-shadow: inset 0 0 0 1px rgba(240, 238, 232, 0.5);
   will-change: transform, opacity;
-}
-
-.hero-bubble--impact {
-  border-color: rgba(234, 250, 254, 0.88);
-  box-shadow:
-    inset -1px -1px 10px rgba(255, 255, 255, 0.3),
-    0 0 14px rgba(198, 242, 250, 0.52),
-    0 0 34px rgba(190, 240, 247, 0.3);
-}
-
-.hero-bubble--claw {
-  border-color: rgba(238, 252, 255, 1);
-  box-shadow:
-    inset -1.5px -1.5px 14px rgba(255, 255, 255, 0.46),
-    0 0 22px rgba(208, 246, 252, 0.72),
-    0 0 58px rgba(172, 234, 244, 0.38);
 }
 
 .nav-shell--home .nav-action-link {

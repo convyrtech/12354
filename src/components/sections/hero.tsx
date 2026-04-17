@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { HeroCrayfishStage } from "@/components/hero/hero-crayfish-stage";
+import { HeroBubbles } from "@/components/hero/hero-bubbles";
 import {
   HeroLineRipple,
   type HeroLineRippleHandle,
@@ -93,7 +94,23 @@ export function Hero() {
         entranceDelay={CRAYFISH_ENTRANCE_DELAY}
         entranceDuration={CRAYFISH_ENTRANCE_DURATION}
         idleDelay={IDLE_BREATHING_DELAY}
-      />
+        frontOverlay={
+          <HeroBubbles
+            entranceDelay={CRAYFISH_ENTRANCE_DELAY}
+            entranceDuration={CRAYFISH_ENTRANCE_DURATION}
+            idleStartDelay={IDLE_BREATHING_DELAY}
+            density={0.25}
+            variant="front"
+          />
+        }
+      >
+        <HeroBubbles
+          entranceDelay={CRAYFISH_ENTRANCE_DELAY}
+          entranceDuration={CRAYFISH_ENTRANCE_DURATION}
+          idleStartDelay={IDLE_BREATHING_DELAY}
+          variant="back"
+        />
+      </HeroCrayfishStage>
 
       <div className="hero-poster">
         <div className="hero-title-stage">
