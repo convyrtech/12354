@@ -1743,7 +1743,7 @@ body[data-route-mode="demo"] .home-panel {
 
 .hero-poster-title {
   position: absolute;
-  top: clamp(60px, 18vh, 240px);
+  top: clamp(30px, 12vh, 160px);
   left: 48%;
   transform: translateX(-50%);
   font-family: var(--font-poster), "Cormorant Garamond", serif;
@@ -1768,7 +1768,7 @@ body[data-route-mode="demo"] .home-panel {
   inset: auto 0 0 0;
   z-index: 4;
   padding-left: clamp(120px, 16vw, 260px);
-  padding-right: clamp(28px, 4.2vw, 120px);
+  padding-right: 0;
   padding-bottom: clamp(80px, 12vh, 140px);
   pointer-events: none;
 }
@@ -1809,7 +1809,7 @@ body[data-route-mode="demo"] .home-panel {
 
 .hero-title-stage {
   position: relative;
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
 }
 
@@ -1823,11 +1823,11 @@ body[data-route-mode="demo"] .home-panel {
 }
 
 .hero-line--top {
-  margin-left: clamp(8px, 1.2vw, 32px);
+  margin-left: clamp(-32px, -1.5vw, -8px);
 }
 
 .hero-line--bottom {
-  margin-left: clamp(48px, 9vw, 200px);
+  margin-left: clamp(100px, 23vw, 640px);
 }
 
 .hero-title__word {
@@ -1843,7 +1843,7 @@ body[data-route-mode="demo"] .home-panel {
 }
 
 .hero-title__word--top {
-  font-size: clamp(44px, 5vw, 72px);
+  font-size: clamp(52px, 6.2vw, 96px);
   line-height: 1;
   letter-spacing: -0.028em;
   font-style: italic;
@@ -2194,7 +2194,7 @@ body[data-route-mode="demo"] .home-panel {
 
   .hero-poster {
     padding-left: clamp(140px, 16vw, 320px);
-    padding-right: clamp(48px, 5vw, 160px);
+    padding-right: 0;
     padding-bottom: clamp(100px, 12vh, 180px);
   }
 }
