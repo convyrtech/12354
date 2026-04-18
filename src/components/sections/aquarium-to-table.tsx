@@ -3,7 +3,6 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   motion,
-  useMotionTemplate,
   useMotionValueEvent,
   useReducedMotion,
   useScroll,
@@ -128,12 +127,12 @@ export function AquariumToTable({ children }: AquariumToTableProps) {
   );
   const creamRotateX3D = useTransform(smooth, [0.66, 1], [0, -95]);
   const creamOpacity3D = useTransform(smooth, [0, 0.92, 1], [1, 1, 0]);
-  const creamShadowOpacity = useTransform(
-    smooth,
-    [0.05, 0.2, 0.33],
-    [0, 0.3, 0],
-  );
-  const creamBoxShadow3D = useMotionTemplate`0 -30px 60px rgba(0, 0, 0, ${creamShadowOpacity})`;
+  // Cream back-plate opacity — stays solid cream behind the flipping hero
+  // (so flip-in reveals cream, not the pin's dark baseline) and fades to 0
+  // while cream-layer is still fully opaque (0.6 → 0.8), so by the time the
+  // exit flip starts at 0.92 the pin bg is already dark and transitions
+  // seamlessly into BrandStory below.
+  const creamBgOpacity = useTransform(smooth, [0.6, 0.8], [1, 0]);
 
   const heroOpacityFB = useTransform(smooth, [0, 0.2], [1, 0]);
   const creamYFB = useTransform(
@@ -209,7 +208,6 @@ export function AquariumToTable({ children }: AquariumToTableProps) {
         y: creamY3D,
         rotateX: creamRotateX3D,
         opacity: creamOpacity3D,
-        boxShadow: creamBoxShadow3D,
       };
 
   return (
@@ -219,6 +217,11 @@ export function AquariumToTable({ children }: AquariumToTableProps) {
       style={{ position: "relative" }}
     >
       <div className="aquarium-to-table__pin">
+        <motion.div
+          className="aquarium-to-table__cream-bg"
+          aria-hidden
+          style={{ opacity: creamBgOpacity }}
+        />
         <motion.div
           className="aquarium-to-table__hero-layer"
           style={heroStyle}

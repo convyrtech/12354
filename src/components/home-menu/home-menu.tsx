@@ -120,11 +120,30 @@ export function HomeMenu() {
         aria-controls="home-menu-panel"
         aria-label={isOpen ? "Закрыть меню" : "Открыть меню"}
       >
-        <span>Меню</span>
-        <span className="home-menu-trigger__arrow" aria-hidden>
-          <span data-visible={!isOpen}>→</span>
-          <span data-visible={isOpen}>←</span>
-        </span>
+        <span className="home-menu-trigger__label">Меню</span>
+        <svg
+          className="home-menu-trigger__mark"
+          viewBox="0 0 40 12"
+          width="40"
+          height="12"
+          aria-hidden
+          focusable="false"
+        >
+          <g className="home-menu-trigger__mark-inner">
+            <line
+              className="home-menu-trigger__mark-line"
+              x1="0"
+              y1="6"
+              x2="32"
+              y2="6"
+              pathLength={32}
+            />
+            <path
+              className="home-menu-trigger__mark-head"
+              d="M26 2 L32 6 L26 10"
+            />
+          </g>
+        </svg>
       </button>
 
       <div

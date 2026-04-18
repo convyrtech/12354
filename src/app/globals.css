@@ -2399,6 +2399,13 @@ body[data-menu-open="true"] button[aria-label="Открыть заказ"] {
   transition: opacity 240ms var(--ease-out);
 }
 
+/* Editorial signature trigger: «Меню ── →» with a custom SVG mark.
+   The line + arrowhead share one drawing unit. On hover, the line
+   extends leftward (via stroke-dashoffset) so the mark reads as a
+   typographic em-dash growing out of the label. When the panel opens
+   the mark mirrors horizontally (scaleX(-1)) — arrow flips to the
+   left, line reads right-to-left. A subtle underline drawn under the
+   whole button (label + mark) reinforces the hover state. */
 .home-menu-trigger {
   position: fixed;
   top: clamp(16px, 2vh, 32px);
@@ -2406,56 +2413,130 @@ body[data-menu-open="true"] button[aria-label="Открыть заказ"] {
   z-index: 40;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 0;
+  gap: 12px;
+  padding: 4px 0 8px;
   background: transparent;
   border: 0;
-  border-bottom: 1px solid transparent;
-  color: rgba(242, 232, 213, 0.8);
+  color: rgba(242, 232, 213, 0.96);
   font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-style: italic;
   font-weight: 400;
   font-size: clamp(16px, 1.2vw, 20px);
   letter-spacing: 0.01em;
   cursor: pointer;
-  transition: color 200ms var(--ease-out), border-color 200ms var(--ease-out);
+  transition: color 240ms var(--ease-out);
+}
+
+.home-menu-trigger:focus-visible {
+  outline: none;
 }
 
 .home-menu-trigger:hover,
 .home-menu-trigger:focus-visible {
   color: rgba(242, 232, 213, 1);
-  border-bottom-color: rgba(242, 232, 213, 0.6);
-  outline: none;
 }
 
-/* When a cream-surface section dominates the viewport (set by AquariumToTable
-   during its pinned cream frame), swap the trigger palette so it remains
-   legible. Transition is already declared on the base rule. */
-body[data-surface="cream"] .home-menu-trigger {
-  color: rgba(16, 28, 30, 0.8);
-}
-body[data-surface="cream"] .home-menu-trigger:hover,
-body[data-surface="cream"] .home-menu-trigger:focus-visible {
-  color: rgb(16, 28, 30);
-  border-bottom-color: rgba(16, 28, 30, 0.6);
-}
-
-.home-menu-trigger__arrow {
-  position: relative;
+.home-menu-trigger__label {
   display: inline-block;
-  width: 1em;
-  text-align: center;
 }
 
-.home-menu-trigger__arrow > span {
-  position: absolute;
-  inset: 0;
-  display: inline-block;
+.home-menu-trigger__mark {
+  width: 40px;
+  height: 12px;
+  overflow: visible;
+  flex-shrink: 0;
+  color: currentColor;
+  /* Subtle vertical nudge so the line sits on the italic's x-height
+     rather than baseline — feels connected to «Меню». */
+  margin-top: 0.1em;
+}
+
+.home-menu-trigger__mark-inner {
+  transform-origin: 16px 6px;
+  transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.home-menu-trigger__mark-line,
+.home-menu-trigger__mark-head {
+  stroke: currentColor;
+  stroke-width: 1;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.home-menu-trigger__mark-line {
+  stroke-dasharray: 32;
+  stroke-dashoffset: 20;
+  opacity: 0.6;
+  transition:
+    stroke-dashoffset 340ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 280ms var(--ease-out);
+}
+
+.home-menu-trigger:hover .home-menu-trigger__mark-line,
+.home-menu-trigger:focus-visible .home-menu-trigger__mark-line {
+  stroke-dashoffset: 4;
+  opacity: 0.95;
+}
+
+.home-menu-trigger__mark-head {
+  opacity: 0.85;
   transition: opacity 200ms var(--ease-out);
 }
 
-.home-menu-trigger__arrow > span[data-visible="false"] {
+.home-menu-trigger:hover .home-menu-trigger__mark-head,
+.home-menu-trigger:focus-visible .home-menu-trigger__mark-head {
+  opacity: 1;
+}
+
+/* Open state: flip the mark horizontally so the arrow points at «Меню»;
+   retract the line to its idle length. */
+.home-menu-trigger[aria-expanded="true"] .home-menu-trigger__mark-inner {
+  transform: scaleX(-1);
+}
+
+.home-menu-trigger[aria-expanded="true"] .home-menu-trigger__mark-line {
+  stroke-dashoffset: 32;
   opacity: 0;
+}
+
+/* Underline under the full button — label + mark. Draws left→right on
+   hover, collapses on open. */
+.home-menu-trigger::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  width: 0;
+  background: currentColor;
+  opacity: 0.5;
+  transition: width 340ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.home-menu-trigger:hover::after,
+.home-menu-trigger:focus-visible::after {
+  width: 100%;
+}
+
+.home-menu-trigger[aria-expanded="true"]::after {
+  width: 0;
+  transition: width 200ms var(--ease-out);
+}
+
+/* Cream-surface palette swap: AquariumToTable pinned cream, or the
+   menu panel open (panel fills the right column under the trigger). */
+body[data-surface="cream"] .home-menu-trigger,
+body[data-menu-open="true"] .home-menu-trigger {
+  color: rgba(16, 28, 30, 0.92);
+}
+body[data-surface="cream"] .home-menu-trigger:hover,
+body[data-surface="cream"] .home-menu-trigger:focus-visible,
+body[data-menu-open="true"] .home-menu-trigger:hover,
+body[data-menu-open="true"] .home-menu-trigger:focus-visible {
+  color: rgb(16, 28, 30);
 }
 
 .home-menu-overlay {
@@ -2856,6 +2937,9 @@ body[data-surface="cream"] .home-menu-trigger:focus-visible {
   perspective: 1400px;
   perspective-origin: top center;
   overflow: clip;
+  /* Baseline dark so flip-out reveal transitions cleanly into BrandStory.
+     During flip-in/pin phases the cream back-plate overlays this. */
+  background: var(--color-bg-dark);
 }
 
 .aquarium-to-table__hero-layer,
@@ -2871,6 +2955,17 @@ body[data-surface="cream"] .home-menu-trigger:focus-visible {
   background: var(--color-bg-cream);
   color: var(--text-on-cream);
   z-index: 2;
+}
+
+/* Back-plate behind hero/cream layers — visible during flip-in and pinned
+   phases so the flipping hero reveals cream (not the dark pin baseline),
+   faded to 0 before the exit flip so cream-layer exits onto dark. */
+.aquarium-to-table__cream-bg {
+  position: absolute;
+  inset: 0;
+  background: var(--color-bg-cream);
+  pointer-events: none;
+  will-change: opacity;
 }
 
 @media (max-width: 767px) {
