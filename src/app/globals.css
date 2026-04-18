@@ -102,7 +102,7 @@
   --color-bg-cream-alt: #ece3ce;
   --text-on-dark: var(--text-primary);
   --text-on-cream: #101c1e;
-  --text-on-cream-muted: rgba(16, 28, 30, 0.6);
+  --text-on-cream-muted: rgba(16, 28, 30, 0.72);
   --accent-cream: #8fb3b0;
 }
 
@@ -116,7 +116,10 @@ html,
 body {
   min-height: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
+  /* `clip` prevents horizontal overflow without turning body into a scroll
+     container — required so `position: sticky` inside the page (hero→cream
+     flip-transition) can anchor to the viewport. */
+  overflow-x: clip;
 }
 
 html {
@@ -2359,10 +2362,15 @@ body[data-menu-open="true"] .perspective-wrapper {
    verbal spec "правый верхний угол должен подняться и сместиться
    левее". 8deg for clear visibility. */
 body[data-menu-open="true"] .home-main {
-  transform: translateY(var(--menu-scroll-y, 0px)) rotate(-8deg) translateX(-200px);
+  transform: translate(5vw, var(--menu-scroll-y, 0px)) rotate(-8deg) translateX(-200px);
   background: var(--color-bg-dark);
   z-index: 36;
+  /* Solid dark blocks above and below the tilted card fill the triangular
+     gaps created by the rotation (top-left drops, top-right rises, etc.).
+     These shadows rotate with the element so the gap is always covered. */
   box-shadow:
+    0 -1200px 0 var(--color-bg-dark),
+    0 1200px 0 var(--color-bg-dark),
     48px 0 90px -12px rgba(0, 0, 0, 0.5),
     20px 0 36px -6px rgba(0, 0, 0, 0.32);
 }
@@ -2418,6 +2426,18 @@ body[data-menu-open="true"] button[aria-label="Открыть заказ"] {
   color: rgba(242, 232, 213, 1);
   border-bottom-color: rgba(242, 232, 213, 0.6);
   outline: none;
+}
+
+/* When a cream-surface section dominates the viewport (set by AquariumToTable
+   during its pinned cream frame), swap the trigger palette so it remains
+   legible. Transition is already declared on the base rule. */
+body[data-surface="cream"] .home-menu-trigger {
+  color: rgba(16, 28, 30, 0.8);
+}
+body[data-surface="cream"] .home-menu-trigger:hover,
+body[data-surface="cream"] .home-menu-trigger:focus-visible {
+  color: rgb(16, 28, 30);
+  border-bottom-color: rgba(16, 28, 30, 0.6);
 }
 
 .home-menu-trigger__arrow {
@@ -2817,4 +2837,56 @@ body[data-menu-open="true"] button[aria-label="Открыть заказ"] {
   .home-menu-trigger__arrow > span {
     transition: none;
   }
+}
+
+/* Aquarium-to-table — cream-pause with 3D flip-transition from the hero.
+   Section is 300vh tall; the pin sticks a 100svh stage while scroll progress
+   drives both the outgoing hero rotation and the incoming cream slab. */
+.aquarium-to-table {
+  position: relative;
+  height: 300vh;
+  isolation: isolate;
+}
+
+.aquarium-to-table__pin {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  min-height: 820px;
+  perspective: 1400px;
+  perspective-origin: top center;
+  overflow: clip;
+}
+
+.aquarium-to-table__hero-layer,
+.aquarium-to-table__cream-layer {
+  position: absolute;
+  inset: 0;
+  transform-origin: top center;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+.aquarium-to-table__cream-layer {
+  background: var(--color-bg-cream);
+  color: var(--text-on-cream);
+  z-index: 2;
+}
+
+@media (max-width: 767px) {
+  .aquarium-to-table {
+    height: 240vh;
+  }
+  .aquarium-to-table__pin {
+    perspective: none;
+  }
+}
+
+/* When the home-menu is open, collapse the scroll-driven flip section so
+   .home-main's rotated tilt is visually tuned (the tilt was calibrated for
+   a shorter home-main; a 2700px section dilutes the rotation). The pin
+   stays in its initial state (cream off-screen, hero visible) because
+   progress = 0 at top of page. */
+body[data-menu-open="true"] .aquarium-to-table {
+  height: 100vh;
 }

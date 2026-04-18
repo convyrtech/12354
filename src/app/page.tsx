@@ -1,4 +1,5 @@
 import { Hero } from "@/components/sections/hero";
+import { AquariumToTable } from "@/components/sections/aquarium-to-table";
 import { BrandStory } from "@/components/sections/brand-story";
 import { BrandProof } from "@/components/sections/brand-proof";
 import { ProductTheatre } from "@/components/sections/product-theatre";
@@ -12,7 +13,9 @@ export default function Home() {
     // AppProviders, outside this wrapper, so panel layout stays unaffected.
     <div className="perspective-wrapper">
       <main data-home-stage="true" className="home-main">
-        <Hero />
+        <AquariumToTable>
+          <Hero />
+        </AquariumToTable>
         <BrandStory />
         <BrandProof />
         <ProductTheatre />
