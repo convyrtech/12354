@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Fraunces, JetBrains_Mono, Manrope } from "next/font/google";
+import { Cormorant_Garamond, JetBrains_Mono, Manrope } from "next/font/google";
 import { AppProviders } from "@/components/app-providers";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
@@ -25,13 +25,10 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  weight: ["300", "400"],
-  style: ["normal", "italic"],
-  variable: "--font-poster",
-  display: "swap",
-});
+// Fraunces (72pt optical size) is declared directly via @font-face in
+// globals.css with an explicit Latin-only unicode-range so Cyrillic copy
+// falls through to Cormorant (--font-display) instead of next/font's
+// auto-generated sans fallback.
 
 export const metadata: Metadata = {
   title: "The Raki — раки, краб и морепродукты с private service по Москве",
@@ -50,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="ru"
-      className={`${manrope.variable} ${cormorant.variable} ${jetbrainsMono.variable} ${fraunces.variable}`}
+      className={`${manrope.variable} ${cormorant.variable} ${jetbrainsMono.variable}`}
     >
       <body>
         <AppProviders>{children}</AppProviders>

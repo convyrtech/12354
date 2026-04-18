@@ -1,5 +1,46 @@
 @import "tailwindcss";
 
+/* Fraunces 72pt — self-hosted for Latin display voice.
+   Explicit unicode-range limits Fraunces to Latin/diacritics/basic
+   punctuation so Cyrillic glyphs fall through to Cormorant (next in
+   the poster stack), instead of hitting next/font's sans fallback. */
+@font-face {
+  font-family: "Fraunces";
+  src: url("/fonts/Fraunces72pt-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-02AF, U+0300-036F, U+2000-206F, U+20A0-20CF, U+2116;
+}
+@font-face {
+  font-family: "Fraunces";
+  src: url("/fonts/Fraunces72pt-LightItalic.woff2") format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  unicode-range: U+0000-02AF, U+0300-036F, U+2000-206F, U+20A0-20CF, U+2116;
+}
+@font-face {
+  font-family: "Fraunces";
+  src: url("/fonts/Fraunces72pt-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-02AF, U+0300-036F, U+2000-206F, U+20A0-20CF, U+2116;
+}
+@font-face {
+  font-family: "Fraunces";
+  src: url("/fonts/Fraunces72pt-Italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  unicode-range: U+0000-02AF, U+0300-036F, U+2000-206F, U+20A0-20CF, U+2116;
+}
+
+:root {
+  --font-poster: "Fraunces";
+}
+
 /* ============================================================
    The Raki — Marine Dark Teal Foundation
    Regenerated 2026-04-14 in Tranche A1.b
@@ -90,9 +131,7 @@ body {
   font-family: var(--font-sans), sans-serif;
   font-size: 17px;
   line-height: 1.6;
-  background:
-    radial-gradient(circle at 72% 12%, rgba(81, 168, 175, 0.12) 0%, transparent 28%),
-    linear-gradient(180deg, #0d3940 0%, #0b3237 52%, #092a30 100%);
+  background: var(--color-bg-dark);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -166,32 +205,32 @@ img {
 }
 
 .font-display {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
 }
 
 .text-hero {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-size: clamp(68px, 6.8vw, 112px);
   line-height: 0.94;
   letter-spacing: -0.055em;
 }
 
 .text-h1 {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-size: clamp(40px, 5vw, 86px);
   line-height: 0.95;
   letter-spacing: -0.05em;
 }
 
 .text-h2 {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-size: clamp(30px, 3.8vw, 58px);
   line-height: 0.98;
   letter-spacing: -0.04em;
 }
 
 .text-h3 {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-size: clamp(24px, 2vw, 34px);
   line-height: 1.05;
   letter-spacing: -0.03em;
@@ -582,7 +621,7 @@ body[data-route-mode="demo"] .cta--secondary {
 }
 
 .nav-mobile-sheet__link {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-size: clamp(42px, 10vw, 68px);
   line-height: 0.98;
   letter-spacing: -0.05em;
@@ -763,7 +802,7 @@ body[data-route-mode="demo"] .cta--secondary {
 }
 
 .quality-proof__value {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-size: clamp(28px, 3vw, 42px);
   line-height: 0.9;
   letter-spacing: -0.04em;
@@ -889,7 +928,7 @@ body[data-route-mode="demo"] .cta--secondary {
   align-items: center;
   width: fit-content;
   gap: 14px;
-  font-family: var(--font-display), serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-size: clamp(28px, 3vw, 48px);
   line-height: 1;
   letter-spacing: -0.04em;
@@ -961,7 +1000,7 @@ body[data-route-mode="demo"] .cta--secondary {
 
 .footer-outro__headline {
   max-width: 10.5ch;
-  font-family: var(--font-display), serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-size: clamp(42px, 5.1vw, 72px);
   line-height: 0.98;
   letter-spacing: -0.05em;
@@ -1025,10 +1064,11 @@ body[data-route-mode="demo"] .cta--secondary {
 .footer-outro__wordmark {
   margin-top: clamp(34px, 5vw, 60px);
   color: #f2e8d5;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-size: clamp(84px, 11.5vw, 180px);
   line-height: 0.86;
   letter-spacing: -0.08em;
-  font-weight: 700;
+  font-weight: 400;
   white-space: nowrap;
   transform-origin: bottom left;
 }
@@ -1043,21 +1083,9 @@ body[data-route-mode="demo"] .cta--secondary {
   margin-top: 28px;
 }
 
-.hero-title__italic {
-  display: block;
-  font-style: italic;
-  color: var(--accent);
-}
-
-.hero-title__lead,
-.hero-title__italic {
-  display: block;
-  will-change: transform, opacity, filter;
-}
-
 /* Nav wordmark — Cormorant italic signature (replaces logo image) */
 .nav-brand__wordmark {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-size: clamp(26px, 2.1vw, 34px);
   line-height: 1;
   letter-spacing: -0.025em;
@@ -1068,21 +1096,6 @@ body[data-route-mode="demo"] .cta--secondary {
 .nav-brand__wordmark em {
   font-style: italic;
   font-weight: 600;
-  color: var(--accent);
-}
-
-/* Hero mega typography — Marine tier serif impact */
-.text-mega {
-  font-family: var(--font-display), serif;
-  font-size: clamp(64px, 8.4vw, 144px);
-  line-height: 0.92;
-  letter-spacing: -0.045em;
-  font-weight: 500;
-}
-
-.text-mega em {
-  font-style: italic;
-  font-weight: 500;
   color: var(--accent);
 }
 
@@ -1109,7 +1122,7 @@ body[data-route-mode="demo"] .cta--secondary {
    two consecutive italic teal lines merge visually. Uses muted cream
    so hierarchy resets between title and strapline. */
 .hero-strapline {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-style: italic;
   font-weight: 400;
   font-size: clamp(22px, 2.2vw, 32px);
@@ -1363,12 +1376,12 @@ body[data-route-mode="demo"] .cta--secondary {
 }
 
 .manifesto-text {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-size: clamp(32px, 4.4vw, 76px);
   line-height: 1.08;
   letter-spacing: -0.03em;
   color: var(--text-primary);
-  font-weight: 500;
+  font-weight: 400;
   max-width: 22ch;
   position: relative;
   z-index: 1;
@@ -1376,8 +1389,7 @@ body[data-route-mode="demo"] .cta--secondary {
 
 .manifesto-italic {
   font-style: italic;
-  color: var(--accent);
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .manifesto-aside {
@@ -1468,19 +1480,18 @@ body[data-route-mode="demo"] .cta--secondary {
 }
 
 .experience-text {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-size: clamp(28px, 3.6vw, 56px);
   line-height: 1.12;
   letter-spacing: -0.03em;
   color: var(--text-primary);
-  font-weight: 500;
+  font-weight: 400;
   margin-top: 28px;
 }
 
 .experience-italic {
   font-style: italic;
-  color: var(--accent);
-  font-weight: 500;
+  font-weight: 400;
 }
 
 /* ============================================================
@@ -1522,19 +1533,18 @@ body[data-route-mode="demo"] .cta--secondary {
 }
 
 .menu-cta-block__headline {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-size: clamp(44px, 6.2vw, 108px);
   line-height: 0.96;
   letter-spacing: -0.045em;
   color: var(--text-primary);
-  font-weight: 500;
+  font-weight: 400;
   max-width: 14ch;
 }
 
 .menu-cta-block__italic {
   font-style: italic;
-  color: var(--accent);
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .menu-cta-block__summary {
@@ -1760,7 +1770,7 @@ body[data-route-mode="demo"] .home-panel {
   top: clamp(30px, 12vh, 160px);
   left: 48%;
   transform: translateX(-50%);
-  font-family: var(--font-poster), "Cormorant Garamond", serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-weight: 400;
   font-size: clamp(140px, 17vw, 520px);
   line-height: 0.9;
@@ -1850,8 +1860,8 @@ body[data-route-mode="demo"] .home-panel {
   z-index: 1;
   display: inline-block;
   will-change: transform, opacity, filter;
-  font-family: var(--font-display), serif;
-  font-weight: 500;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
+  font-weight: 400;
   color: rgba(247, 240, 228, 0.97);
   letter-spacing: -0.048em;
   white-space: pre;
@@ -1871,6 +1881,7 @@ body[data-route-mode="demo"] .home-panel {
   font-size: clamp(44px, 5.7vw, 260px);
   line-height: 0.86;
   letter-spacing: -0.052em;
+  font-style: italic;
   text-shadow: 0 0 24px rgba(246, 239, 228, 0.06);
 }
 
@@ -1879,7 +1890,7 @@ body[data-route-mode="demo"] .home-panel {
   padding-inline-start: 0.04em;
   color: rgba(236, 227, 206, 0.92);
   font-style: italic;
-  font-weight: 500;
+  font-weight: 400;
   letter-spacing: -0.014em;
   text-shadow:
     0 0 14px rgba(246, 239, 228, 0.08),
@@ -1903,7 +1914,7 @@ body[data-route-mode="demo"] .home-panel {
       180deg,
       #010608 0%,
       #041318 36%,
-      #0b3137 100%
+      #0a1619 100%
     );
 }
 
@@ -2393,7 +2404,7 @@ body[data-menu-open="true"] button[aria-label="Открыть заказ"] {
   border: 0;
   border-bottom: 1px solid transparent;
   color: rgba(242, 232, 213, 0.8);
-  font-family: var(--font-poster), "Cormorant Garamond", serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-style: italic;
   font-weight: 400;
   font-size: clamp(16px, 1.2vw, 20px);
@@ -2489,7 +2500,7 @@ body[data-menu-open="true"] button[aria-label="Открыть заказ"] {
   padding: 0;
   background: transparent;
   border: 0;
-  font-family: var(--font-poster), "Cormorant Garamond", serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-weight: 400;
   font-size: clamp(26px, 3.1vw, 44px);
   line-height: 1.2;
@@ -2562,7 +2573,7 @@ body[data-menu-open="true"] button[aria-label="Открыть заказ"] {
 }
 
 .home-menu-track__title {
-  font-family: var(--font-poster), "Cormorant Garamond", serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-weight: 400;
   font-size: clamp(32px, 3.4vw, 44px);
   line-height: 1.15;
@@ -2671,7 +2682,7 @@ body[data-menu-open="true"] button[aria-label="Открыть заказ"] {
 }
 
 .cream-page__title {
-  font-family: var(--font-poster), "Cormorant Garamond", serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-weight: 400;
   font-size: clamp(48px, 6.5vw, 96px);
   line-height: 1.05;
@@ -2681,7 +2692,7 @@ body[data-menu-open="true"] button[aria-label="Открыть заказ"] {
 }
 
 .cream-page__lead {
-  font-family: var(--font-display), "Cormorant Garamond", serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-weight: 400;
   font-size: clamp(20px, 2vw, 26px);
   line-height: 1.5;
@@ -2708,7 +2719,7 @@ body[data-menu-open="true"] button[aria-label="Открыть заказ"] {
 }
 
 .cream-page__section-value {
-  font-family: var(--font-poster), "Cormorant Garamond", serif;
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
   font-weight: 400;
   font-size: clamp(28px, 3vw, 44px);
   line-height: 1.2;
