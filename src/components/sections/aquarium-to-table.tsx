@@ -1,11 +1,12 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import Image from "next/image";
 import {
   motion,
+  useMotionValue,
   useMotionValueEvent,
   useReducedMotion,
-  useScroll,
   useSpring,
   useTransform,
 } from "framer-motion";
@@ -92,9 +93,18 @@ type AquariumToTableProps = {
 
 export function AquariumToTable({ children }: AquariumToTableProps) {
   const sectionRef = useRef<HTMLElement | null>(null);
+  const creamLayerRef = useRef<HTMLDivElement | null>(null);
+  const photoAliveRef = useRef<HTMLDivElement | null>(null);
+  const photoServedRef = useRef<HTMLDivElement | null>(null);
+  const maskPathRef = useRef<SVGPathElement | null>(null);
   const prefersReduced = useReducedMotion();
   const [isMobile, setIsMobile] = useState(false);
+  // Three sequenced reveals during the cream-pause:
+  // photo1 (alive crayfish) lands first, then text + line draw together,
+  // then photo2 (served plate) appears once the line has reached its end.
+  const [photo1Active, setPhoto1Active] = useState(false);
   const [textActive, setTextActive] = useState(false);
+  const [photo2Active, setPhoto2Active] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -107,10 +117,30 @@ export function AquariumToTable({ children }: AquariumToTableProps) {
 
   const useFallback = Boolean(prefersReduced) || isMobile;
 
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start start", "end end"],
-  });
+  // Section progress measured via rAF instead of framer's useScroll. Lenis
+  // (src/components/smooth-scroll-provider.tsx) runs its own rAF loop; when
+  // framer's useScroll is combined with Lenis it can desync in Firefox and
+  // report progress = 1 before the user has actually scrolled the full
+  // section. Reading getBoundingClientRect() once per frame gives us
+  // deterministic cross-browser progress driven purely by layout state.
+  const scrollYProgress = useMotionValue(0);
+  useEffect(() => {
+    let raf = 0;
+    const measure = () => {
+      const el = sectionRef.current;
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        const total = Math.max(1, rect.height - window.innerHeight);
+        const scrolled = -rect.top;
+        const p = Math.max(0, Math.min(1, scrolled / total));
+        scrollYProgress.set(p);
+      }
+      raf = window.requestAnimationFrame(measure);
+    };
+    raf = window.requestAnimationFrame(measure);
+    return () => window.cancelAnimationFrame(raf);
+  }, [scrollYProgress]);
+
   const smooth = useSpring(scrollYProgress, {
     stiffness: 90,
     damping: 28,
@@ -147,7 +177,11 @@ export function AquariumToTable({ children }: AquariumToTableProps) {
   );
 
   useMotionValueEvent(smooth, "change", (v) => {
-    if (!textActive && v >= 0.35) setTextActive(true);
+    // Sequenced reveals — once latched, never unlatch (forward-only progression).
+    // Line starts drawing as photo1 appears and finishes as photo2 appears.
+    if (!photo1Active && v >= 0.3) setPhoto1Active(true);
+    if (!textActive && v >= 0.4) setTextActive(true);
+    if (!photo2Active && v >= 0.6) setPhoto2Active(true);
     // Signal to body-scoped CSS that a cream surface now dominates the viewport,
     // so fixed overlays (e.g. the home-menu trigger) can swap to a cream palette.
     if (typeof document === "undefined") return;
@@ -161,7 +195,11 @@ export function AquariumToTable({ children }: AquariumToTableProps) {
   });
 
   useEffect(() => {
-    if (prefersReduced) setTextActive(true);
+    if (prefersReduced) {
+      setPhoto1Active(true);
+      setTextActive(true);
+      setPhoto2Active(true);
+    }
   }, [prefersReduced]);
 
   useEffect(() => {
@@ -171,6 +209,117 @@ export function AquariumToTable({ children }: AquariumToTableProps) {
       }
     };
   }, []);
+
+  // Path d is rebuilt from real photo/cream-layer rects so the wave always
+  // anchors at photo1 right-bottom and photo2 left-top regardless of viewport
+  // aspect ratio. Coords normalized to viewBox 0-100 against cream-layer.
+  // Curve is built via Catmull-Rom → Cubic Bezier conversion through waypoints,
+  // which guarantees C1 continuity (matching tangents) at every waypoint —
+  // no zigzag corners between segments.
+  const [pathD, setPathD] = useState<string>("M 0 0");
+  const [pathLength, setPathLength] = useState<number>(2000);
+
+  useEffect(() => {
+    const compute = () => {
+      const layer = creamLayerRef.current;
+      const p1 = photoAliveRef.current;
+      const p2 = photoServedRef.current;
+      if (!layer || !p1 || !p2) return;
+
+      const lr = layer.getBoundingClientRect();
+      if (lr.width <= 0 || lr.height <= 0) return;
+
+      const r1 = p1.getBoundingClientRect();
+      const r2 = p2.getBoundingClientRect();
+
+      const toX = (px: number) => ((px - lr.left) / lr.width) * 100;
+      const toY = (py: number) => ((py - lr.top) / lr.height) * 100;
+
+      const sx = toX(r1.right);
+      const sy = toY(r1.bottom);
+      const ex = toX(r2.left);
+      const ey = toY(r2.top);
+      const dx = ex - sx;
+
+      // Two-peak wave above the heading (heading sits at Y ~38-62).
+      const peak = 7;
+      const valley = 21;
+
+      const wps: Array<[number, number]> = [
+        [sx, sy],
+        [sx + dx * 0.2, valley],
+        [sx + dx * 0.42, peak],
+        [sx + dx * 0.62, valley],
+        [sx + dx * 0.82, peak],
+        [ex, ey],
+      ];
+
+      const tension = 0.22;
+      const f = (n: number) => n.toFixed(2);
+
+      let d = `M ${f(wps[0][0])} ${f(wps[0][1])}`;
+      for (let i = 0; i < wps.length - 1; i++) {
+        const p0 = wps[Math.max(0, i - 1)];
+        const p1pt = wps[i];
+        const p2pt = wps[i + 1];
+        const p3 = wps[Math.min(wps.length - 1, i + 2)];
+
+        const c1x = p1pt[0] + (p2pt[0] - p0[0]) * tension;
+        const c1y = p1pt[1] + (p2pt[1] - p0[1]) * tension;
+        const c2x = p2pt[0] - (p3[0] - p1pt[0]) * tension;
+        const c2y = p2pt[1] - (p3[1] - p1pt[1]) * tension;
+
+        d += ` C ${f(c1x)} ${f(c1y)} ${f(c2x)} ${f(c2y)} ${f(p2pt[0])} ${f(p2pt[1])}`;
+      }
+
+      setPathD(d);
+    };
+
+    compute();
+    const ro = new ResizeObserver(compute);
+    if (creamLayerRef.current) ro.observe(creamLayerRef.current);
+    window.addEventListener("resize", compute);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", compute);
+    };
+  }, []);
+
+  useEffect(() => {
+    const path = maskPathRef.current;
+    if (!path) return;
+    const id = requestAnimationFrame(() => {
+      const len = path.getTotalLength();
+      if (len > 0) setPathLength(len);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [pathD]);
+
+  // Wipe via stroked mask path — the mask's dash grows along the path direction,
+  // so dots reveal sequentially along the curve (not horizontally).
+  // Synced with reveal triggers: starts as photo1 lands (0.32), ends as photo2 lands (0.60).
+  const wipeProgress = useTransform(smooth, [0.32, 0.6], [0, 1]);
+  // Drive stroke-dashoffset directly via setAttribute. Going through framer's
+  // motion.path style was unreliable on SVG (style.strokeDashoffset doesn't
+  // propagate to the SVG attribute the same way it does for HTML elements).
+  useEffect(() => {
+    const path = maskPathRef.current;
+    if (!path) return;
+    if (prefersReduced) {
+      path.setAttribute("stroke-dashoffset", "0");
+      return;
+    }
+    const apply = (v: number) => {
+      path.setAttribute("stroke-dashoffset", String(pathLength * (1 - v)));
+    };
+    apply(wipeProgress.get());
+    return wipeProgress.on("change", apply);
+  }, [wipeProgress, pathLength, prefersReduced, pathD]);
+
+  const photoInitial = prefersReduced
+    ? { opacity: 1, scale: 1 }
+    : { opacity: 0, scale: 0.92 };
+  const photoAnimate = { opacity: 1, scale: 1 };
 
   const wordInitial = prefersReduced
     ? { opacity: 1, y: 0, filter: "blur(0px)" }
@@ -230,10 +379,31 @@ export function AquariumToTable({ children }: AquariumToTableProps) {
         </motion.div>
 
         <motion.div
+          ref={creamLayerRef}
           className="aquarium-to-table__cream-layer"
           style={creamStyle}
         >
-          <div style={creamInnerStyle}>
+          <motion.div
+            ref={photoAliveRef}
+            className="aquarium-to-table__photo aquarium-to-table__photo--alive"
+            initial={photoInitial}
+            animate={photo1Active ? photoAnimate : photoInitial}
+            transition={{
+              duration: prefersReduced ? 0 : 0.9,
+              ease: EXPO_OUT,
+            }}
+          >
+            <Image
+              src="/images/aquarium/crayfish-alive.png"
+              alt="Живой рак в аквариуме"
+              width={1024}
+              height={1024}
+              sizes="(max-width: 767px) 60vw, clamp(200px, 18vw, 320px)"
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          </motion.div>
+
+          <div className="aquarium-to-table__inner" style={creamInnerStyle}>
             <motion.span
               style={eyebrowStyle}
               initial={fadeInitial}
@@ -278,6 +448,67 @@ export function AquariumToTable({ children }: AquariumToTableProps) {
               Живой · Горячий · На дом
             </motion.p>
           </div>
+
+          <motion.div
+            ref={photoServedRef}
+            className="aquarium-to-table__photo aquarium-to-table__photo--served"
+            initial={photoInitial}
+            animate={photo2Active ? photoAnimate : photoInitial}
+            transition={{
+              duration: prefersReduced ? 0 : 0.9,
+              ease: EXPO_OUT,
+            }}
+          >
+            <Image
+              src="/images/aquarium/crayfish-served.png"
+              alt="Готовая подача раков на тарелке"
+              width={1024}
+              height={1024}
+              sizes="(max-width: 767px) 60vw, clamp(200px, 18vw, 320px)"
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          </motion.div>
+
+          <svg
+            className="aquarium-to-table__line"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            aria-hidden
+          >
+            <defs>
+              <mask
+                id="aquarium-line-reveal"
+                maskUnits="userSpaceOnUse"
+                maskContentUnits="userSpaceOnUse"
+                x="0"
+                y="0"
+                width="100"
+                height="100"
+              >
+                <rect x="0" y="0" width="100" height="100" fill="black" />
+                <path
+                  ref={maskPathRef}
+                  d={pathD}
+                  stroke="white"
+                  strokeWidth={3}
+                  strokeDasharray={pathLength}
+                  strokeDashoffset={pathLength}
+                  strokeLinecap="butt"
+                  fill="none"
+                />
+              </mask>
+            </defs>
+            <path
+              d={pathD}
+              stroke="rgba(16, 28, 30, 0.55)"
+              strokeWidth={4}
+              strokeDasharray="0 14"
+              strokeLinecap="round"
+              fill="none"
+              vectorEffect="non-scaling-stroke"
+              mask="url(#aquarium-line-reveal)"
+            />
+          </svg>
         </motion.div>
       </div>
     </section>

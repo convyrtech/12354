@@ -2921,18 +2921,25 @@ body[data-menu-open="true"] .home-menu-trigger:focus-visible {
 }
 
 /* Aquarium-to-table — cream-pause with 3D flip-transition from the hero.
-   Section is 300vh tall; the pin sticks a 100svh stage while scroll progress
-   drives both the outgoing hero rotation and the incoming cream slab. */
+   Section is 400vh tall; the pin sticks a 100vh stage while scroll progress
+   drives both the outgoing hero rotation and the incoming cream slab.
+   Notes:
+   - `100vh` (not `100svh`) on the pin — `svh` misbehaves in Firefox when
+     nested inside a perspective/3D-transform container, shortening the
+     scroll track and making framer-motion's scrollYProgress reach 1.0
+     before the user has actually scrolled the full section.
+   - 400vh instead of 300vh — more scroll distance per phase, so any
+     remaining cross-browser progress mismatch is visually absorbed. */
 .aquarium-to-table {
   position: relative;
-  height: 300vh;
+  height: 400vh;
   isolation: isolate;
 }
 
 .aquarium-to-table__pin {
   position: sticky;
   top: 0;
-  height: 100svh;
+  height: 100vh;
   min-height: 820px;
   perspective: 1400px;
   perspective-origin: top center;
@@ -2968,12 +2975,80 @@ body[data-menu-open="true"] .home-menu-trigger:focus-visible {
   will-change: opacity;
 }
 
+/* Photo composition inside cream-layer.
+   Stacking inside cream-layer (which is its own stacking context):
+   - line: z:0 — its endpoints tuck under the photo corners
+   - inner text block: z:1 — sits above the dotted line
+   - photos: z:2 — cover line endpoints so the line "emerges" from them */
+.aquarium-to-table__inner {
+  position: relative;
+  z-index: 1;
+}
+
+.aquarium-to-table__photo {
+  position: absolute;
+  width: clamp(180px, 14vw, 260px);
+  height: clamp(180px, 14vw, 260px);
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 2;
+  box-shadow:
+    0 1px 2px rgba(16, 28, 30, 0.08),
+    0 18px 40px -20px rgba(16, 28, 30, 0.28);
+  will-change: opacity, transform;
+}
+
+.aquarium-to-table__photo--alive {
+  top: clamp(48px, 7vh, 96px);
+  left: clamp(48px, 8vw, 140px);
+}
+
+.aquarium-to-table__photo--served {
+  bottom: clamp(48px, 6vh, 80px);
+  right: clamp(80px, 10vw, 200px);
+}
+
+.aquarium-to-table__line {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
 @media (max-width: 767px) {
   .aquarium-to-table {
-    height: 240vh;
+    height: 320vh;
   }
   .aquarium-to-table__pin {
     perspective: none;
+  }
+  /* Vertical stack on mobile: photo → text → photo, line hidden. */
+  .aquarium-to-table__cream-layer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(20px, 4vh, 40px);
+    padding-block: clamp(40px, 8vh, 80px);
+  }
+  .aquarium-to-table__inner {
+    width: 100%;
+    height: auto;
+  }
+  .aquarium-to-table__photo {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    width: 60vw;
+    height: 60vw;
+    margin: 0 auto;
+  }
+  .aquarium-to-table__line {
+    display: none;
   }
 }
 
