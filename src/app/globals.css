@@ -1437,11 +1437,11 @@ body[data-route-mode="demo"] .cta--secondary {
   position: absolute;
   left: 0;
   right: 0;
-  /* Taller box so the SVG wave has curving room without clipping — stroke
-     itself is still 2px (non-scaling); extra height is headroom. */
-  bottom: -0.14em;
+  /* Tall box so the SVG wave has real curving room — stroke itself is
+     still 2px (non-scaling); the height is pure animation headroom. */
+  bottom: -0.22em;
   display: block;
-  height: 8px;
+  height: 16px;
   transform-origin: left center;
   pointer-events: none;
 }

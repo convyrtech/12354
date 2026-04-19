@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   animate,
   motion,
@@ -123,9 +123,12 @@ export function MenuEntry() {
     [time, windAmp],
     ([t, a]) => {
       if (a <= 0.001) return "M 0 5 L 100 5";
-      const amp = a * 2.4;
-      const k = 0.06;
-      const omega = 0.012;
+      // 3.8 → peaks at ~38% of viewBox Y. Combined with the 16px
+      // underline box (below in globals.css) this translates to ~6px
+      // vertical displacement — reads clearly as a wave, not a wobble.
+      const amp = a * 3.8;
+      const k = 0.075;          // tighter spatial frequency → 2 crests visible
+      const omega = 0.015;       // faster sweep → one oscillation ≈ 420ms
       const phase = omega * t;
       const env = (x: number) => Math.sin((Math.PI * x) / 100);
       const yAt = (x: number, off: number) =>
@@ -145,30 +148,32 @@ export function MenuEntry() {
     },
   );
 
+  // Fire one wave burst. Cooldown guard: if a wave is already playing
+  // (windAmp > 0.001), the call is a no-op — no stacking, no jitter on
+  // rapid re-triggers. Skipped entirely under reduced-motion.
+  const triggerWindBurst = useCallback(() => {
+    if (!useMotion) return;
+    if (windAmp.get() > 0.001) return;
+    animate(windAmp, [0, 1.15, 0.7, 0.3, 0], {
+      // Slight over-peak (>1) for a decisive "gust hit", tightened to
+      // 2.2s for a livelier, more noticeable sweep.
+      duration: 2.2,
+      times: [0, 0.18, 0.5, 0.78, 1],
+      ease: "easeOut",
+    });
+  }, [useMotion, windAmp]);
+
+  // Welcome burst — fires once, ~1s after the underline has drawn in.
+  // The extra pause past the 800ms draw lets the card finish its
+  // z-depth approach first, so the wave lands on a fully settled card.
+  const welcomeFired = useRef(false);
   useEffect(() => {
-    if (!useMotion || !underlineDrawn) return;
-    let tid: ReturnType<typeof setTimeout>;
-    let cancelled = false;
-
-    const schedule = () => {
-      const wait = 8000 + Math.random() * 8000;
-      tid = setTimeout(async () => {
-        if (cancelled) return;
-        await animate(windAmp, [0, 1, 0.6, 0.25, 0], {
-          duration: 2.8,
-          times: [0, 0.18, 0.5, 0.78, 1],
-          ease: "easeOut",
-        });
-        if (!cancelled) schedule();
-      }, wait);
-    };
-    schedule();
-
-    return () => {
-      cancelled = true;
-      clearTimeout(tid);
-    };
-  }, [useMotion, underlineDrawn, windAmp]);
+    if (!useMotion) return;
+    if (!underlineDrawn || welcomeFired.current) return;
+    welcomeFired.current = true;
+    const tid = setTimeout(triggerWindBurst, 1000);
+    return () => clearTimeout(tid);
+  }, [useMotion, underlineDrawn, triggerWindBurst]);
 
   const sectionStyle = useMotion
     ? { scale, opacity, filter, y, scrollMarginTop: 120 }
@@ -186,7 +191,11 @@ export function MenuEntry() {
           <div className="menu-cta-block__text-col">
             <h2 className="menu-cta-block__headline">
               Ваш стол{" "}
-              <span ref={emphasisRef} className="menu-cta-block__emphasis">
+              <span
+                ref={emphasisRef}
+                className="menu-cta-block__emphasis"
+                onMouseEnter={triggerWindBurst}
+              >
                 начинается
                 <motion.span
                   className="menu-cta-block__underline"
