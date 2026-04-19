@@ -1,32 +1,36 @@
 # Dev artifacts that pollute repo root — none of these belong in a deploy.
 # Keeps the upload tarball lean if .vercel CLI is used, and prevents Vercel
 # from ever scanning these even when a build runs from Git integration.
+#
+# All glob patterns below are anchored to the repo root with a leading "/".
+# Without the anchor, "hero-*.png" would match `public/editorial/hero-*.png`
+# too — and we DO want those (hero crayfish art ships with the site).
 
 # Server / dev process logs
-.next-dev-*.log
-.codex-*
-.dev-*.log
-dev-*.log
+/.next-dev-*.log
+/.codex-*
+/.dev-*.log
+/dev-*.log
 
 # Local Edge Headless / Playwright sessions
-.edge-headless/
-test-results/
-output/
+/.edge-headless/
+/test-results/
+/output/
 
-# Hundreds of throwaway dev screenshots scattered in repo root
-hero-*.png
-aquarium-*.png
-tilt-*.png
-tilt-2d*.png
-ripple-*.png
+# Hundreds of throwaway dev screenshots scattered in repo root only
+/hero-*.png
+/aquarium-*.png
+/tilt-*.png
+/tilt-2d*.png
+/ripple-*.png
 
 # Design exploration screenshots — not part of the shipping site
-.gstack/design-reports/screenshots/
-.gstack/design-reports/menu-variants.html
+/.gstack/design-reports/screenshots/
+/.gstack/design-reports/menu-variants.html
 
 # Local Claude / IDE-specific files
-.claude/settings.local.json
+/.claude/settings.local.json
 
 # Build artifacts (Vercel rebuilds these, no need to upload)
-.next/
-node_modules/
+/.next/
+/node_modules/
