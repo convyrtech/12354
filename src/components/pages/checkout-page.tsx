@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useDraft } from "@/components/draft-provider";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { useFakeAuth } from "@/hooks/use-fake-auth";
 import { isValidRuPhone, normalizeRuPhone } from "@/lib/checkout";
 import { getProductFamilyImage } from "@/lib/category-images";
 import { getDraftCartView, hasResolvedServiceContext } from "@/lib/draft-view";
@@ -174,6 +175,8 @@ export function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const { hydrated: authHydrated, lookup: lookupAuth, login: loginAuth } = useFakeAuth();
+
   useEffect(() => {
     setName(draft.customerName);
   }, [draft.customerName]);
@@ -193,6 +196,17 @@ export function CheckoutPage() {
   const phoneValid = isValidRuPhone(phone);
   const canSubmit =
     name.trim().length > 0 && phoneValid && cart.lineItems.length > 0 && !submitting;
+
+  // Fake-auth lookup: if the typed phone matches a stored entry, show
+  // "welcome back" with bonus balance. Otherwise greet as first-time.
+  const normalizedPhone = phoneValid ? normalizeRuPhone(phone) : null;
+  const knownAuth =
+    authHydrated && normalizedPhone ? lookupAuth(normalizedPhone) : null;
+  const phoneLookupMessage = !authHydrated || !phoneValid
+    ? null
+    : knownAuth
+      ? `С возвращением${knownAuth.name ? `, ${knownAuth.name}` : ""}. На вашем счету: ${knownAuth.bonusBalance.toLocaleString("ru-RU")} ₽ бонусов.`
+      : "Это ваш первый заказ — зарегистрируем вас при оформлении.";
   const serviceLabel =
     cart.serviceLabel ||
     (draft.fulfillmentMode === "pickup"
@@ -278,6 +292,9 @@ export function CheckoutPage() {
         orderStage: "accepted",
       });
       setSubmittedOrder(payload.order);
+      // Fake auth: record the phone as a known customer after a successful
+      // order so future visits greet them by name/bonus balance.
+      loginAuth(nextDraft.customerPhone);
     } catch (error) {
       setSubmitError(
         error instanceof Error ? error.message : "Не удалось передать заказ команде.",
@@ -285,7 +302,7 @@ export function CheckoutPage() {
     } finally {
       setSubmitting(false);
     }
-  }, [canSubmit, comment, draft, name, patchDraft, paymentMethod, phone]);
+  }, [canSubmit, comment, draft, loginAuth, name, patchDraft, paymentMethod, phone]);
 
   if (cart.lineItems.length === 0) {
     return (
@@ -775,6 +792,18 @@ export function CheckoutPage() {
                       ) : null}
                     </AnimatePresence>
                   </div>
+                  {phoneLookupMessage ? (
+                    <p
+                      style={{
+                        marginTop: "var(--space-xs)",
+                        fontSize: 13,
+                        lineHeight: 1.5,
+                        color: knownAuth ? "var(--accent)" : "var(--text-muted)",
+                      }}
+                    >
+                      {phoneLookupMessage}
+                    </p>
+                  ) : null}
                 </div>
               </div>
 

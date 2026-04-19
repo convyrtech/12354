@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { CartPill } from "@/components/cart-pill";
 import { DraftProvider } from "@/components/draft-provider";
+import { HomeMenu } from "@/components/home-menu/home-menu";
 import { Navigation } from "@/components/navigation";
 import { SmoothScrollProvider } from "@/components/smooth-scroll-provider";
 import { getRouteMode } from "@/lib/route-mode";
@@ -12,6 +13,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [demoParam, setDemoParam] = useState<string | null>(null);
   const routeMode = getRouteMode(pathname, demoParam);
+  const isHome = pathname === "/";
 
   useEffect(() => {
     setDemoParam(new URLSearchParams(window.location.search).get("demo"));
@@ -30,7 +32,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
       <SmoothScrollProvider>
         {routeMode === "public" ? (
           <>
-            <Navigation />
+            {isHome ? <HomeMenu /> : <Navigation />}
             <CartPill />
           </>
         ) : null}

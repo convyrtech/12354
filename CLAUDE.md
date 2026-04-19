@@ -46,6 +46,13 @@ Do not create new docs, audits, plans, or design writeups unless the user asks f
 - Do not create parallel implementations.
 - Do not edit `.next`, `node_modules`, or secret `.env*` files.
 - For public UI, avoid generic SaaS aesthetics, but do not overfit to the current unfinished homepage.
+- Prefer installed skills when they clearly fit the task instead of improvising the whole workflow from scratch.
+- For homepage, branding, animation, or visible public UI work, proactively use or at least suggest `/frontend-design` and finish with `/design-review`.
+- After non-trivial code changes or refactors, proactively run `/simplify`.
+- For bug hunts or "why is this broken?" tasks, proactively use `/investigate`.
+- For explicit review requests or pre-merge checks, proactively use `/review`.
+- For architecture, sequencing, or big-system tradeoffs, proactively use `/think-through:deep-thinking`.
+- If the task benefits from several competing viewpoints, suggest `/agent-teams:team-review` or `/agent-teams:team-debug`.
 
 ## Verify
 

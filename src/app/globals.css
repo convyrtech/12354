@@ -1360,205 +1360,273 @@ body[data-route-mode="demo"] .cta--secondary {
 }
 
 /* ============================================================
-   MANIFESTO block (replaces BrandProof chip-grid)
-   Single large italic-accented serif manifesto
-   ============================================================ */
-.manifesto-section {
-  position: relative;
-}
-
-.manifesto-block {
-  position: relative;
-  display: grid;
-  gap: clamp(32px, 4vw, 64px);
-  padding-top: clamp(48px, 6vw, 96px);
-}
-
-.manifesto-block .text-eyebrow {
-  z-index: 1;
-}
-
-.manifesto-text {
-  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
-  font-size: clamp(32px, 4.4vw, 76px);
-  line-height: 1.08;
-  letter-spacing: -0.03em;
-  color: var(--text-primary);
-  font-weight: 400;
-  max-width: 22ch;
-  position: relative;
-  z-index: 1;
-}
-
-.manifesto-italic {
-  font-style: italic;
-  font-weight: 400;
-}
-
-.manifesto-aside {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  max-height: 520px;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  box-shadow: var(--shadow-strong);
-}
-
-@media (min-width: 1024px) {
-  .manifesto-aside {
-    aspect-ratio: 4 / 5;
-    max-height: 640px;
-  }
-}
-
-.manifesto-aside__veil {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, rgba(11, 50, 55, 0.04) 0%, rgba(11, 50, 55, 0.22) 100%),
-    radial-gradient(circle at 26% 22%, rgba(81, 168, 175, 0.18) 0%, transparent 32%);
-}
-
-@media (min-width: 1024px) {
-  .manifesto-block {
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr);
-    gap: clamp(56px, 6vw, 104px);
-    align-items: center;
-  }
-  .manifesto-block > .text-eyebrow {
-    grid-column: 1;
-    grid-row: 1;
-  }
-  .manifesto-text {
-    grid-column: 1;
-    grid-row: 2;
-  }
-  .manifesto-aside {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-    align-self: stretch;
-    max-height: 640px;
-  }
-}
-
-/* ============================================================
-   EXPERIENCE block (replaces ProductTheatre chip-points)
-   Large editorial image + lyrical serif text
-   ============================================================ */
-.experience-section {
-  position: relative;
-}
-
-.experience-block {
-  display: grid;
-  gap: clamp(36px, 4vw, 72px);
-  align-items: center;
-}
-
-@media (min-width: 1024px) {
-  .experience-block {
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr);
-  }
-}
-
-.experience-block__media {
-  position: relative;
-  overflow: hidden;
-  min-height: clamp(420px, 48vw, 680px);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-strong);
-}
-
-.experience-block__veil {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, rgba(11, 50, 55, 0.06) 0%, rgba(11, 50, 55, 0.28) 100%),
-    radial-gradient(circle at 84% 18%, rgba(81, 168, 175, 0.22) 0%, transparent 26%);
-}
-
-.experience-block__copy {
-  max-width: 520px;
-}
-
-.experience-text {
-  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
-  font-size: clamp(28px, 3.6vw, 56px);
-  line-height: 1.12;
-  letter-spacing: -0.03em;
-  color: var(--text-primary);
-  font-weight: 400;
-  margin-top: 28px;
-}
-
-.experience-italic {
-  font-style: italic;
-  font-weight: 400;
-}
-
-/* ============================================================
-   MENU CTA block (Marine-style: centered serif + single CTA)
+   MENU CTA — "Cream finale card" sitting on the dark body.
+   Top corners rounded + horizontal margin → reads as a card on
+   a dark floor (also a literal "table" for the copy «Ваш стол
+   начинается здесь»). Contains: eyebrow → CTA zone → separator
+   → 3 info columns → wordmark. Full closing business of the
+   homepage lives here (old Footer was folded in).
    ============================================================ */
 .menu-cta-section {
   position: relative;
+  background: var(--color-bg-cream);
+  color: var(--text-on-cream);
+  margin-inline: clamp(16px, 2vw, 40px);
+  /* Semi-oval table silhouette: horizontal radius 50% of width →
+     left + right corners meet at the midpoint, forming one sweeping
+     arch across the whole top. Vertical radius (clamp) sets the
+     arch height — enough to read as the top of an oval tabletop. */
+  border-top-left-radius: 50% clamp(100px, 12vw, 320px);
+  border-top-right-radius: 50% clamp(100px, 12vw, 320px);
+  overflow: hidden;
 }
 
 .menu-cta-block {
+  /* Asymmetric vertical padding: generous top for CTA breathing,
+     tight bottom so the card closes crisply after the wordmark
+     (instead of leaving a big empty cream trailer). */
+  padding:
+    clamp(80px, 11vh, 160px)
+    clamp(40px, 7vw, 96px)
+    clamp(32px, 4vh, 56px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(48px, 8vh, 96px);
   position: relative;
-  display: grid;
-  gap: clamp(24px, 2.6vw, 40px);
-  place-items: center;
+  transform-origin: center center;
+}
+
+.menu-cta-block__cta-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(28px, 4vh, 56px);
+  min-height: clamp(240px, 40vh, 440px);
+  justify-content: center;
+}
+
+.menu-cta-block__text-col {
   text-align: center;
-  padding: clamp(88px, 10vw, 148px) clamp(24px, 4vw, 72px);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  isolation: isolate;
-  border: 1px solid var(--border);
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(81, 168, 175, 0.18) 0%, transparent 48%),
-    radial-gradient(ellipse at 50% 100%, rgba(190, 150, 103, 0.12) 0%, transparent 52%),
-    linear-gradient(180deg, rgba(18, 64, 70, 0.72) 0%, rgba(11, 50, 55, 0.92) 100%);
-  box-shadow: var(--shadow-soft);
-}
-
-.menu-cta-block__backdrop {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-  background:
-    radial-gradient(circle at 50% 42%, rgba(242, 232, 213, 0.04) 0%, transparent 40%);
-}
-
-.menu-cta-block__eyebrow {
-  color: rgba(242, 232, 213, 0.62);
 }
 
 .menu-cta-block__headline {
+  margin: 0;
   font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
-  font-size: clamp(44px, 6.2vw, 108px);
-  line-height: 0.96;
-  letter-spacing: -0.045em;
-  color: var(--text-primary);
-  font-weight: 400;
-  max-width: 14ch;
-}
-
-.menu-cta-block__italic {
   font-style: italic;
   font-weight: 400;
+  font-size: clamp(36px, 6vw, 96px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--text-on-cream);
 }
 
-.menu-cta-block__summary {
-  max-width: 42ch;
-  color: var(--text-muted);
-  font-size: clamp(15px, 1.1vw, 17px);
-  line-height: 1.6;
+/* Desktop: headline MUST be one line. */
+@media (min-width: 1024px) {
+  .menu-cta-block__headline {
+    white-space: nowrap;
+  }
 }
 
-.menu-cta-block__cta {
-  margin-top: 8px;
+.menu-cta-block__emphasis {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.menu-cta-block__underline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* Taller box so the SVG wave has curving room without clipping — stroke
+     itself is still 2px (non-scaling); extra height is headroom. */
+  bottom: -0.14em;
+  display: block;
+  height: 8px;
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+.menu-cta-block__underline-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.menu-cta-block__cta-col {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ============================================================
+   Info block — separator + 3 columns + wordmark. Stagger anim
+   driven by framer-motion variants in menu-entry.tsx.
+   ============================================================ */
+.menu-cta-info {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "sep"
+    "c1"
+    "c2"
+    "c3"
+    "wm";
+  gap: clamp(32px, 5vh, 56px);
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .menu-cta-info {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas:
+      "sep sep sep"
+      "c1 c2 c3"
+      "wm wm wm";
+    column-gap: clamp(32px, 4vw, 80px);
+    row-gap: clamp(40px, 6vh, 80px);
+  }
+}
+
+.menu-cta-info__separator {
+  grid-area: sep;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: clamp(16px, 2vw, 32px);
+  color: color-mix(in srgb, var(--text-on-cream) 28%, transparent);
+}
+
+.menu-cta-info__separator-line {
+  display: block;
+  height: 1px;
+  background: currentColor;
+}
+
+.menu-cta-info__separator-dots {
+  font-size: 18px;
+  letter-spacing: 0.3em;
+  line-height: 1;
+  color: inherit;
+}
+
+.menu-cta-info__col {
+  text-align: left;
+}
+
+/* Three-column balance on desktop: left / center / right. Below the
+   1024px breakpoint the grid stacks to one column and center-
+   alignment would look accidental, so alignment is scoped to desktop. */
+@media (min-width: 1024px) {
+  .menu-cta-info__col--2 {
+    text-align: center;
+  }
+  .menu-cta-info__col--3 {
+    text-align: right;
+  }
+}
+
+.menu-cta-info__title {
+  margin: 0 0 clamp(12px, 1.5vh, 20px);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: clamp(12px, 0.95vw, 14px);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-on-cream-muted);
+  font-weight: 500;
+}
+
+.menu-cta-info__col p {
+  margin: 0 0 clamp(6px, 0.8vh, 10px);
+  font-family: var(--font-display), "Cormorant Garamond", serif;
+  font-size: clamp(14px, 1.3vw, 17px);
+  line-height: 1.5;
+  color: var(--text-on-cream);
+  font-style: normal;
+}
+
+.menu-cta-info__col p:last-child {
+  margin-bottom: 0;
+}
+
+.menu-cta-info__wordmark {
+  grid-area: wm;
+  text-align: center;
+  margin: 0;
+  font-family: var(--font-display), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: clamp(14px, 1.2vw, 16px);
+  letter-spacing: 0.08em;
+  color: color-mix(in srgb, var(--text-on-cream) 45%, transparent);
+}
+
+/* ============================================================
+   .cta--editorial — Finale-size italic pill.
+   Re-declares size, shape, and type on top of .cta base so the
+   pill carries the "Invitation" beat (Fraunces italic, not
+   uppercase, not tracked, larger than .cta--primary).
+   ============================================================ */
+.cta--editorial {
+  min-height: auto;
+  padding: clamp(24px, 3vh, 40px) clamp(48px, 5vw, 80px);
+  gap: 0.4em;
+  border-radius: 9999px;
+  /* Matches the «не больше двух часов.» italic text colour in the
+     cream-pause section (--accent-cream, #8fb3b0) — the editorial CTA
+     should echo that softer teal, not the brighter generic --accent. */
+  background: var(--accent-cream);
+  color: var(--bg);
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: clamp(24px, 2.4vw, 32px);
+  line-height: 1;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  text-decoration: none;
+  /* Shadow tinted to match the new button colour (143,179,176 → the
+     --accent-cream RGB) so the drop shadow doesn't clash with the
+     paler teal fill. */
+  box-shadow: 0 22px 42px rgba(143, 179, 176, 0.3);
+  transition:
+    opacity 200ms ease-out,
+    transform 200ms ease-out,
+    background-color 200ms ease-out;
+}
+
+.cta--editorial:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+.cta--editorial:active {
+  transform: scale(0.98);
+  background: var(--accent-hover);
+}
+
+.cta--editorial:focus-visible {
+  outline: 2px solid var(--bg);
+  outline-offset: 3px;
+}
+
+.menu-cta-block__cta-arrow {
+  display: inline-block;
+  transition: transform 200ms ease-out;
+}
+
+.cta--editorial:hover .menu-cta-block__cta-arrow {
+  transform: translateX(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta--editorial,
+  .cta--editorial:hover,
+  .cta--editorial:active,
+  .menu-cta-block__cta-arrow,
+  .cta--editorial:hover .menu-cta-block__cta-arrow {
+    transition: none;
+    transform: none;
+  }
 }
 
 .home-panel {
@@ -2341,16 +2409,29 @@ body[data-route-mode="demo"] .home-panel {
   perspective-origin: left center;
   position: relative;
   z-index: 1;
+  /* z-index can't tween like a gradient, but transition-delay still gates
+     when the step happens. A 700ms delay here means: on menu close, this
+     wrapper's z-index stays at its previous (elevated) value for 700ms
+     before snapping back to 1 — keeps the tilted card above the menu panel
+     while BOTH close transitions (home-main un-rotate, panel slide-out)
+     finish. The open-side override below sets delay to 0s so z-index
+     elevates immediately when the menu opens. */
+  transition: z-index 0s 700ms;
 }
 
 body[data-menu-open="true"] .perspective-wrapper {
   z-index: 36;
+  transition-delay: 0s;
 }
 
 .home-main {
   position: relative;
+  /* z-index transition mirrors .perspective-wrapper — 700ms delay so the
+     step from elevated (36) back to auto happens AFTER the transform
+     un-rotate and the menu panel's own slide-out have both finished. */
   transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 700ms cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    z-index 0s 700ms;
   will-change: transform;
   transform-origin: center center;
   backface-visibility: hidden;
@@ -2362,9 +2443,18 @@ body[data-menu-open="true"] .perspective-wrapper {
    verbal spec "правый верхний угол должен подняться и сместиться
    левее". 8deg for clear visibility. */
 body[data-menu-open="true"] .home-main {
-  transform: translate(5vw, var(--menu-scroll-y, 0px)) rotate(-8deg) translateX(-200px);
+  /* 9vw (not 5vw) so the card's rotated top-right corner reaches past the
+     menu-panel's left edge. With 5vw the CCW rotation pulled the top-right
+     to x≈1891 in a 2560-wide viewport while the panel starts at x=1980,
+     leaving an ~89px triangular dark gap at the top between card and panel.
+     Extra 4vw horizontal shift closes that gap without touching the tilt. */
+  transform: translate(9vw, var(--menu-scroll-y, 0px)) rotate(-8deg) translateX(-200px);
   background: var(--color-bg-dark);
   z-index: 36;
+  /* Zero the z-index delay when menu is open — elevating happens instantly
+     so the card is above the panel as the open animation starts.
+     (Base rule holds the 700ms close-side delay.) */
+  transition-delay: 0s;
   /* Solid dark blocks above and below the tilted card fill the triangular
      gaps created by the rotation (top-left drops, top-right rises, etc.).
      These shadows rotate with the element so the gap is always covered. */
@@ -2921,18 +3011,16 @@ body[data-menu-open="true"] .home-menu-trigger:focus-visible {
 }
 
 /* Aquarium-to-table — cream-pause with 3D flip-transition from the hero.
-   Section is 400vh tall; the pin sticks a 100vh stage while scroll progress
+   Section is 280vh tall; the pin sticks a 100vh stage while scroll progress
    drives both the outgoing hero rotation and the incoming cream slab.
    Notes:
    - `100vh` (not `100svh`) on the pin — `svh` misbehaves in Firefox when
-     nested inside a perspective/3D-transform container, shortening the
-     scroll track and making framer-motion's scrollYProgress reach 1.0
-     before the user has actually scrolled the full section.
-   - 400vh instead of 300vh — more scroll distance per phase, so any
-     remaining cross-browser progress mismatch is visually absorbed. */
+     nested inside a perspective/3D-transform container. This was the root
+     cause of the earlier progress desync, not scroll distance per se, so
+     the section length can safely go below the 300vh baseline now. */
 .aquarium-to-table {
   position: relative;
-  height: 400vh;
+  height: 280vh;
   isolation: isolate;
 }
 
@@ -3056,7 +3144,166 @@ body[data-menu-open="true"] .home-menu-trigger:focus-visible {
    .home-main's rotated tilt is visually tuned (the tilt was calibrated for
    a shorter home-main; a 2700px section dilutes the rotation). The pin
    stays in its initial state (cream off-screen, hero visible) because
-   progress = 0 at top of page. */
+   progress = 0 at top of page.
+
+   The transition-delay gate on close is CRITICAL: the height step is a
+   layout reflow (can't tween), so reverting height instantly while the
+   home-main transform is still rotated would resize the element under its
+   rotation mid-animation. Rotate-around-center uses current size, so a
+   sudden +180vh on the element yanks its visible portion sideways at the
+   bottom of the viewport. 700ms delay holds the open-menu layout until
+   transform + panel slide-out both finish. Open side overrides the delay
+   to 0s so height collapses instantly when the menu opens. */
+.aquarium-to-table {
+  transition: height 0s 700ms;
+}
 body[data-menu-open="true"] .aquarium-to-table {
   height: 100vh;
+  transition-delay: 0s;
+}
+
+/* Brand-story and trusted-by both use margin-top: -100vh to overlap the
+   upstream sticky-pin exit zone. When the menu is open we collapse the
+   aquarium section to a single viewport, so those overlaps would pull the
+   dark text sections up ON TOP of the hero. Zero the margins in menu-open
+   mode so sections stay stacked cleanly. Same asymmetric delay pattern
+   as .aquarium-to-table height above: close waits 700ms so the layout
+   doesn't reflow under the tilted card mid-transition. */
+.brand-story--overlap-pin {
+  margin-top: -100vh;
+  transition: margin-top 0s 700ms;
+}
+body[data-menu-open="true"] .brand-story--overlap-pin,
+body[data-menu-open="true"] .trusted-by {
+  margin-top: 0;
+  transition-delay: 0s;
+}
+
+/* Trusted-by — scroll-driven coverflow of partner logos.
+   Phase 1: heading large + visually centered (offset right via translateX).
+   Phase 2: heading slides into the left grid column and shrinks; coverflow
+            fades in.
+   Phase 3: coverflow rotates through partners as scroll progresses. */
+.trusted-by {
+  position: relative;
+  /* Overlap the previous section's sticky-pin exit zone (same pattern as
+     brand-story). -100vh pulls this section up by the pin height so our own
+     sticky pin engages exactly as the upstream pin unsticks — no 100vh of
+     empty dark scroll in between. No bg here: body is already dark and the
+     pin's dark surface (via pin content) carries the surface continuity.
+     transition-delay gate mirrors .brand-story--overlap-pin — layout
+     revert on menu close waits 700ms to avoid reflowing under the
+     still-rotating home-main. */
+  margin-top: -100vh;
+  isolation: isolate;
+  transition: margin-top 0s 700ms;
+}
+
+.trusted-by__pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 40% 60%;
+  align-items: center;
+  perspective: 1400px;
+  perspective-origin: center center;
+  overflow: hidden;
+  contain: paint;
+}
+
+@media (min-width: 1440px) {
+  .trusted-by__pin {
+    grid-template-columns: 35% 65%;
+  }
+}
+
+@media (min-width: 2000px) {
+  .trusted-by__pin {
+    grid-template-columns: 30% 1fr;
+  }
+}
+
+.trusted-by__heading-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  will-change: transform;
+}
+
+.trusted-by__heading {
+  font-family: var(--font-poster), var(--font-display), "Cormorant Garamond", serif;
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(80px, 10vw, 160px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: rgb(242, 232, 213);
+  margin: 0;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.trusted-by__coverflow {
+  position: relative;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform-style: preserve-3d;
+  width: 100%;
+  max-width: 1400px;
+  justify-self: center;
+}
+
+.trusted-by__slide {
+  position: absolute;
+  width: clamp(180px, 18vw, 280px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Filter (invert/brightness/grayscale) is applied per-slide via framer
+     motion in trusted-by.tsx — framer's style.filter replaces CSS filter
+     wholesale, so we don't set it here or it would just get overwritten. */
+  will-change: transform, opacity, filter;
+}
+
+/* Static fallback — mobile + reduced-motion. Same dark surface, stacked grid. */
+.trusted-by--static {
+  background: var(--color-bg-dark);
+  padding-block: clamp(80px, 12vh, 160px);
+  padding-inline: clamp(24px, 5vw, 48px);
+}
+
+.trusted-by__static-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.trusted-by__heading--static {
+  text-align: center;
+  margin-bottom: clamp(40px, 6vh, 80px);
+  font-size: clamp(40px, 7vw, 80px);
+}
+
+.trusted-by__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(28px, 5vh, 56px) clamp(20px, 4vw, 40px);
+  align-items: center;
+}
+
+@media (min-width: 480px) and (orientation: landscape) {
+  .trusted-by__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.trusted-by__grid-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  filter: invert(1) brightness(1.2) grayscale(0.3);
+  opacity: 0.85;
 }

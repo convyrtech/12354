@@ -10,6 +10,7 @@ import {
   useSpring,
   useTransform,
 } from "framer-motion";
+import { useMatchMedia } from "@/hooks/use-match-media";
 
 const HEADING_LINE_1 = ["От", "аквариума", "до", "стола\u00A0—"] as const;
 const HEADING_LINE_2 = ["не", "больше", "двух", "часов."] as const;
@@ -98,22 +99,14 @@ export function AquariumToTable({ children }: AquariumToTableProps) {
   const photoServedRef = useRef<HTMLDivElement | null>(null);
   const maskPathRef = useRef<SVGPathElement | null>(null);
   const prefersReduced = useReducedMotion();
-  const [isMobile, setIsMobile] = useState(false);
-  // Three sequenced reveals during the cream-pause:
-  // photo1 (alive crayfish) lands first, then text + line draw together,
-  // then photo2 (served plate) appears once the line has reached its end.
+  const isMobile = useMatchMedia("(max-width: 767px)");
+  // Mouse parallax only on widescreen + pointer-fine devices.
+  const isParallaxCapable = useMatchMedia(
+    "(min-width: 1024px) and (pointer: fine)",
+  );
   const [photo1Active, setPhoto1Active] = useState(false);
   const [textActive, setTextActive] = useState(false);
   const [photo2Active, setPhoto2Active] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mql = window.matchMedia("(max-width: 767px)");
-    const update = () => setIsMobile(mql.matches);
-    update();
-    mql.addEventListener("change", update);
-    return () => mql.removeEventListener("change", update);
-  }, []);
 
   const useFallback = Boolean(prefersReduced) || isMobile;
 
@@ -125,10 +118,40 @@ export function AquariumToTable({ children }: AquariumToTableProps) {
   // deterministic cross-browser progress driven purely by layout state.
   const scrollYProgress = useMotionValue(0);
   useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    // Resolve the .home-main ancestor once. Its computed transform + the
+    // body data-menu-open attribute together flag when the home-menu tilt
+    // is active (open, the 700ms close transition, AND a small safety
+    // cooldown after that). Otherwise getBoundingClientRect would return
+    // an axis-aligned bbox of the rotated section (rect.top negative,
+    // rect.height inflated) and drive the hero→cream flip with no real
+    // scroll input — the visible symptom is a flicker of cream-pause
+    // during menu open/close.
+    const homeMain = el.closest<HTMLElement>(".home-main");
+    const MENU_SAFE_WINDOW_MS = 900; // 700ms transition + rAF slack
+    let menuTransformUntil = 0;
     let raf = 0;
     const measure = () => {
-      const el = sectionRef.current;
-      if (el) {
+      const now = performance.now();
+      const menuOpen =
+        typeof document !== "undefined" &&
+        document.body.dataset.menuOpen === "true";
+      const ancestorTransform = homeMain
+        ? getComputedStyle(homeMain).transform
+        : "none";
+      const hasTransform = ancestorTransform && ancestorTransform !== "none";
+      // Any signal that menu-tilt is in play extends the safe window. The
+      // window also keeps pinning progress to 0 for a short tail after the
+      // transform settles, which masks any residual layout-settle frame
+      // where getComputedStyle briefly reports identity but the ancestor
+      // paint hasn't yet caught up.
+      if (menuOpen || hasTransform) {
+        menuTransformUntil = now + MENU_SAFE_WINDOW_MS;
+      }
+      if (now < menuTransformUntil) {
+        scrollYProgress.set(0);
+      } else {
         const rect = el.getBoundingClientRect();
         const total = Math.max(1, rect.height - window.innerHeight);
         const scrolled = -rect.top;
@@ -299,6 +322,64 @@ export function AquariumToTable({ children }: AquariumToTableProps) {
   // so dots reveal sequentially along the curve (not horizontally).
   // Synced with reveal triggers: starts as photo1 lands (0.32), ends as photo2 lands (0.60).
   const wipeProgress = useTransform(smooth, [0.32, 0.6], [0, 1]);
+
+  // Mouse-driven parallax — photo frames drift gently opposite to the cursor
+  // (max ±5px) on widescreen pointer-fine devices. Spring-smoothed so the
+  // motion reads as atmospheric rather than tracking 1:1 with the cursor.
+  // Disabled on reduced motion, narrow viewports, or coarse pointers.
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const springX = useSpring(mouseX, { stiffness: 80, damping: 40, mass: 0.5 });
+  const springY = useSpring(mouseY, { stiffness: 80, damping: 40, mass: 0.5 });
+  const parallaxX = useTransform(springX, (v) => -v * 5);
+  const parallaxY = useTransform(springY, (v) => -v * 5);
+
+  useEffect(() => {
+    const node = sectionRef.current;
+    if (!node || !isParallaxCapable || prefersReduced) return;
+    let raf = 0;
+    let lastE: MouseEvent | null = null;
+    let vw = window.innerWidth;
+    let vh = window.innerHeight;
+    const onResize = () => {
+      vw = window.innerWidth;
+      vh = window.innerHeight;
+    };
+    const tick = () => {
+      raf = 0;
+      if (!lastE) return;
+      mouseX.set((lastE.clientX / vw) * 2 - 1);
+      mouseY.set((lastE.clientY / vh) * 2 - 1);
+    };
+    const onMove = (e: MouseEvent) => {
+      lastE = e;
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+    let attached = false;
+    const attach = () => {
+      if (attached) return;
+      attached = true;
+      window.addEventListener("mousemove", onMove, { passive: true });
+      window.addEventListener("resize", onResize);
+    };
+    const detach = () => {
+      if (!attached) return;
+      attached = false;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("resize", onResize);
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+    };
+    const io = new IntersectionObserver(
+      ([entry]) => (entry.isIntersecting ? attach() : detach()),
+      { rootMargin: "200px" },
+    );
+    io.observe(node);
+    return () => {
+      io.disconnect();
+      detach();
+    };
+  }, [isParallaxCapable, prefersReduced, mouseX, mouseY]);
   // Drive stroke-dashoffset directly via setAttribute. Going through framer's
   // motion.path style was unreliable on SVG (style.strokeDashoffset doesn't
   // propagate to the SVG attribute the same way it does for HTML elements).
@@ -392,14 +473,14 @@ export function AquariumToTable({ children }: AquariumToTableProps) {
               duration: prefersReduced ? 0 : 0.9,
               ease: EXPO_OUT,
             }}
+            style={{ x: parallaxX, y: parallaxY }}
           >
             <Image
               src="/images/aquarium/crayfish-alive.png"
               alt="Живой рак в аквариуме"
-              width={1024}
-              height={1024}
-              sizes="(max-width: 767px) 60vw, clamp(200px, 18vw, 320px)"
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              fill
+              sizes="(max-width: 767px) 60vw, 14vw"
+              style={{ objectFit: "cover" }}
             />
           </motion.div>
 
@@ -458,14 +539,14 @@ export function AquariumToTable({ children }: AquariumToTableProps) {
               duration: prefersReduced ? 0 : 0.9,
               ease: EXPO_OUT,
             }}
+            style={{ x: parallaxX, y: parallaxY }}
           >
             <Image
               src="/images/aquarium/crayfish-served.png"
               alt="Готовая подача раков на тарелке"
-              width={1024}
-              height={1024}
-              sizes="(max-width: 767px) 60vw, clamp(200px, 18vw, 320px)"
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              fill
+              sizes="(max-width: 767px) 60vw, 14vw"
+              style={{ objectFit: "cover" }}
             />
           </motion.div>
 

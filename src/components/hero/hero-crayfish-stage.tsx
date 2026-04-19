@@ -4,9 +4,16 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 
-// Viscous-out — no springy front-load, steady deceleration through the whole
-// duration so the crayfish slows down as if settling into a fluid medium.
-const VISCOUS_OUT = [0.22, 0.61, 0.36, 1] as const;
+// Critically-damped entrance: viscous dive past equilibrium, then monotonic
+// rise back to rest. No second overshoot — one bob feels physical without the
+// "wiggle" of a free underdamped oscillator.
+const DIVE_EASE = [0.22, 0.61, 0.36, 1] as const;   // high-velocity descent, viscous slowdown
+const SETTLE_EASE = [0.35, 0, 0.45, 1] as const;    // 0 → fast → 0, no crossing
+
+const ENTRANCE_TIMES = [0, 0.7, 1] as const;
+const ENTRANCE_Y = ["-180vh", "2.4vh", "0vh"] as const;
+const ENTRANCE_ROTATE = [-8, 2, 0] as const;
+const ENTRANCE_SCALE = [0.88, 1, 1] as const;
 
 type HeroCrayfishStageProps = {
   entranceDelay?: number;
@@ -37,13 +44,24 @@ export function HeroCrayfishStage({
         initial={
           prefersReduced
             ? { y: 0, rotate: 0, scale: 1 }
-            : { y: "-180vh", rotate: -8, scale: 0.88 }
+            : { y: ENTRANCE_Y[0], rotate: ENTRANCE_ROTATE[0], scale: ENTRANCE_SCALE[0] }
         }
-        animate={{ y: 0, rotate: 0, scale: 1 }}
+        animate={
+          prefersReduced
+            ? { y: 0, rotate: 0, scale: 1 }
+            : {
+                y: [...ENTRANCE_Y],
+                rotate: [...ENTRANCE_ROTATE],
+                scale: [...ENTRANCE_SCALE],
+              }
+        }
         transition={{
           duration: prefersReduced ? 0.2 : entranceDuration,
           delay: prefersReduced ? 0 : entranceDelay,
-          ease: VISCOUS_OUT,
+          times: prefersReduced ? undefined : [...ENTRANCE_TIMES],
+          ease: prefersReduced
+            ? undefined
+            : [[...DIVE_EASE], [...SETTLE_EASE]],
         }}
       >
         {children}
@@ -54,18 +72,36 @@ export function HeroCrayfishStage({
             prefersReduced
               ? undefined
               : {
-                  y: [0, -12, 0],
-                  rotate: [0, 0.5, -0.3, 0],
+                  y: [0, -14, 0],
+                  x: [0, 4, -3, 0],
+                  rotate: [0, 0.9, -0.5, 0.2, 0],
                 }
           }
           transition={
             prefersReduced
               ? undefined
               : {
-                  duration: 8.5,
-                  delay: idleDelay,
-                  ease: "easeInOut",
-                  repeat: Number.POSITIVE_INFINITY,
+                  // Three non-commensurate periods → drift never re-syncs,
+                  // gives the crayfish a living "biorhythm" instead of a
+                  // mechanical sinusoid.
+                  y: {
+                    duration: 6.2,
+                    delay: idleDelay,
+                    ease: "easeInOut",
+                    repeat: Number.POSITIVE_INFINITY,
+                  },
+                  x: {
+                    duration: 9.4,
+                    delay: idleDelay,
+                    ease: "easeInOut",
+                    repeat: Number.POSITIVE_INFINITY,
+                  },
+                  rotate: {
+                    duration: 7.8,
+                    delay: idleDelay,
+                    ease: "easeInOut",
+                    repeat: Number.POSITIVE_INFINITY,
+                  },
                 }
           }
         >

@@ -225,7 +225,7 @@ export function HeroBubbles({
     // from first motion to landing.
     const phase1StartMs = entranceDelay * 1000;
     const phase1WindowMs = entranceDuration * 1000;
-    const phase1Count = Math.max(1, Math.round(randInt(25, 35) * density));
+    const phase1Count = Math.max(1, Math.round(randInt(32, 45) * density));
     const phase1Jitter = phase1WindowMs / phase1Count;
     for (let i = 0; i < phase1Count; i++) {
       const base = phase1StartMs + (i / phase1Count) * phase1WindowMs;

@@ -12,13 +12,6 @@ type NavLink = {
   active: boolean;
 };
 
-const HOME_LINKS = [
-  { href: "/#quality", label: "О бренде" },
-  { href: "/#product", label: "Продукт" },
-  { href: "/#service", label: "Сервис" },
-  { href: "/#contact", label: "Контакты" },
-] as const;
-
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 function truncateLabel(value: string, limit: number) {
@@ -153,50 +146,12 @@ function LinkRow({ links }: { links: NavLink[] }) {
   );
 }
 
-function HomeNavigation({ scrolled }: { scrolled: boolean }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const links = HOME_LINKS.map((link) => ({ ...link, active: false }));
-
-  return (
-    <>
-      <nav className="nav-root">
-        <motion.div
-          className="nav-shell nav-shell--home"
-          animate={{
-            y: 0,
-            opacity: 1,
-            borderRadius: scrolled ? 20 : 24,
-          }}
-          transition={{ duration: 0.28, ease: EASE }}
-        >
-          <LinkRow links={links} />
-          <div className="nav-actions">
-            <Link href="/menu?fulfillment=delivery" className="nav-action-link hidden sm:inline-flex">
-              Открыть меню
-            </Link>
-            <MobileMenuButton open={menuOpen} onToggle={() => setMenuOpen((value) => !value)} />
-          </div>
-        </motion.div>
-      </nav>
-
-      <MobileSheet
-        open={menuOpen}
-        links={links}
-        primaryHref="/menu?fulfillment=delivery"
-        primaryLabel="Открыть меню"
-        onClose={() => setMenuOpen(false)}
-      />
-    </>
-  );
-}
-
 export function Navigation() {
   const pathname = usePathname();
   const { draft } = useDraft();
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const isHome = pathname === "/";
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     setScrolled(latest > 28);
@@ -239,10 +194,6 @@ export function Navigation() {
     ],
     [menuHref, pathname],
   );
-
-  if (isHome) {
-    return <HomeNavigation scrolled={scrolled} />;
-  }
 
   return (
     <>

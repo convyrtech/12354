@@ -24,51 +24,47 @@ export const HERO_SCENE = {
 } as const;
 
 /**
- * MANIFESTO block — replaces former QUALITY_PROOF chip grid.
- * Single lyrical serif manifesto, no items, no bullets.
- */
-export const QUALITY_PROOF = {
-  eyebrow: "Философия",
-  lead: "The Raki — это",
-  italic: "не доставка еды,",
-  tail: "а доставленный момент: живой, точный, настоящий. Тот самый, который нельзя повторить, если хоть что-то пошло не так.",
-  image: "/editorial/cold-crawfish.png",
-} as const;
-
-/**
- * EXPERIENCE block — replaces former PRODUCT_THEATRE chip points.
- * Operational truth folded into lyrical serif, not bullets.
- */
-export const PRODUCT_THEATRE = {
-  eyebrow: "Опыт и доверие",
-  lead: "С 2017 года мы держим одно правило:",
-  italic: "всё решают минуты.",
-  tail: "Свои курьеры учат продукт, не маршрут. Своя кухня работает только на доставку. Мы контролируем каждый метр пути — от бульона до вашего стола.",
-  image: "/editorial/boiling-crawfish.png",
-} as const;
-
-/**
- * MENU_ENTRY — Marine-style CTA block.
- * Centered display serif with italic accent on key word + single CTA.
+ * MENU_ENTRY — finale CTA block ("Invitation" beat).
+ * Single call to action with a typographic underline flourish on
+ * «начинается». Headline structure is inlined in the component
+ * (не через data-поля), since the emphasis span is specific to
+ * this one section and doesn't reuse the lead/italic pattern.
  */
 export const MENU_ENTRY = {
-  eyebrow: "Меню",
-  lead: "Ваш стол",
-  italic: "начинается здесь.",
-  summary:
-    "Раки, камчатский краб и деликатесы — в спокойном каталоге без лишних решений.",
-  cta: { label: "Открыть меню", href: "/menu?fulfillment=delivery" },
+  cta: { label: "К меню", href: "/menu?fulfillment=delivery" },
 } as const;
 
-export const HOME_CONTACT_LINES = [
-  { label: "Телефон", value: "+7 (980) 888-05-88", href: "tel:+79808880588" },
-  { label: "Telegram", value: "@The_raki", href: "https://t.me/The_raki" },
-  {
-    label: "Instagram",
-    value: "@the_raki_moscow",
-    href: "https://www.instagram.com/the_raki_moscow/",
-  },
-] as const;
+/**
+ * MENU_ENTRY_INFO — finale "cream card" footer content that now
+ * lives inside the CTA section (replacing the old standalone
+ * Footer component). Contacts are placeholders pending real data.
+ */
+export const MENU_ENTRY_INFO = {
+  columns: [
+    {
+      title: "Доставка",
+      lines: [
+        "Москва и ближнее Подмосковье",
+        "",
+        "Самовывоз",
+        "Осоргино, 202",
+      ],
+    },
+    {
+      title: "Контакты",
+      lines: [
+        "+7 495 XXX-XX-XX",
+        "team@theraki.ru",
+        "Telegram: @theraki",
+      ],
+    },
+    {
+      title: "В прессе",
+      lines: ["Коммерсантъ", "Рублёвка Gold"],
+    },
+  ],
+  wordmark: "— The Raki · С 2017 —",
+} as const;
 
 export function getResetPatch(
   fulfillmentMode: "delivery" | "pickup",
