@@ -16,7 +16,6 @@ import {
 } from "framer-motion";
 import { useMatchMedia } from "@/hooks/use-match-media";
 import { MENU_ENTRY, MENU_ENTRY_INFO } from "@/lib/homepage-data";
-import { getEffectiveViewportHeight } from "@/lib/viewport";
 
 // ────────────────────────────────────────────────────────────────
 // CTA finale — a cream "card" sitting on the dark body, carrying
@@ -80,10 +79,7 @@ export function MenuEntry() {
       const el = sectionRef.current;
       if (el) {
         const rect = el.getBoundingClientRect();
-        // Capped vh so the z-depth entrance (scale/opacity/blur/y) reaches
-        // settled state at the same scroll distance on 1080 and 1200 — raw
-        // innerHeight made the CTA card read as a compressed strip at 1200.
-        const vh = getEffectiveViewportHeight() || 1;
+        const vh = window.innerHeight || 1;
         const p = Math.max(0, Math.min(1, (vh - rect.top) / vh));
         scrollYProgress.set(p);
       }

@@ -11,7 +11,6 @@ import {
   useTransform,
 } from "framer-motion";
 import { useMatchMedia } from "@/hooks/use-match-media";
-import { getEffectiveViewportHeight } from "@/lib/viewport";
 
 const HEADING_LINE_1 = ["От", "аквариума", "до", "стола\u00A0—"] as const;
 const HEADING_LINE_2 = ["не", "больше", "двух", "часов."] as const;
@@ -154,9 +153,7 @@ export function AquariumToTable({ children }: AquariumToTableProps) {
         scrollYProgress.set(0);
       } else {
         const rect = el.getBoundingClientRect();
-        // Denominator uses capped vh to stay consistent with
-        // .aquarium-to-table__pin max-height on tall viewports (>1080).
-        const total = Math.max(1, rect.height - getEffectiveViewportHeight());
+        const total = Math.max(1, rect.height - window.innerHeight);
         const scrolled = -rect.top;
         const p = Math.max(0, Math.min(1, scrolled / total));
         scrollYProgress.set(p);

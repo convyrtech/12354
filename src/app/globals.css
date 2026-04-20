@@ -92,12 +92,6 @@
   --duration-medium: 360ms;
   --duration-long: 860ms;
 
-  /* Logical viewport-height cap for cinematic homepage sections.
-     Mirrored by EFFECTIVE_VIEWPORT_CAP_PX in src/lib/viewport.ts —
-     CSS max-height, JS proximity/progress math, and sticky-pin unstick
-     point all resolve against this one number. Change both sides or neither. */
-  --viewport-cap: 1080px;
-
   /* ------------------------------------------------------------
      Dual-theme tokens: home stays dark (existing --bg/--text-primary),
      internal cream-editorial pages use the *-on-cream set.
@@ -1839,7 +1833,6 @@ body[data-route-mode="demo"] .home-panel {
 .hero-stage {
   height: 100svh;
   min-height: 820px;
-  max-height: var(--viewport-cap);
   isolation: isolate;
 }
 
@@ -3037,10 +3030,7 @@ body[data-menu-open="true"] .home-menu-trigger:focus-visible {
      the section length can safely go below the 300vh baseline now. */
 .aquarium-to-table {
   position: relative;
-  /* Capped so scroll distance stays stable once viewport height crosses
-     --viewport-cap (1080). Without the cap, a 1920×1200 user would scroll
-     ~22% longer through this section than a 1080 user. */
-  height: min(280vh, calc(var(--viewport-cap) * 2.8));
+  height: 280vh;
   isolation: isolate;
 }
 
@@ -3049,7 +3039,6 @@ body[data-menu-open="true"] .home-menu-trigger:focus-visible {
   top: 0;
   height: 100vh;
   min-height: 820px;
-  max-height: var(--viewport-cap);
   perspective: 1400px;
   perspective-origin: top center;
   overflow: clip;
