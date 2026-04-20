@@ -7,6 +7,7 @@ import { DraftProvider } from "@/components/draft-provider";
 import { HomeMenu } from "@/components/home-menu/home-menu";
 import { Navigation } from "@/components/navigation";
 import { SmoothScrollProvider } from "@/components/smooth-scroll-provider";
+import { CityProvider } from "@/lib/cities/city-context";
 import { getRouteMode } from "@/lib/route-mode";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
@@ -29,15 +30,17 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <DraftProvider key={routeMode} mode={routeMode}>
-      <SmoothScrollProvider>
-        {routeMode === "public" ? (
-          <>
-            {isHome ? <HomeMenu /> : <Navigation />}
-            <CartPill />
-          </>
-        ) : null}
-        {children}
-      </SmoothScrollProvider>
+      <CityProvider>
+        <SmoothScrollProvider>
+          {routeMode === "public" ? (
+            <>
+              {isHome ? <HomeMenu /> : <Navigation />}
+              <CartPill />
+            </>
+          ) : null}
+          {children}
+        </SmoothScrollProvider>
+      </CityProvider>
     </DraftProvider>
   );
 }

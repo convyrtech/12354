@@ -12,7 +12,10 @@
     "verify": "npm run lint && npm run build:clean",
     "geo:doctor": "node scripts/geo-doctor.mjs",
     "iiko:bindings-template": "node scripts/generate-iiko-bindings-template.mjs",
-    "iiko:bindings-validate": "node scripts/validate-iiko-bindings.mjs"
+    "iiko:bindings-validate": "node scripts/validate-iiko-bindings.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -30,9 +33,11 @@
     "@types/node": "^22.15.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
+    "@vitest/coverage-v8": "^2.1.9",
     "eslint": "^9.28.0",
     "eslint-config-next": "^15.3.3",
     "tailwindcss": "^4.1.7",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^2.1.9"
   }
 }

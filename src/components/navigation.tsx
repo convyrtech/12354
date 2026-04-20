@@ -4,7 +4,7 @@ import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
-import { useDraft } from "@/components/draft-provider";
+import { CitySwitcher } from "@/components/shared/city-switcher";
 
 type NavLink = {
   href: string;
@@ -13,40 +13,6 @@ type NavLink = {
 };
 
 const EASE = [0.22, 1, 0.36, 1] as const;
-
-function truncateLabel(value: string, limit: number) {
-  if (value.length <= limit) return value;
-  return `${value.slice(0, Math.max(limit - 3, 0))}...`;
-}
-
-function getServiceChip(input: {
-  fulfillmentMode: "delivery" | "pickup" | null;
-  serviceLabel: string;
-  serviceTimingLabel: string;
-  lineItemCount: number;
-}) {
-  if (input.fulfillmentMode === "delivery") {
-    return {
-      eyebrow: "Доставка",
-      value: truncateLabel(input.serviceLabel || "Уточнить адрес", 28),
-      detail: input.serviceTimingLabel || "Private service по Москве",
-    };
-  }
-
-  if (input.fulfillmentMode === "pickup") {
-    return {
-      eyebrow: "Самовывоз",
-      value: truncateLabel(input.serviceLabel || "Выбрать точку", 28),
-      detail: input.serviceTimingLabel || "Точка и окно выдачи",
-    };
-  }
-
-  return {
-    eyebrow: "The Raki",
-    value: "Moscow / since 2017",
-    detail: input.lineItemCount > 0 ? `${input.lineItemCount} поз. в заказе` : "Свежий продукт и точная подача",
-  };
-}
 
 function BrandLockup() {
   return (
@@ -148,7 +114,6 @@ function LinkRow({ links }: { links: NavLink[] }) {
 
 export function Navigation() {
   const pathname = usePathname();
-  const { draft } = useDraft();
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -157,17 +122,7 @@ export function Navigation() {
     setScrolled(latest > 28);
   });
 
-  const serviceLabel =
-    draft.serviceLabel || draft.confirmedDropoffLabel || draft.normalizedAddress || draft.typedAddress;
-  const chip = getServiceChip({
-    fulfillmentMode: draft.fulfillmentMode,
-    serviceLabel,
-    serviceTimingLabel: draft.serviceTimingLabel,
-    lineItemCount: draft.lineItems.length,
-  });
-
-  const menuHref =
-    draft.fulfillmentMode === "pickup" ? "/menu?fulfillment=pickup" : "/menu?fulfillment=delivery";
+  const menuHref = "/menu";
 
   const links = useMemo<NavLink[]>(
     () => [
@@ -192,7 +147,7 @@ export function Navigation() {
         active: pathname === "/cart" || pathname === "/checkout",
       },
     ],
-    [menuHref, pathname],
+    [pathname],
   );
 
   return (
@@ -210,10 +165,8 @@ export function Navigation() {
           <BrandLockup />
           <LinkRow links={links} />
           <div className="nav-actions">
-            <div className="nav-chip hidden xl:flex">
-              <span>{chip.eyebrow}</span>
-              <strong>{chip.value}</strong>
-              <em>{chip.detail}</em>
+            <div className="hidden xl:flex">
+              <CitySwitcher />
             </div>
             <MobileMenuButton open={menuOpen} onToggle={() => setMenuOpen((value) => !value)} />
           </div>

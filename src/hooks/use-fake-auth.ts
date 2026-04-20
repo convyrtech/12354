@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { readJson, removeKey, writeJson } from "@/lib/storage";
 
 const STORAGE_KEY = "theraki_fake_auth";
 
@@ -19,39 +20,23 @@ const DEFAULT: FakeAuthState = {
 };
 
 function readStorage(): FakeAuthState {
-  if (typeof window === "undefined") return DEFAULT;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT;
-    const parsed = JSON.parse(raw) as Partial<FakeAuthState>;
-    return {
-      isAuthenticated: Boolean(parsed.isAuthenticated),
-      phone: parsed.phone ?? null,
-      name: parsed.name ?? null,
-      bonusBalance:
-        typeof parsed.bonusBalance === "number" ? parsed.bonusBalance : 0,
-    };
-  } catch {
-    return DEFAULT;
-  }
+  const parsed = readJson<Partial<FakeAuthState>>(STORAGE_KEY);
+  if (!parsed || typeof parsed !== "object") return DEFAULT;
+  return {
+    isAuthenticated: Boolean(parsed.isAuthenticated),
+    phone: parsed.phone ?? null,
+    name: parsed.name ?? null,
+    bonusBalance:
+      typeof parsed.bonusBalance === "number" ? parsed.bonusBalance : 0,
+  };
 }
 
 function writeStorage(next: FakeAuthState) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    /* ignore quota / unavailability */
-  }
+  writeJson(STORAGE_KEY, next);
 }
 
 function clearStorage() {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    /* ignore */
-  }
+  removeKey(STORAGE_KEY);
 }
 
 export function useFakeAuth() {

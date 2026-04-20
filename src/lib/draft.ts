@@ -17,7 +17,11 @@ import {
   getMenuItem,
   getZone,
 } from "@/lib/fixtures";
-import { buildDefaultDraftLineItem, type DraftLineItem } from "@/lib/line-item";
+import {
+  buildDefaultDraftLineItem,
+  rebuildDraftLineItem,
+  type DraftLineItem,
+} from "@/lib/line-item";
 
 export type OrderStage =
   | "idle"
@@ -254,7 +258,7 @@ export function hydrateStoredDraft(raw: unknown): OrderDraftContext {
   const record = raw as Record<string, unknown>;
   const legacyLineItem = normalizeLineItem(record.selectedLineItem);
   const legacySelectedItemId = typeof record.selectedItemId === "string" ? record.selectedItemId : null;
-  const lineItems =
+  const rawLineItems: DraftLineItem[] =
     Array.isArray(record.lineItems)
       ? record.lineItems
           .map((lineItem) => normalizeLineItem(lineItem))
@@ -267,6 +271,16 @@ export function hydrateStoredDraft(raw: unknown): OrderDraftContext {
               return item ? [buildDefaultDraftLineItem(item)] : [];
             })()
           : [];
+
+  // Reprice against current fixtures: modifier groups and option deltas
+  // may have drifted since the draft was stored.
+  const lineItems: DraftLineItem[] = rawLineItems
+    .map((line) => {
+      const item = getMenuItem(line.itemId);
+      if (!item) return null;
+      return rebuildDraftLineItem(item, line);
+    })
+    .filter((line): line is DraftLineItem => Boolean(line));
 
   const hydratedDraft: OrderDraftContext = {
     ...fallback,

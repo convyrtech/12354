@@ -19,6 +19,7 @@ import {
   type OrderDraftContext,
 } from "@/lib/draft";
 import type { RouteMode } from "@/lib/route-mode";
+import { readJson, writeJson } from "@/lib/storage";
 
 const PUBLIC_STORAGE_KEY = "raki_draft";
 const DEMO_STORAGE_KEY = "raki_demo_draft";
@@ -64,42 +65,28 @@ export function DraftProvider({
     if (hydrated.current) return;
     hydrated.current = true;
 
-    try {
+    const key = mode === "demo" ? DEMO_STORAGE_KEY : PUBLIC_STORAGE_KEY;
+    const parsed = readJson<unknown>(key);
+
+    if (parsed != null) {
+      setDraft(hydrateStoredDraft(parsed));
+    } else if (mode === "demo") {
       const url = new URL(window.location.href);
-      if (mode === "demo") {
-        const storedDemo = localStorage.getItem(DEMO_STORAGE_KEY);
-        if (storedDemo) {
-          const parsed = JSON.parse(storedDemo);
-          setDraft(hydrateStoredDraft(parsed));
-        } else {
-          const seeded = createInvestorDemoDraft({
-            orderStage: getDemoOrderStage(url.pathname),
-          });
-          setDraft(seeded);
-          localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(seeded));
-        }
-      } else {
-        const stored = localStorage.getItem(PUBLIC_STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setDraft(hydrateStoredDraft(parsed));
-        } else {
-          setDraft(createDraft());
-        }
-      }
-    } catch {
-      // ignore corrupt storage
+      const seeded = createInvestorDemoDraft({
+        orderStage: getDemoOrderStage(url.pathname),
+      });
+      setDraft(seeded);
+      writeJson(key, seeded);
+    } else {
+      setDraft(createDraft());
     }
+
     setIsHydrated(true);
   }, [mode]);
 
   useEffect(() => {
     if (!hydrated.current) return;
-    try {
-      localStorage.setItem(mode === "demo" ? DEMO_STORAGE_KEY : PUBLIC_STORAGE_KEY, JSON.stringify(draft));
-    } catch {
-      // storage full or unavailable
-    }
+    writeJson(mode === "demo" ? DEMO_STORAGE_KEY : PUBLIC_STORAGE_KEY, draft);
   }, [draft, mode]);
 
   const patchDraft = useCallback((patch: DraftPatch) => {

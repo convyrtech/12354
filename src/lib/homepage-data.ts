@@ -31,7 +31,7 @@ export const HERO_SCENE = {
  * this one section and doesn't reuse the lead/italic pattern.
  */
 export const MENU_ENTRY = {
-  cta: { label: "К меню", href: "/menu?fulfillment=delivery" },
+  cta: { label: "К меню", href: "/menu" },
 } as const;
 
 /**

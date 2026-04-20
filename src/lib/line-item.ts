@@ -42,6 +42,8 @@ function getPreferredDefaultOptionIds(group: MenuItem["modifierGroups"][number])
     "fried_size_m",
     "live_size_m",
     "recipe_classic",
+    "fried_recipe_creamy_garlic",
+    "live_spice_classic",
     "weight_1kg",
     "salt_classic",
     "heat_none",
@@ -164,13 +166,26 @@ export function rebuildDraftLineItem(
   item: MenuItem,
   current: DraftLineItem,
   basePriceOverride?: number,
-) {
+): DraftLineItem {
   const rebuilt = buildDraftLineItem(item, current.selections, basePriceOverride);
+  const totalPrice = rebuilt.unitPrice * current.quantity;
+
+  // Return the original reference when nothing has drifted — keeps
+  // memoized consumers (React.memo, useMemo) stable across hydrate/reroute.
+  if (
+    rebuilt.itemName === current.itemName &&
+    rebuilt.basePrice === current.basePrice &&
+    rebuilt.unitPrice === current.unitPrice &&
+    totalPrice === current.totalPrice &&
+    selectionsMatch(rebuilt.selections, current.selections)
+  ) {
+    return current;
+  }
 
   return {
     ...rebuilt,
     quantity: current.quantity,
-    totalPrice: rebuilt.unitPrice * current.quantity,
+    totalPrice,
   };
 }
 

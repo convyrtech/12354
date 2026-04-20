@@ -143,6 +143,23 @@ export type ModifierGroup = {
 
 export type MenuAvailabilityState = "available" | "hidden" | "planned" | "sold_out";
 
+const AVAILABILITY_STATE_PRIORITY: Record<MenuAvailabilityState, number> = {
+  available: 0,
+  sold_out: 1,
+  planned: 2,
+  hidden: 3,
+};
+
+export function pickHighestAvailabilityPriority(
+  states: readonly MenuAvailabilityState[],
+): MenuAvailabilityState {
+  return states.reduce((best, current) =>
+    AVAILABILITY_STATE_PRIORITY[current] < AVAILABILITY_STATE_PRIORITY[best]
+      ? current
+      : best,
+  );
+}
+
 export type MenuLocationAvailability = {
   locationId: string;
   state: MenuAvailabilityState;
@@ -155,6 +172,36 @@ export type MenuServicePointAvailability = {
   state: MenuAvailabilityState;
   note?: string;
   priceDelta?: number;
+};
+
+export type MenuKitchenAvailability = {
+  kitchenId: string;
+  state: MenuAvailabilityState;
+  note?: string;
+  priceDelta?: number;
+};
+
+export type BundledAccessory = {
+  id: string;
+  title: string;
+  perUnit: "item" | "kg";
+  quantity: number;
+  note?: string;
+};
+
+export type UpsellAccessory = {
+  id: string;
+  title: string;
+  price: number;
+  note?: string;
+};
+
+export type MenuItemBadge = "hit" | "new";
+
+export type MenuItemMetadata = {
+  weight?: { value: number; unit: "g" | "kg" };
+  origin?: string;
+  serving?: string;
 };
 
 export type ProductOrderingModel = "standard" | "weight_based";
@@ -188,6 +235,16 @@ export type MenuItem = {
   commercialRules?: ProductCommercialRules;
   locationAvailability?: MenuLocationAvailability[];
   servicePointAvailability?: MenuServicePointAvailability[];
+  kitchenAvailability?: MenuKitchenAvailability[];
+  categorySlug?: string;
+  subcategory?: string;
+  editorialNote?: string;
+  badge?: MenuItemBadge;
+  isSignature?: boolean;
+  metadata?: MenuItemMetadata;
+  imageKey?: string;
+  bundledAccessories?: BundledAccessory[];
+  upsellAccessories?: UpsellAccessory[];
 };
 
 export type MenuSnapshotItem = {
@@ -890,6 +947,24 @@ const boiledRecipeOptions: ModifierOption[] = [
   { id: "recipe_donskoy", label: "Донской", priceDelta: 0 },
   { id: "recipe_beer", label: "В пиве", priceDelta: 1000 },
   { id: "recipe_beer_hot", label: "В пиве острые", priceDelta: 1000 },
+  { id: "recipe_apple_honey_fennel", label: "Яблоко на меду с фенхелем", priceDelta: 800 },
+];
+
+const friedRecipeOptions: ModifierOption[] = [
+  { id: "fried_recipe_creamy_garlic", label: "Сливки-чеснок", priceDelta: 0 },
+  { id: "fried_recipe_beer_spicy_herbs", label: "Пиво-травы острые", priceDelta: 0 },
+  { id: "fried_recipe_white_truffle", label: "С белыми грибами и трюфелем", priceDelta: 0 },
+  { id: "fried_recipe_asian_spicy", label: "Азиатский острый", priceDelta: 0 },
+  { id: "fried_recipe_sour_dill_garlic", label: "Сметана-укроп-чеснок", priceDelta: 0 },
+  { id: "fried_recipe_blue_cheese", label: "Блю чиз", priceDelta: 200 },
+];
+
+const liveSpicesOptions: ModifierOption[] = [
+  { id: "live_spice_classic", label: "Классическая", priceDelta: 200 },
+  { id: "live_spice_garlic", label: "Чесночная", priceDelta: 200 },
+  { id: "live_spice_tomato", label: "Томатная", priceDelta: 200 },
+  { id: "live_spice_hot", label: "Острая", priceDelta: 200 },
+  { id: "live_spice_donskoy", label: "Донская", priceDelta: 500 },
 ];
 
 const shrimpSauceOptions: ModifierOption[] = [
@@ -899,16 +974,53 @@ const shrimpSauceOptions: ModifierOption[] = [
   { id: "shrimp_sauce_sweet_chili", label: "Свит чили", priceDelta: 180 },
 ];
 
+const glovesAccessory: BundledAccessory = {
+  id: "accessory_gloves",
+  title: "Перчатки",
+  perUnit: "kg",
+  quantity: 1,
+  note: "Одна пара на каждый килограмм раков.",
+};
+
+const breadToastAccessory: BundledAccessory = {
+  id: "accessory_bread_toast",
+  title: "Гренка пшеничная",
+  perUnit: "kg",
+  quantity: 1,
+  note: "40 г на килограмм.",
+};
+
+const rakiSauceUpsells: UpsellAccessory[] = [
+  { id: "sauce_tartar", title: "Соус тартар", price: 100 },
+  { id: "sauce_cocktail", title: "Соус коктейльный", price: 100 },
+  { id: "sauce_aioli", title: "Соус айоли", price: 100 },
+  { id: "sauce_teriyaki", title: "Соус терияки", price: 100 },
+];
+
+const crabUpsells: UpsellAccessory[] = [
+  { id: "accessory_scissors", title: "Ножницы для краба", price: 300 },
+  { id: "sauce_teriyaki", title: "Соус терияки", price: 100 },
+];
+
 export const menuItems: MenuItem[] = [
   {
     id: "item_crayfish_boiled",
     category: "Варёные раки",
+    categorySlug: "raki",
+    subcategory: "boiled",
     productFamily: "boiled",
     name: "Варёные раки",
     description:
       "Главная линия The Raki: размер от S до XXL, реальный рецепт варки и вес подтверждаются ещё до корзины.",
+    editorialNote:
+      "Шеф варит раков 15 лет. Размерный ряд без компромиссов — S для плотных ужинов парой, XXL для стола на шесть.",
     basePrice: 4900,
+    isSignature: true,
     availableFor: ["delivery", "pickup"],
+    metadata: { origin: "Ростов-Дон", serving: "горячо к столу" },
+    imageKey: "raki-boiled",
+    bundledAccessories: [glovesAccessory],
+    upsellAccessories: rakiSauceUpsells,
     note: "Минимальный заказ — 1 кг. Дальше вес добирается шагом 0.5 кг. Размерный ряд идёт через S-XXL, а старые граммы остаются только внутренним мостом.",
     bestEffortRequests: ["Только самки — только в сезон и без гарантии по конкретной партии."],
     commercialRules: {
@@ -984,19 +1096,27 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_crayfish_fried",
     category: "Жареные раки",
+    categorySlug: "raki",
+    subcategory: "fried",
     productFamily: "fried",
     name: "Жареные раки",
     description:
       "Жареная линия тоже строится вокруг размера и веса: тот же размерный ряд, но уже более плотная и насыщенная подача.",
+    editorialNote:
+      "Плотнее варёных, под сливки и травы. Хорошо идут поздним вечером, когда стол уже собран и нужен более сочный акцент.",
     basePrice: 5700,
     availableFor: ["delivery", "pickup"],
+    metadata: { origin: "Ростов-Дон", serving: "горячо к столу" },
+    imageKey: "raki-fried",
+    bundledAccessories: [glovesAccessory],
+    upsellAccessories: rakiSauceUpsells,
     note: "Минимальный заказ — 1 кг. Размер идёт от S до XXL. Жареная линия держится на размере, весе и сезонном пожелании без гарантии.",
     bestEffortRequests: ["Только самки — только в сезон и без гарантии по конкретной партии."],
     commercialRules: {
       orderingModel: "weight_based",
       minimumWeightKg: 1,
       weightStepKg: 0.5,
-      recipeAffectsPrice: false,
+      recipeAffectsPrice: true,
       seasonalRequest: crayfishSeasonalRule,
     },
     servicePointAvailability: [
@@ -1007,15 +1127,24 @@ export const menuItems: MenuItem[] = [
       },
     ],
     modifierGroups: [
-        {
-          id: "mg_fried_size_tier",
-          label: "Размер",
-          kind: "core",
-          minSelections: 1,
-          maxSelections: 1,
-          helpText: "Размерный ряд должен совпадать с текущей шкалой: S, M, L, XL, XXL.",
-          options: friedCrayfishSizeOptions,
-        },
+      {
+        id: "mg_fried_size_tier",
+        label: "Размер",
+        kind: "core",
+        minSelections: 1,
+        maxSelections: 1,
+        helpText: "Размерный ряд должен совпадать с текущей шкалой: S, M, L, XL, XXL.",
+        options: friedCrayfishSizeOptions,
+      },
+      {
+        id: "mg_fried_recipe",
+        label: "Рецепт обжарки",
+        kind: "core",
+        minSelections: 1,
+        maxSelections: 1,
+        helpText: "Выберите рецепт. Сливки-чеснок — базовая подача.",
+        options: friedRecipeOptions,
+      },
       {
         id: "mg_fried_weight",
         label: "Вес",
@@ -1043,19 +1172,26 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_crayfish_live",
     category: "Живые раки",
+    categorySlug: "raki",
+    subcategory: "live",
     productFamily: "live",
     name: "Живые раки",
     description:
       "Свежая линия для тех, кто хочет получить живого рака. Здесь главное — размерный ряд и вес, а не комментарии по рецепту.",
+    editorialNote:
+      "Прибывают живыми, хранятся в аквариуме до выезда. Специи кухня пришлёт отдельно — добавляются к заказу по запросу.",
     basePrice: 4700,
     availableFor: ["delivery", "pickup"],
+    metadata: { origin: "Ростов-Дон", serving: "живые, в аквариуме" },
+    imageKey: "raki-live",
+    bundledAccessories: [glovesAccessory],
     note: "Минимальный заказ — 1 кг. Размерный ряд идёт от S до XXL. Самовывоз для живых раков пока ограничен.",
     bestEffortRequests: ["Только самки — только в сезон и без гарантии по текущей партии."],
     commercialRules: {
       orderingModel: "weight_based",
       minimumWeightKg: 1,
       weightStepKg: 0.5,
-      recipeAffectsPrice: false,
+      recipeAffectsPrice: true,
       seasonalRequest: crayfishSeasonalRule,
     },
     servicePointAvailability: [
@@ -1076,6 +1212,15 @@ export const menuItems: MenuItem[] = [
         options: liveCrayfishSizeOptions,
       },
       {
+        id: "mg_live_spice",
+        label: "Специи",
+        kind: "core",
+        minSelections: 1,
+        maxSelections: 1,
+        helpText: "Специи кухня шлёт отдельной упаковкой. Классическая — базовая подача.",
+        options: liveSpicesOptions,
+      },
+      {
         id: "mg_live_weight",
         label: "Вес",
         kind: "core",
@@ -1089,11 +1234,17 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_shrimp_magadan_boiled",
     category: "Креветки Магаданские / Медведка",
+    categorySlug: "shrimp",
+    subcategory: "boiled",
     productFamily: "shrimp",
     name: "Магаданские креветки 70/90 отварные",
     description: "Магаданские креветки 70/90, отварные к подаче с лимоном и соусами на выбор.",
+    editorialNote: "Дикие, не фермерские. Из открытого Охотского моря.",
     basePrice: 4400,
     availableFor: ["delivery", "pickup"],
+    isSignature: true,
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Магадан", serving: "отварные" },
+    imageKey: "shrimp-70-90-boiled",
     modifierGroups: [
       {
         id: "mg_shrimp_weight",
@@ -1120,11 +1271,16 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_shrimp_medvedka_ice",
     category: "Креветки Магаданские / Медведка",
+    categorySlug: "shrimp",
+    subcategory: "on-ice",
     productFamily: "shrimp",
     name: "Креветки - медведка 70/90 на льду",
     description: "Шипастая медведка на льду для холодной подачи и щедрого стола.",
     basePrice: 6000,
     availableFor: ["delivery", "pickup"],
+    badge: "new",
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Магадан", serving: "на льду" },
+    imageKey: "shrimp-medvedka",
     modifierGroups: [
       {
         id: "mg_shrimp_medvedka_weight",
@@ -1151,11 +1307,16 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_shrimp_mix_on_ice",
     category: "Креветки Магаданские / Медведка",
+    categorySlug: "shrimp",
+    subcategory: "on-ice",
     productFamily: "shrimp",
     name: "MIX креветок на льду Магадан",
     description: "Смешанная ледяная подача с магаданской креветкой и медведкой.",
     basePrice: 6000,
     availableFor: ["delivery", "pickup"],
+    badge: "new",
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Магадан", serving: "на льду" },
+    imageKey: "shrimp-mix",
     modifierGroups: [
       {
         id: "mg_shrimp_mix_weight",
@@ -1182,11 +1343,15 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_shrimp_magadan_fried",
     category: "Креветки Магаданские / Медведка",
+    categorySlug: "shrimp",
+    subcategory: "fried",
     productFamily: "shrimp",
     name: "Магаданские креветки обжаренные в азиатском стиле",
     description: "Магаданские креветки 70/90, обжаренные с чесноком, сливочным маслом и зеленью.",
     basePrice: 3900,
     availableFor: ["delivery", "pickup"],
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Магадан", serving: "обжаренные" },
+    imageKey: "shrimp-70-90-fried",
     modifierGroups: [
       {
         id: "mg_shrimp_finish",
@@ -1213,11 +1378,16 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_shrimp_magadan_50_70_ice",
     category: "Креветки Магаданские / Медведка",
+    categorySlug: "shrimp",
+    subcategory: "on-ice",
     productFamily: "shrimp",
     name: "Магаданские креветки 50/70 на льду",
     description: "Более крупный калибр для холодной подачи и больших заказов.",
     basePrice: 4900,
     availableFor: ["delivery", "pickup"],
+    badge: "new",
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Магадан", serving: "на льду" },
+    imageKey: "shrimp-50-70-ice",
     modifierGroups: [
       {
         id: "mg_shrimp_50_70_weight",
@@ -1242,13 +1412,122 @@ export const menuItems: MenuItem[] = [
     ],
   },
   {
+    id: "item_shrimp_magadan_boiled_sauce",
+    category: "Креветки Магаданские / Медведка",
+    categorySlug: "shrimp",
+    subcategory: "boiled",
+    productFamily: "shrimp",
+    name: "Магаданские креветки 70/90 отварные с соусом",
+    description: "Тот же калибр 70/90, но уже с базовым соусом в цене — подача для быстрого заказа.",
+    basePrice: 3900,
+    availableFor: ["delivery", "pickup"],
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Магадан", serving: "отварные с соусом" },
+    imageKey: "shrimp-70-90-sauce",
+    modifierGroups: [
+      {
+        id: "mg_shrimp_boiled_sauce_weight",
+        label: "Вес",
+        kind: "core",
+        minSelections: 1,
+        maxSelections: 1,
+        options: [
+          { id: "shrimp_boiled_sauce_1kg", label: "1 кг", priceDelta: 0 },
+          { id: "shrimp_boiled_sauce_2kg", label: "2 кг", priceDelta: 3900 },
+        ],
+      },
+      {
+        id: "mg_shrimp_boiled_sauce_kind",
+        label: "Базовый соус",
+        kind: "core",
+        minSelections: 1,
+        maxSelections: 1,
+        helpText: "Один соус включён в цену.",
+        options: [
+          { id: "shrimp_default_sauce_cocktail", label: "Коктейльный", priceDelta: 0 },
+          { id: "shrimp_default_sauce_teriyaki", label: "Терияки", priceDelta: 0 },
+          { id: "shrimp_default_sauce_aioli", label: "Айоли", priceDelta: 0 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "item_shrimp_magadan_50_70_boiled",
+    category: "Креветки Магаданские / Медведка",
+    categorySlug: "shrimp",
+    subcategory: "boiled",
+    productFamily: "shrimp",
+    name: "Магаданские креветки 50/70 отварные",
+    description: "Крупный калибр отварных креветок для плотной подачи.",
+    basePrice: 4500,
+    availableFor: ["delivery", "pickup"],
+    badge: "new",
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Магадан", serving: "отварные" },
+    imageKey: "shrimp-50-70-boiled",
+    modifierGroups: [
+      {
+        id: "mg_shrimp_50_70_boiled_weight",
+        label: "Вес",
+        kind: "core",
+        minSelections: 1,
+        maxSelections: 1,
+        options: [
+          { id: "shrimp_50_70_boiled_1kg", label: "1 кг", priceDelta: 0 },
+          { id: "shrimp_50_70_boiled_2kg", label: "2 кг", priceDelta: 4500 },
+        ],
+      },
+      {
+        id: "mg_shrimp_50_70_boiled_sauce",
+        label: "Соусы к подаче",
+        kind: "secondary",
+        minSelections: 0,
+        maxSelections: 2,
+        helpText: "По желанию можно добавить один или два соуса.",
+        options: shrimpSauceOptions,
+      },
+    ],
+  },
+  {
+    id: "item_shrimp_tails_premium",
+    category: "Раковые шейки",
+    categorySlug: "shrimp-tails",
+    productFamily: "shrimp-tails",
+    name: "Раковые шейки премиум",
+    description: "Очищенные раковые шейки для плотного закусочного стола.",
+    editorialNote: "Ручная разделка. Отдаём охлаждёнными, без лишней заморозки.",
+    basePrice: 2000,
+    availableFor: ["delivery", "pickup"],
+    isSignature: true,
+    metadata: { weight: { value: 100, unit: "g" }, origin: "Ростов-Дон", serving: "очищенные" },
+    imageKey: "shrimp-tails",
+    modifierGroups: [
+      {
+        id: "mg_shrimp_tails_pack",
+        label: "Порция",
+        kind: "core",
+        minSelections: 1,
+        maxSelections: 1,
+        options: [
+          { id: "shrimp_tails_100g", label: "100 г", priceDelta: 0 },
+          { id: "shrimp_tails_200g", label: "200 г", priceDelta: 2000 },
+          { id: "shrimp_tails_500g", label: "500 г", priceDelta: 8000 },
+        ],
+      },
+    ],
+  },
+  {
     id: "item_king_crab",
     category: "Камчатский краб",
+    categorySlug: "crab",
     productFamily: "crab",
     name: "Фаланга камчатского краба L5",
     description: "Премиальная якорная линия из текущего меню, которая должна звучать спокойно и дорого.",
+    editorialNote:
+      "Самая крупная фаланга. Мяса до 90 процентов. Приходит живой, готовим под стол: в бульоне, на льду или живым.",
     basePrice: 10500,
     availableFor: ["delivery"],
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Камчатка", serving: "отварная" },
+    imageKey: "crab-phalanx",
+    upsellAccessories: crabUpsells,
     locationAvailability: [
       {
         locationId: "loc_lesnoy_01",
@@ -1273,9 +1552,11 @@ export const menuItems: MenuItem[] = [
         kind: "core",
         minSelections: 1,
         maxSelections: 1,
+        helpText: "Отварная в бульоне, охлаждённая на льду или живая — выбор за столом.",
         options: [
           { id: "crab_broth", label: "В бульоне", priceDelta: 0 },
-          { id: "crab_butter", label: "Со сливочным маслом", priceDelta: 0 },
+          { id: "crab_cold", label: "На льду", priceDelta: 0 },
+          { id: "crab_live", label: "Живым", priceDelta: 0 },
         ],
       },
     ],
@@ -1283,16 +1564,22 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_king_crab_whole",
     category: "Камчатский краб",
+    categorySlug: "crab",
     productFamily: "crab",
     name: "Камчатский краб целиком 2 кг",
     description: "Большая якорная позиция для тех, кто приходит в The Raki за редким и дорогим продуктом.",
+    editorialNote: "Для стола на шестерых и больше. Подача — целиком: в бульоне, на льду или живым.",
     basePrice: 16000,
     availableFor: ["delivery"],
-    locationAvailability: [
+    badge: "hit",
+    metadata: { weight: { value: 2, unit: "kg" }, origin: "Камчатка", serving: "целиком" },
+    imageKey: "crab-whole",
+    upsellAccessories: [crabUpsells[0]],
+    servicePointAvailability: [
       {
-        locationId: "loc_lesnoy_01",
-        state: "planned",
-        note: "Целый краб требует отдельного операционного подтверждения и пока остаётся плановой линией.",
+        servicePointId: "sp_lesnoy_dispatch_01",
+        state: "available",
+        note: "Целый краб доступен к доставке с активной кухни — подтверждается звонком.",
       },
     ],
     modifierGroups: [
@@ -1302,9 +1589,11 @@ export const menuItems: MenuItem[] = [
         kind: "core",
         minSelections: 1,
         maxSelections: 1,
+        helpText: "Отварная в бульоне, охлаждённая на льду или живая — выбор за столом.",
         options: [
           { id: "crab_whole_broth", label: "В бульоне", priceDelta: 0 },
           { id: "crab_whole_cold", label: "На льду", priceDelta: 0 },
+          { id: "crab_whole_live", label: "Живым", priceDelta: 0 },
         ],
       },
     ],
@@ -1312,11 +1601,15 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_mussels_blue_cheese",
     category: "Мидии",
+    categorySlug: "mussels",
     productFamily: "mussels",
     name: "Мидии в соусе Блю Чиз / 1 кг",
-      description: "Реальная соседняя линия меню, которая показывает ресторанную ширину каталога рядом с главной раковой линией.",
-      basePrice: 3000,
-      availableFor: ["delivery", "pickup"],
+    description: "Реальная соседняя линия меню, которая показывает ресторанную ширину каталога рядом с главной раковой линией.",
+    basePrice: 3000,
+    availableFor: ["delivery", "pickup"],
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Мурманск", serving: "горячо" },
+    imageKey: "mussels-blue-cheese",
+    bundledAccessories: [breadToastAccessory],
     modifierGroups: [
       {
         id: "mg_mussels_weight",
@@ -1334,11 +1627,15 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_mussels_tomato_greens",
     category: "Мидии",
+    categorySlug: "mussels",
     productFamily: "mussels",
     name: "Мидии в соусе Томат — Зелень / 1 кг",
     description: "Более яркая томатная линия для гостей, которым нужна тёплая гастрономическая подача.",
     basePrice: 3000,
     availableFor: ["delivery", "pickup"],
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Мурманск", serving: "горячо" },
+    imageKey: "mussels-tomato-greens",
+    bundledAccessories: [breadToastAccessory],
     modifierGroups: [
       {
         id: "mg_mussels_tomato_weight",
@@ -1356,11 +1653,16 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_mussels_pesto",
     category: "Мидии",
+    categorySlug: "mussels",
     productFamily: "mussels",
     name: "Мидии в соусе Песто / 1 кг",
     description: "Зелёная линия мидий для тех, кто ищет более мягкую и свежую подачу.",
     basePrice: 3000,
     availableFor: ["delivery", "pickup"],
+    isSignature: true,
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Мурманск", serving: "горячо" },
+    imageKey: "mussels-pesto",
+    bundledAccessories: [breadToastAccessory],
     modifierGroups: [
       {
         id: "mg_mussels_pesto_weight",
@@ -1378,11 +1680,15 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_mussels_tom_yam",
     category: "Мидии",
+    categorySlug: "mussels",
     productFamily: "mussels",
     name: "Мидии в соусе Том Ям / 1 кг",
     description: "Острый вариант мидий для тех, кто хочет более яркую и пряную подачу.",
     basePrice: 3000,
     availableFor: ["delivery", "pickup"],
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Мурманск", serving: "остро, горячо" },
+    imageKey: "mussels-tom-yam",
+    bundledAccessories: [breadToastAccessory],
     modifierGroups: [
       {
         id: "mg_mussels_tom_yam_weight",
@@ -1399,12 +1705,16 @@ export const menuItems: MenuItem[] = [
   },
   {
     id: "item_vongole_arabiata",
-    category: "Мидии",
+    category: "Вонголе",
+    categorySlug: "vongole",
     productFamily: "mussels",
     name: "Вонголе в соусе Арабьята / 1 кг",
     description: "Лёгкая и более средиземноморская ветка внутри мидийной линии.",
     basePrice: 2400,
     availableFor: ["delivery", "pickup"],
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Средиземноморье", serving: "остро, горячо" },
+    imageKey: "vongole-arrabiata",
+    bundledAccessories: [breadToastAccessory],
     modifierGroups: [
       {
         id: "mg_vongole_arabiata_weight",
@@ -1421,12 +1731,16 @@ export const menuItems: MenuItem[] = [
   },
   {
     id: "item_vongole_creamy",
-    category: "Мидии",
+    category: "Вонголе",
+    categorySlug: "vongole",
     productFamily: "mussels",
     name: "Вонголе в сливочно-сырном соусе / 1 кг",
     description: "Более мягкая кремовая линия для спокойного ресторанного заказа.",
     basePrice: 2400,
     availableFor: ["delivery", "pickup"],
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Средиземноморье", serving: "горячо" },
+    imageKey: "vongole-creamy",
+    bundledAccessories: [breadToastAccessory],
     modifierGroups: [
       {
         id: "mg_vongole_creamy_weight",
@@ -1443,12 +1757,16 @@ export const menuItems: MenuItem[] = [
   },
   {
     id: "item_vongole_pesto",
-    category: "Мидии",
+    category: "Вонголе",
+    categorySlug: "vongole",
     productFamily: "mussels",
     name: "Вонголе в соусе Песто / 1 кг",
     description: "Свежая зелёная ветка внутри мидийной карты для более лёгкой подачи.",
     basePrice: 2400,
     availableFor: ["delivery", "pickup"],
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Средиземноморье", serving: "горячо" },
+    imageKey: "vongole-pesto",
+    bundledAccessories: [breadToastAccessory],
     modifierGroups: [
       {
         id: "mg_vongole_pesto_weight",
@@ -1466,11 +1784,14 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_caviar_red",
     category: "Икра",
+    categorySlug: "caviar",
     productFamily: "caviar",
     name: "Икра красная Горбуши / 250 гр",
     description: "Красная икра как деликатесная линия рядом с крабом и раками.",
     basePrice: 3500,
     availableFor: ["delivery", "pickup"],
+    metadata: { weight: { value: 250, unit: "g" }, origin: "Сахалин", serving: "охлаждённая" },
+    imageKey: "caviar-red",
     modifierGroups: [
       {
         id: "mg_caviar_pack",
@@ -1488,11 +1809,14 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_caviar_black",
     category: "Икра",
+    categorySlug: "caviar",
     productFamily: "caviar",
     name: "Икра черная 250 зернистая русского осетра пластик",
     description: "Тихая чёрная линия для дорогого деликатесного заказа.",
     basePrice: 15000,
     availableFor: ["delivery", "pickup"],
+    metadata: { weight: { value: 250, unit: "g" }, origin: "Русский осётр", serving: "охлаждённая" },
+    imageKey: "caviar-black",
     modifierGroups: [
       {
         id: "mg_black_caviar_pack",
@@ -1510,11 +1834,14 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_dessert_cherry",
     category: "Десерты",
+    categorySlug: "desserts",
     productFamily: "dessert",
     name: "Вишня в молочном шоколаде",
     description: "Небольшой сладкий финал, который не спорит с главным продуктом.",
     basePrice: 1500,
     availableFor: ["delivery", "pickup"],
+    metadata: { weight: { value: 130, unit: "g" }, serving: "комнатная" },
+    imageKey: "dessert-cherry",
     modifierGroups: [
       {
         id: "mg_dessert_cherry_pack",
@@ -1531,11 +1858,14 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_dessert_raspberry",
     category: "Десерты",
+    categorySlug: "desserts",
     productFamily: "dessert",
     name: "Малина в молочном шоколаде",
     description: "Сладкая линия для тех, кто хочет закончить заказ мягко и аккуратно.",
     basePrice: 1500,
     availableFor: ["delivery", "pickup"],
+    metadata: { weight: { value: 130, unit: "g" }, serving: "комнатная" },
+    imageKey: "dessert-raspberry",
     modifierGroups: [
       {
         id: "mg_dessert_raspberry_pack",
@@ -1552,11 +1882,15 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_drink_borjomi",
     category: "Напитки",
+    categorySlug: "drinks",
+    subcategory: "non-alcoholic",
     productFamily: "drink",
     name: "Боржоми",
     description: "Спокойное сопровождение к заказу без лишнего внимания к себе.",
     basePrice: 250,
     availableFor: ["delivery", "pickup"],
+    metadata: { weight: { value: 500, unit: "g" }, origin: "Грузия", serving: "охлаждённая" },
+    imageKey: "drink-borjomi",
     modifierGroups: [
       {
         id: "mg_drink_volume",
@@ -1574,11 +1908,15 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_drink_yoga_cherry",
     category: "Напитки",
+    categorySlug: "drinks",
+    subcategory: "non-alcoholic",
     productFamily: "drink",
     name: "Сок YOGA Вишня 0,2",
     description: "Спокойное сопровождение для заказа, которое не спорит за внимание с главным продуктом.",
     basePrice: 490,
     availableFor: ["delivery", "pickup"],
+    metadata: { weight: { value: 200, unit: "g" }, origin: "Италия", serving: "охлаждённый" },
+    imageKey: "drink-yoga-cherry",
     modifierGroups: [
       {
         id: "mg_yoga_volume",
@@ -1596,11 +1934,14 @@ export const menuItems: MenuItem[] = [
   {
     id: "item_gift_card",
     category: "Подарки",
+    categorySlug: "gifts",
     productFamily: "gift",
     name: "Подарочная карта",
     description: "Подарочная линия, которая остаётся в витрине как жест и повод, не смещая фокус с главного заказа.",
+    editorialNote: "На любую сумму от 3 000 ₽. Вручается в конверте при доставке.",
     basePrice: 5000,
     availableFor: ["delivery"],
+    imageKey: "gift-card",
     modifierGroups: [
       {
         id: "mg_gift_value",
@@ -1717,37 +2058,45 @@ export function getProductCommercialTruth(item: MenuItem, referenceDate = new Da
   };
 }
 
+const menuItemsById = new Map(menuItems.map((item) => [item.id, item]));
+const legalEntitiesById = new Map(legalEntities.map((entity) => [entity.id, entity]));
+const locationsById = new Map(locations.map((location) => [location.id, location]));
+const servicePointsById = new Map(servicePoints.map((point) => [point.id, point]));
+const zonesById = new Map(zones.map((zone) => [zone.id, zone]));
+
 export function getMenuItem(productId: string) {
-  return menuItems.find((item) => item.id === productId);
+  return menuItemsById.get(productId);
 }
 
 export function getLegalEntity(legalEntityId: string | null) {
   if (!legalEntityId) return undefined;
-  return legalEntities.find((legalEntity) => legalEntity.id === legalEntityId);
+  return legalEntitiesById.get(legalEntityId);
 }
 
 export function getLocation(locationId: string | null) {
   if (!locationId) return undefined;
-  return locations.find((location) => location.id === locationId);
+  return locationsById.get(locationId);
 }
 
 export function getServicePoint(servicePointId: string | null) {
   if (!servicePointId) return undefined;
-  return servicePoints.find((servicePoint) => servicePoint.id === servicePointId);
+  return servicePointsById.get(servicePointId);
 }
 
 export function getZone(zoneId: string | null) {
   if (!zoneId) return undefined;
-  return zones.find((zone) => zone.id === zoneId);
+  return zonesById.get(zoneId);
 }
 
 function compareClockLabels(left: string, right: string) {
   return left.localeCompare(right);
 }
 
+const timingSlotsById = new Map(timingSlots.map((slot) => [slot.id, slot]));
+
 export function getTimingSlot(slotId: string | null | undefined) {
   if (!slotId) return undefined;
-  return timingSlots.find((slot) => slot.id === slotId);
+  return timingSlotsById.get(slotId);
 }
 
 export function getTimingSlotPromiseLabel(slot: TimingSlot | null | undefined) {
@@ -2247,9 +2596,13 @@ export function getRoutingAssignmentDisplay(input: {
   };
 }
 
+const deliveryScenariosById = new Map(
+  deliveryScenarios.map((scenario) => [scenario.id, scenario]),
+);
+
 export function getDeliveryScenario(scenarioId: string | null | undefined) {
   if (!scenarioId) return undefined;
-  return deliveryScenarios.find((scenario) => scenario.id === scenarioId);
+  return deliveryScenariosById.get(scenarioId);
 }
 
 export function findDeliveryScenarioForDraftContext(input: {
