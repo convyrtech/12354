@@ -16,6 +16,7 @@ import {
 } from "framer-motion";
 import { useMatchMedia } from "@/hooks/use-match-media";
 import { MENU_ENTRY, MENU_ENTRY_INFO } from "@/lib/homepage-data";
+import { getEffectiveViewportHeight } from "@/lib/viewport";
 
 // ────────────────────────────────────────────────────────────────
 // CTA finale — a cream "card" sitting on the dark body, carrying
@@ -79,7 +80,10 @@ export function MenuEntry() {
       const el = sectionRef.current;
       if (el) {
         const rect = el.getBoundingClientRect();
-        const vh = window.innerHeight || 1;
+        // Capped vh so the z-depth entrance (scale/opacity/blur/y) reaches
+        // settled state at the same scroll distance on 1080 and 1200 — raw
+        // innerHeight made the CTA card read as a compressed strip at 1200.
+        const vh = getEffectiveViewportHeight() || 1;
         const p = Math.max(0, Math.min(1, (vh - rect.top) / vh));
         scrollYProgress.set(p);
       }
@@ -175,6 +179,84 @@ export function MenuEntry() {
     return () => clearTimeout(tid);
   }, [useMotion, underlineDrawn, triggerWindBurst]);
 
+  // ───────────── Magnetic hover on the «К меню» pill.
+  // When the cursor enters a 160px radius around the pill's visual
+  // center, the pill is pulled toward it at ~35% strength with
+  // quadratic falloff — strong near center, gentle at the activation
+  // edge, zero outside. Spring-smoothed so it reads as a weighty
+  // object leaning toward the cursor, not a jittery tracker.
+  // Desktop + pointer-fine only; reduced-motion skips entirely.
+  const pillMagneticRef = useRef<HTMLDivElement | null>(null);
+  const pointerFine = useMatchMedia("(pointer: fine)");
+  const magneticX = useMotionValue(0);
+  const magneticY = useMotionValue(0);
+  const magneticSpringX = useSpring(magneticX, {
+    stiffness: 220,
+    damping: 22,
+    mass: 0.6,
+  });
+  const magneticSpringY = useSpring(magneticY, {
+    stiffness: 220,
+    damping: 22,
+    mass: 0.6,
+  });
+
+  useEffect(() => {
+    if (!useMotion || !pointerFine) return;
+    const el = pillMagneticRef.current;
+    const section = sectionRef.current;
+    if (!el || !section) return;
+
+    const RADIUS = 160;
+    const STRENGTH = 0.35;
+
+    const onMove = (e: MouseEvent) => {
+      const r = el.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const dx = e.clientX - cx;
+      const dy = e.clientY - cy;
+      const d = Math.hypot(dx, dy);
+      if (d > RADIUS) {
+        magneticX.set(0);
+        magneticY.set(0);
+        return;
+      }
+      // Quadratic falloff: 1 at center, 0 at edge, smooth in between.
+      const falloff = 1 - (d / RADIUS) ** 2;
+      const pull = STRENGTH * falloff;
+      magneticX.set(dx * pull);
+      magneticY.set(dy * pull);
+    };
+
+    // Gate the global mousemove listener on CTA visibility — without this
+    // every mouse twitch during hero/aquarium/brand-story scroll (where the
+    // pill sits 3000-6000px below the viewport) invokes getBoundingClientRect
+    // for nothing. Mirrors the pattern in aquarium-to-table.tsx:358-380.
+    let attached = false;
+    const attach = () => {
+      if (attached) return;
+      attached = true;
+      window.addEventListener("mousemove", onMove, { passive: true });
+    };
+    const detach = () => {
+      if (!attached) return;
+      attached = false;
+      window.removeEventListener("mousemove", onMove);
+      magneticX.set(0);
+      magneticY.set(0);
+    };
+    const io = new IntersectionObserver(
+      ([entry]) => (entry.isIntersecting ? attach() : detach()),
+      { rootMargin: "200px" },
+    );
+    io.observe(section);
+    return () => {
+      io.disconnect();
+      detach();
+    };
+  }, [useMotion, pointerFine, magneticX, magneticY]);
+
   const sectionStyle = useMotion
     ? { scale, opacity, filter, y, scrollMarginTop: 120 }
     : { scrollMarginTop: 120 };
@@ -227,15 +309,20 @@ export function MenuEntry() {
           </div>
 
           <div className="menu-cta-block__cta-col">
-            <Link
-              href={MENU_ENTRY.cta.href}
-              className="cta cta--editorial menu-cta-block__cta"
+            <motion.div
+              ref={pillMagneticRef}
+              style={{ x: magneticSpringX, y: magneticSpringY }}
             >
-              <span>{MENU_ENTRY.cta.label}</span>
-              <span className="menu-cta-block__cta-arrow" aria-hidden="true">
-                →
-              </span>
-            </Link>
+              <Link
+                href={MENU_ENTRY.cta.href}
+                className="cta cta--editorial menu-cta-block__cta"
+              >
+                <span>{MENU_ENTRY.cta.label}</span>
+                <span className="menu-cta-block__cta-arrow" aria-hidden="true">
+                  →
+                </span>
+              </Link>
+            </motion.div>
           </div>
         </div>
 

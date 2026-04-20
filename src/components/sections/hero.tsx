@@ -42,6 +42,7 @@ const RIPPLE_DURATION = 1.2;
 export function Hero() {
   const prefersReduced = useReducedMotion();
 
+  const titleRef = useRef<HTMLHeadingElement | null>(null);
   const line2Ref = useRef<HTMLSpanElement | null>(null);
   const emRef = useRef<HTMLElement | null>(null);
   const rippleRef = useRef<HeroLineRippleHandle>(null);
@@ -121,6 +122,7 @@ export function Hero() {
       <div className="hero-poster">
         <div className="hero-title-stage">
           <h1
+            ref={titleRef}
             className="hero-title"
             aria-label="Вкус, после которого всё остальное звучит тише."
           >
@@ -191,13 +193,13 @@ export function Hero() {
 
       <HeroLineRipple
         ref={rippleRef}
-        targetRef={line2Ref}
+        targetRef={titleRef}
         centerRef={emRef}
         filterId="hero-ripple-line2"
         duration={RIPPLE_DURATION * 1000}
         waveWidth={180}
         amplitude={48}
-        maxRadiusFactor={0.7}
+        maxRadiusFactor={1.0}
       />
     </section>
   );

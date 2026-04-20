@@ -9,6 +9,7 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
+import { getEffectiveViewportHeight, vhCapped } from "@/lib/viewport";
 
 // ---------------------------------------------------------------------------
 // Content — identical between cinematic and stacked fallback.
@@ -114,7 +115,10 @@ const sectionCinematicStyle: CSSProperties = {
   // the viewport is just dark pin bg. Pulling this section up by -100vh
   // means our own sticky container engages exactly as the upstream pin
   // unsticks, eliminating the empty-dark gap.
-  height: `${SECTION_HEIGHT_VH}vh`,
+  // Capped via --viewport-cap (1080) so scroll distance through this section
+  // stays identical on 1080 / 1200 / 1440 — otherwise a 1200 user would
+  // scroll ~22% further through the cinematic flow than a 1080 user.
+  height: `min(${SECTION_HEIGHT_VH}vh, calc(var(--viewport-cap) * ${SECTION_HEIGHT_VH / 100}))`,
   // No explicit bg — body dark shows through before sticky engages (so this
   // section's dark surface doesn't clip the bottom of the cream-pause pin
   // during the overlap zone). Once sticky engages, aquarium pin is dark too
@@ -135,6 +139,7 @@ const stickyContainerStyle: CSSProperties = {
   top: 0,
   height: "100vh",
   minHeight: "720px",
+  maxHeight: "var(--viewport-cap)",
   overflow: "hidden",
 };
 
@@ -149,7 +154,7 @@ const flowContainerStyle: CSSProperties = {
 
 const blockBaseCss = (topVh: number): CSSProperties => ({
   position: "absolute",
-  top: `${topVh}vh`,
+  top: vhCapped(topVh),
   left: 0,
   right: 0,
   margin: 0,
@@ -308,7 +313,10 @@ function Cinematic() {
 
     const measure = () => {
       const section = sectionRef.current;
-      const vh = window.innerHeight;
+      // Capped vh keeps proximity scoring and flow translate locked to the
+      // 1080 reference — without it, tall viewports light up two blocks at
+      // once because the off-center proximity scores compress.
+      const vh = getEffectiveViewportHeight();
 
       if (section) {
         const rect = section.getBoundingClientRect();
@@ -330,8 +338,9 @@ function Cinematic() {
   }, [scrollYProgress, headingProx, bodyProx, closingProx]);
 
   const smoothProgress = useSpring(scrollYProgress, SPRING);
-  const flowY = useTransform(smoothProgress, (p) =>
-    typeof window === "undefined" ? 0 : -(FLOW_TRANSLATE_VH / 100) * window.innerHeight * p,
+  const flowY = useTransform(
+    smoothProgress,
+    (p) => -(FLOW_TRANSLATE_VH / 100) * getEffectiveViewportHeight() * p,
   );
 
   const heading = useProximityMotion(headingProx);

@@ -92,6 +92,12 @@
   --duration-medium: 360ms;
   --duration-long: 860ms;
 
+  /* Logical viewport-height cap for cinematic homepage sections.
+     Mirrored by EFFECTIVE_VIEWPORT_CAP_PX in src/lib/viewport.ts —
+     CSS max-height, JS proximity/progress math, and sticky-pin unstick
+     point all resolve against this one number. Change both sides or neither. */
+  --viewport-cap: 1080px;
+
   /* ------------------------------------------------------------
      Dual-theme tokens: home stays dark (existing --bg/--text-primary),
      internal cream-editorial pages use the *-on-cream set.
@@ -1833,6 +1839,7 @@ body[data-route-mode="demo"] .home-panel {
 .hero-stage {
   height: 100svh;
   min-height: 820px;
+  max-height: var(--viewport-cap);
   isolation: isolate;
 }
 
@@ -2422,6 +2429,11 @@ body[data-route-mode="demo"] .home-panel {
 body[data-menu-open="true"] .perspective-wrapper {
   z-index: 36;
   transition-delay: 0s;
+  /* Wrapper itself spans 100vw and now sits ABOVE the menu panel (z=35),
+     so without this the wrapper's own invisible box would intercept every
+     click meant for menu items. Cascades pointer-events: none to the
+     whole home tree — visual layering stays exactly as before. */
+  pointer-events: none;
 }
 
 .home-main {
@@ -2451,6 +2463,11 @@ body[data-menu-open="true"] .home-main {
   transform: translate(9vw, var(--menu-scroll-y, 0px)) rotate(-8deg) translateX(-200px);
   background: var(--color-bg-dark);
   z-index: 36;
+  /* Visual stays on top (z=36) so the tilted card reads above the panel
+     during open + close animations — but click-through is essential: the
+     rotated card's invisible DOM box still overlaps the panel's left edge,
+     which would otherwise intercept every click meant for the menu links. */
+  pointer-events: none;
   /* Zero the z-index delay when menu is open — elevating happens instantly
      so the card is above the panel as the open animation starts.
      (Base rule holds the 700ms close-side delay.) */
@@ -3020,7 +3037,10 @@ body[data-menu-open="true"] .home-menu-trigger:focus-visible {
      the section length can safely go below the 300vh baseline now. */
 .aquarium-to-table {
   position: relative;
-  height: 280vh;
+  /* Capped so scroll distance stays stable once viewport height crosses
+     --viewport-cap (1080). Without the cap, a 1920×1200 user would scroll
+     ~22% longer through this section than a 1080 user. */
+  height: min(280vh, calc(var(--viewport-cap) * 2.8));
   isolation: isolate;
 }
 
@@ -3029,6 +3049,7 @@ body[data-menu-open="true"] .home-menu-trigger:focus-visible {
   top: 0;
   height: 100vh;
   min-height: 820px;
+  max-height: var(--viewport-cap);
   perspective: 1400px;
   perspective-origin: top center;
   overflow: clip;

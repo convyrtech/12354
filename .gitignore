@@ -64,3 +64,5 @@ raki-*.jpg
 .vscode/
 .idea/
 *.swp
+
+.vercel
