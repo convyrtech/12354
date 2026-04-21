@@ -24,6 +24,11 @@ describe("getMenuImage", () => {
     const image = getMenuImage("raki-boiled", "Custom alt");
     expect(image.alt).toBe("Custom alt");
   });
+
+  it("resolves separate caviar image keys to dedicated local assets", () => {
+    expect(getMenuImage("caviar-red").src).toBe("/images/menu/categories/caviar-red.jpg");
+    expect(getMenuImage("caviar-black").src).toBe("/images/menu/categories/caviar-black.jpg");
+  });
 });
 
 describe("getProductFamilyImage", () => {
@@ -35,5 +40,10 @@ describe("getProductFamilyImage", () => {
   it("falls back to default for unknown family", () => {
     const src = getProductFamilyImage("something-unknown");
     expect(src).toContain("tildacdn.com");
+  });
+
+  it("maps shrimp-tails product family to its dedicated local image", () => {
+    const src = getProductFamilyImage("shrimp-tails");
+    expect(src).toBe("/images/menu/categories/shrimp-tails.jpg");
   });
 });

@@ -6,10 +6,8 @@ export type MenuImage = {
   blurDataURL?: string;
 };
 
-// Tilda CDN placeholders — real food photography pending (TODOS.md). Aspect
-// ratios encoded in width/height so next/image reserves correct space and
-// CLS stays < 0.1. Actual dimensions from the source assets.
-
+// Width/height stay explicit so next/image reserves the final slot and avoids
+// catalog CLS while placeholder families are replaced one-by-one.
 const familyImages: Record<string, MenuImage> = {
   boiled: {
     src: "https://static.tildacdn.com/tild6535-6639-4530-b639-626339396365/_.jpg",
@@ -35,6 +33,12 @@ const familyImages: Record<string, MenuImage> = {
     height: 1000,
     alt: "Магаданские креветки",
   },
+  shrimpTails: {
+    src: "/images/menu/categories/shrimp-tails.jpg",
+    width: 1000,
+    height: 1000,
+    alt: "Раковые шейки",
+  },
   crab: {
     src: "https://static.tildacdn.com/tild3632-6665-4833-b135-373864636134/_.jpg",
     width: 960,
@@ -48,28 +52,37 @@ const familyImages: Record<string, MenuImage> = {
     alt: "Мидии",
   },
   caviar: {
-    src: "https://static.tildacdn.com/tild3335-3565-4261-a434-613363333865/_.jpg",
+    src: "/images/menu/categories/caviar-red.jpg",
     width: 1000,
     height: 1000,
     alt: "Икра",
   },
-  // Dessert photography pending (TODOS.md P2). Neutral cream SVG beats
-  // the caviar photo as a placeholder — a red-caviar dish paired with
-  // "Вишня в молочном шоколаде" reads as a misconfigured catalog.
+  caviarRed: {
+    src: "/images/menu/categories/caviar-red.jpg",
+    width: 1000,
+    height: 1000,
+    alt: "Красная икра",
+  },
+  caviarBlack: {
+    src: "/images/menu/categories/caviar-black.jpg",
+    width: 1000,
+    height: 1000,
+    alt: "Чёрная икра",
+  },
   dessert: {
-    src: "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201000%201000%22%3E%3Crect%20width%3D%221000%22%20height%3D%221000%22%20fill%3D%22%23f2e8d5%22%2F%3E%3Ctext%20x%3D%22500%22%20y%3D%22500%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20font-family%3D%22Cormorant%20Garamond%2C%20serif%22%20font-style%3D%22italic%22%20font-size%3D%2264%22%20fill%3D%22%23101c1e%22%20fill-opacity%3D%220.28%22%3E%D0%B4%D0%B5%D1%81%D0%B5%D1%80%D1%82%3C%2Ftext%3E%3C%2Fsvg%3E",
+    src: "/images/menu/categories/dessert-cherry.jpg",
     width: 1000,
     height: 1000,
     alt: "Десерт",
   },
   drink: {
-    src: "https://static.tildacdn.com/tild3933-3335-4264-b430-396365373132/photo.jpg",
+    src: "/images/menu/categories/drink-mineral-water.jpg",
     width: 800,
     height: 1000,
     alt: "Напиток",
   },
   gift: {
-    src: "https://static.tildacdn.com/tild3937-6265-4131-b236-386265306563/_.jpg",
+    src: "/images/menu/categories/gift-envelope.jpg",
     width: 1200,
     height: 900,
     alt: "Подарочный набор",
@@ -78,9 +91,13 @@ const familyImages: Record<string, MenuImage> = {
 
 const DEFAULT_IMAGE = familyImages.boiled;
 
-// imageKey → family fallback: specific keys resolve to family-level image
-// until real food photography lands. Keep imageKey stable in fixtures so the
-// component surface doesn't change when the real asset drops in.
+const productFamilyToImageFamily: Record<string, string> = {
+  "shrimp-tails": "shrimpTails",
+};
+
+// imageKey -> family fallback: specific keys resolve to family-level image
+// until dedicated photography lands. Keep imageKey stable in fixtures so the
+// component surface does not change when the asset set expands.
 const imageKeyToFamily: Record<string, string> = {
   "raki-boiled": "boiled",
   "raki-fried": "fried",
@@ -92,7 +109,7 @@ const imageKeyToFamily: Record<string, string> = {
   "shrimp-50-70-ice": "shrimp",
   "shrimp-medvedka": "shrimp",
   "shrimp-mix": "shrimp",
-  "shrimp-tails": "shrimp",
+  "shrimp-tails": "shrimpTails",
   "crab-phalanx": "crab",
   "crab-whole": "crab",
   "mussels-blue-cheese": "mussels",
@@ -102,8 +119,8 @@ const imageKeyToFamily: Record<string, string> = {
   "vongole-arrabiata": "mussels",
   "vongole-creamy": "mussels",
   "vongole-pesto": "mussels",
-  "caviar-red": "caviar",
-  "caviar-black": "caviar",
+  "caviar-red": "caviarRed",
+  "caviar-black": "caviarBlack",
   "dessert-cherry": "dessert",
   "dessert-raspberry": "dessert",
   "drink-borjomi": "drink",
@@ -119,5 +136,6 @@ export function getMenuImage(imageKey: string | undefined, alt?: string): MenuIm
 }
 
 export function getProductFamilyImage(family: string): string {
-  return (familyImages[family] ?? DEFAULT_IMAGE).src;
+  const resolvedFamily = productFamilyToImageFamily[family] ?? family;
+  return (familyImages[resolvedFamily] ?? DEFAULT_IMAGE).src;
 }
