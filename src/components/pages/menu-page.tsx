@@ -119,8 +119,8 @@ export function MenuPage() {
       <DemoSeedHandler />
       <MenuHero />
       <div className="menu-catalog">
-        <CategoryChips chips={chips} />
         <RecommendationTriptych items={recommendations} lookup={lookupEntry} />
+        <CategoryChips chips={chips} />
         <RakiSection
           boiled={byCategory.rakiBoiled}
           live={byCategory.rakiLive}
