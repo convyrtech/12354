@@ -6,7 +6,6 @@ import { CompactCard } from "@/components/menu/cards/compact-card";
 
 type Props = {
   entries: MenuSnapshotItem[];
-  onAdd?: (entry: MenuSnapshotItem) => void;
 };
 
 type DrinksSub = { title: string; items: MenuSnapshotItem[] };
@@ -19,25 +18,30 @@ function bucketBySubcategory(entries: MenuSnapshotItem[]): DrinksSub[] {
   ];
   for (const entry of entries) {
     const idx =
-      entry.item.subcategory === "beer" ? 1 : entry.item.subcategory === "wine" ? 2 : 0;
+      entry.item.subcategory === "beer"
+        ? 1
+        : entry.item.subcategory === "wine"
+          ? 2
+          : 0;
     groups[idx].items.push(entry);
   }
   return groups;
 }
 
 // Beer and wine slots stay architecturally ready so fixtures can add items
-// without structural changes in Phase 3.
-export function DrinksSection({ entries, onAdd }: Props) {
+// without structural changes.
+export function DrinksSection({ entries }: Props) {
   if (entries.length === 0) return null;
   const [main, ...subGroups] = bucketBySubcategory(entries);
-  if (main.items.length === 0 && subGroups.every((g) => g.items.length === 0)) return null;
+  if (main.items.length === 0 && subGroups.every((g) => g.items.length === 0))
+    return null;
 
   return (
     <SectionShell id="drinks" title={main.title}>
       {main.items.length > 0 ? (
         <div className="menu-section__grid-2">
           {main.items.map((entry) => (
-            <CompactCard key={entry.item.id} entry={entry} variant="small" onAdd={onAdd} />
+            <CompactCard key={entry.item.id} entry={entry} variant="small" />
           ))}
         </div>
       ) : null}
@@ -49,7 +53,7 @@ export function DrinksSection({ entries, onAdd }: Props) {
             <h3 className="menu-section__subheadline">{group.title}</h3>
             <div className="menu-section__grid-2">
               {group.items.map((entry) => (
-                <CompactCard key={entry.item.id} entry={entry} variant="small" onAdd={onAdd} />
+                <CompactCard key={entry.item.id} entry={entry} variant="small" />
               ))}
             </div>
           </div>

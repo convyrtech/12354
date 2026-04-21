@@ -8,6 +8,10 @@ import {
   getDynamicDeliveryEtaLabel,
   getZone,
 } from "@/lib/fixtures";
+import {
+  computeBundledSubItems,
+  type BundledSubItem,
+} from "@/lib/menu/bundled-accessories";
 
 export type DraftCartView = {
   items: DraftLineItem[];
@@ -25,11 +29,17 @@ export type DraftCartView = {
   etaLabel: string | null;
   revalidationIssues: ReturnType<typeof getDraftLineRevalidationIssues>;
   itemCount: number;
+  bundledSubItems: Record<number, BundledSubItem[]>;
 };
 
 export function getDraftCartView(draft: OrderDraftContext): DraftCartView {
   const subtotal = draft.lineItems.reduce((sum, lineItem) => sum + lineItem.totalPrice, 0);
   const lineCount = draft.lineItems.length;
+  const bundledSubItems: Record<number, BundledSubItem[]> = {};
+  for (let index = 0; index < draft.lineItems.length; index += 1) {
+    const subs = computeBundledSubItems(draft.lineItems[index]);
+    if (subs.length > 0) bundledSubItems[index] = subs;
+  }
   const fee =
     draft.fulfillmentMode === "delivery"
       ? (draft.liveDeliveryQuoteAmount ?? getZone(draft.zoneId)?.feeAmount ?? 0)
@@ -89,6 +99,7 @@ export function getDraftCartView(draft: OrderDraftContext): DraftCartView {
       servicePointId: draft.servicePointId,
     }),
     itemCount: lineCount,
+    bundledSubItems,
   };
 }
 

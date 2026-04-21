@@ -7,15 +7,16 @@ import { formatMoney } from "@/lib/fixtures";
 import { getMenuImage } from "@/lib/category-images";
 import { AddToCartLink } from "@/components/menu/shared/add-to-cart-link";
 import { StopListNote } from "@/components/menu/shared/stop-list-note";
+import { useAddToCart } from "@/components/menu/use-add-to-cart";
 
 type Props = {
   entry: MenuSnapshotItem;
   reasonText: string;
   priority?: boolean;
-  onAdd?: (entry: MenuSnapshotItem) => void;
 };
 
-export function MenuCardEditorial({ entry, reasonText, priority, onAdd }: Props) {
+export function MenuCardEditorial({ entry, reasonText, priority }: Props) {
+  const { addEntry } = useAddToCart();
   const isStopList = entry.state === "sold_out";
   const image = getMenuImage(entry.item.imageKey, entry.item.name);
 
@@ -33,7 +34,12 @@ export function MenuCardEditorial({ entry, reasonText, priority, onAdd }: Props)
           alt={image.alt}
           sizes="(max-width: 1023px) 92vw, 420px"
           priority={priority}
-          style={{ width: "100%", height: "auto", aspectRatio: "4 / 3", objectFit: "cover" }}
+          style={{
+            width: "100%",
+            height: "auto",
+            aspectRatio: "4 / 3",
+            objectFit: "cover",
+          }}
         />
       </Link>
       <div>
@@ -46,7 +52,7 @@ export function MenuCardEditorial({ entry, reasonText, priority, onAdd }: Props)
         {isStopList ? (
           <StopListNote />
         ) : (
-          <AddToCartLink onClick={() => onAdd?.(entry)} disabled={!onAdd}>
+          <AddToCartLink onClick={() => addEntry(entry)}>
             в корзину
           </AddToCartLink>
         )}

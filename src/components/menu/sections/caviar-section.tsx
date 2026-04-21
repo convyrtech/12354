@@ -6,17 +6,16 @@ import { CaviarCard } from "@/components/menu/cards/caviar-card";
 
 type Props = {
   entries: MenuSnapshotItem[];
-  onAdd?: (entry: MenuSnapshotItem) => void;
 };
 
-export function CaviarSection({ entries, onAdd }: Props) {
+export function CaviarSection({ entries }: Props) {
   if (entries.length === 0) return null;
 
   return (
     <SectionShell id="caviar" title="Икра." eyebrow="горбуша и осётр">
       <div className="menu-section__grid-2">
         {entries.map((entry) => (
-          <CaviarCard key={entry.item.id} entry={entry} onAdd={onAdd} />
+          <CaviarCard key={entry.item.id} entry={entry} />
         ))}
       </div>
     </SectionShell>

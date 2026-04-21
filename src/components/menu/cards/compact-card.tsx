@@ -8,13 +8,13 @@ import { getMenuImage } from "@/lib/category-images";
 import { AddToCartLink } from "@/components/menu/shared/add-to-cart-link";
 import { NewTag } from "@/components/menu/shared/new-tag";
 import { StopListNote } from "@/components/menu/shared/stop-list-note";
+import { useAddToCart } from "@/components/menu/use-add-to-cart";
 
 type Variant = "mussel" | "shrimp" | "small";
 
 type Props = {
   entry: MenuSnapshotItem;
   variant?: Variant;
-  onAdd?: (entry: MenuSnapshotItem) => void;
 };
 
 function formatMetadata(entry: MenuSnapshotItem): string {
@@ -33,7 +33,8 @@ function formatMetadata(entry: MenuSnapshotItem): string {
   return parts.join(" · ");
 }
 
-export function CompactCard({ entry, variant = "mussel", onAdd }: Props) {
+export function CompactCard({ entry, variant = "mussel" }: Props) {
+  const { addEntry } = useAddToCart();
   const isStopList = entry.state === "sold_out";
   const image = getMenuImage(entry.item.imageKey, entry.item.name);
   const meta = formatMetadata(entry);
@@ -78,7 +79,7 @@ export function CompactCard({ entry, variant = "mussel", onAdd }: Props) {
           {isStopList ? (
             <StopListNote />
           ) : (
-            <AddToCartLink onClick={() => onAdd?.(entry)} disabled={!onAdd}>
+            <AddToCartLink onClick={() => addEntry(entry)}>
               в корзину
             </AddToCartLink>
           )}

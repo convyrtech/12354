@@ -1213,11 +1213,11 @@ export const menuItems: MenuItem[] = [
       },
       {
         id: "mg_live_spice",
-        label: "Специи",
+        label: "Рецепт",
         kind: "core",
         minSelections: 1,
         maxSelections: 1,
-        helpText: "Специи кухня шлёт отдельной упаковкой. Классическая — базовая подача.",
+        helpText: "Рецепт подбирается по желанию. Классический — базовая подача.",
         options: liveSpicesOptions,
       },
       {

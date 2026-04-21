@@ -9,7 +9,6 @@ import {
   getMenuForCity,
 } from "@/lib/menu/menu-queries";
 import { MenuHero } from "@/components/menu/menu-hero";
-import { MenuFlip } from "@/components/menu/menu-flip";
 import {
   CategoryChips,
   type CategoryChip,
@@ -80,13 +79,10 @@ export function MenuPage() {
     return list;
   }, [byCategory]);
 
-  // Phase 2 skeleton: no onAdd is passed so card CTAs render disabled —
-  // a visible no-op is worse than a disabled-looking button. Phase 3 wires
-  // the real handler through context.
   return (
     <div className="menu-shell">
-      <MenuFlip hero={<MenuHero />} />
-      <div className="menu-catalog menu-catalog--overlap-pin">
+      <MenuHero />
+      <div className="menu-catalog">
         <CategoryChips chips={chips} />
         <RakiSection
           boiled={byCategory.rakiBoiled}

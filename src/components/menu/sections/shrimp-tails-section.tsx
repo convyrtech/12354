@@ -7,13 +7,14 @@ import { getMenuImage } from "@/lib/category-images";
 import { AddToCartLink } from "@/components/menu/shared/add-to-cart-link";
 import { SectionShell } from "@/components/menu/shared/section-shell";
 import { StopListNote } from "@/components/menu/shared/stop-list-note";
+import { useAddToCart } from "@/components/menu/use-add-to-cart";
 
 type Props = {
   entry: MenuSnapshotItem;
-  onAdd?: (entry: MenuSnapshotItem) => void;
 };
 
-export function ShrimpTailsSection({ entry, onAdd }: Props) {
+export function ShrimpTailsSection({ entry }: Props) {
+  const { addEntry } = useAddToCart();
   const image = getMenuImage(entry.item.imageKey, entry.item.name);
   const isStopList = entry.state === "sold_out";
 
@@ -32,7 +33,7 @@ export function ShrimpTailsSection({ entry, onAdd }: Props) {
             {isStopList ? (
               <StopListNote />
             ) : (
-              <AddToCartLink onClick={() => onAdd?.(entry)} disabled={!onAdd}>
+              <AddToCartLink onClick={() => addEntry(entry)}>
                 в корзину
               </AddToCartLink>
             )}

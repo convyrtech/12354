@@ -6,7 +6,6 @@ import { CompactCard } from "@/components/menu/cards/compact-card";
 
 type Props = {
   entries: MenuSnapshotItem[];
-  onAdd?: (entry: MenuSnapshotItem) => void;
 };
 
 type Group = { title: string; items: MenuSnapshotItem[] };
@@ -29,7 +28,7 @@ function bucketByPreparation(entries: MenuSnapshotItem[]): Group[] {
   return groups.filter((group) => group.items.length > 0);
 }
 
-export function ShrimpSection({ entries, onAdd }: Props) {
+export function ShrimpSection({ entries }: Props) {
   if (entries.length === 0) return null;
   const groups = bucketByPreparation(entries);
 
@@ -47,12 +46,7 @@ export function ShrimpSection({ entries, onAdd }: Props) {
           ) : null}
           <div className="menu-section__grid-3">
             {group.items.map((entry) => (
-              <CompactCard
-                key={entry.item.id}
-                entry={entry}
-                variant="shrimp"
-                onAdd={onAdd}
-              />
+              <CompactCard key={entry.item.id} entry={entry} variant="shrimp" />
             ))}
           </div>
         </div>

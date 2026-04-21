@@ -9,13 +9,14 @@ import { AddToCartLink } from "@/components/menu/shared/add-to-cart-link";
 import { NewTag } from "@/components/menu/shared/new-tag";
 import { SectionShell } from "@/components/menu/shared/section-shell";
 import { StopListNote } from "@/components/menu/shared/stop-list-note";
+import { useAddToCart } from "@/components/menu/use-add-to-cart";
 
 type Props = {
   entries: MenuSnapshotItem[];
-  onAdd?: (entry: MenuSnapshotItem) => void;
 };
 
-export function CrabSection({ entries, onAdd }: Props) {
+export function CrabSection({ entries }: Props) {
+  const { addEntry } = useAddToCart();
   if (entries.length === 0) return null;
 
   const lead = entries[0];
@@ -57,7 +58,7 @@ export function CrabSection({ entries, onAdd }: Props) {
                       {isStopList ? (
                         <StopListNote />
                       ) : (
-                        <AddToCartLink onClick={() => onAdd?.(entry)} disabled={!onAdd}>
+                        <AddToCartLink onClick={() => addEntry(entry)}>
                           в корзину
                         </AddToCartLink>
                       )}

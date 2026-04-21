@@ -3566,6 +3566,102 @@ body[data-menu-open="true"] .trusted-by {
   border-radius: 2px;
 }
 
+.menu-recipe-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.menu-recipe-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 28, 30, 0.1);
+  background: rgba(255, 255, 255, 0.35);
+  color: var(--text-on-cream);
+  font-family: var(--font-sans), sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 160ms var(--ease-out), border-color 160ms var(--ease-out),
+    color 160ms var(--ease-out);
+}
+
+.menu-recipe-chip:hover {
+  border-color: rgba(143, 179, 176, 0.45);
+}
+
+.menu-recipe-chip[data-active] {
+  background: var(--accent-cream);
+  border-color: var(--accent-cream);
+  color: var(--color-bg-dark);
+}
+
+.menu-recipe-chip__label {
+  line-height: 1.15;
+}
+
+.menu-recipe-chip__delta {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.78;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.menu-recipe-chip__delta[data-included] {
+  opacity: 0.48;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.menu-recipe-current {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(143, 179, 176, 0.08);
+  border: 1px solid rgba(143, 179, 176, 0.22);
+  font-family: var(--font-sans), sans-serif;
+  font-size: 13px;
+  color: var(--text-on-cream);
+}
+
+.menu-recipe-current__label {
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--text-on-cream-muted);
+}
+
+.menu-recipe-current__value {
+  font-family: var(--font-display), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 17px;
+  line-height: 1.15;
+  color: var(--text-on-cream);
+}
+
+.menu-recipe-current__delta {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-on-cream-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-recipe-chip {
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Menu hero ------------------------------------------------ */
 
 .menu-shell {
@@ -3684,41 +3780,14 @@ body[data-menu-open="true"] .trusted-by {
 
 /* Flip dark→cream ----------------------------------------- */
 
-.menu-flip {
-  position: relative;
-  height: 180vh;
-  perspective: 1500px;
-}
-
-/* Same pattern as brand-story--overlap-pin on home: pull the catalog up by
-   the pin height so that when the flip pin unsticks, the cream catalog is
-   already in position. Eliminates the ~100vh dead-scroll of empty pin that
-   otherwise sits between the animation completing and Раки appearing. */
-.menu-catalog--overlap-pin {
-  margin-top: -100vh;
-}
-
-.menu-flip__pin {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow: hidden;
-  transform-style: preserve-3d;
-}
-
-.menu-flip__hero-layer,
-.menu-flip__cream-layer {
-  position: absolute;
-  inset: 0;
-  transform-origin: top center;
-  will-change: transform, opacity;
-  backface-visibility: hidden;
-}
-
-.menu-flip__cream-layer {
-  background: var(--color-bg-cream);
-  color: var(--text-on-cream);
-  transform-origin: bottom center;
+.menu-hero {
+  /* Dark hero is a normal 100vh block. No sticky pin, no flip — the
+     handoff from dark to cream happens via the next section (.menu-catalog)
+     starting immediately below. Earlier iterations tried a 3D rotateX flip
+     borrowed from aquarium-to-table.tsx, but /menu doesn't have a
+     sticky-sticky handoff chain (catalog isn't sticky), so the transition
+     either left dead pin-scroll (100vh empty) or braided the outgoing hero
+     with the incoming cream. Removed for honest scroll. */
 }
 
 /* Sticky category chips ----------------------------------- */
