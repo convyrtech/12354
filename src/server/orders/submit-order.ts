@@ -9,6 +9,7 @@ import {
   getDeliveryDropoffSourceLabel,
 } from "@/lib/fixtures";
 import { getPaymentMethodLabel, type SubmittedOrderSummary } from "@/lib/orders";
+import { resolvePublicSiteOrigin } from "@/lib/site-origin";
 import { ensureAssignmentPublicTrackingToken } from "@/server/courier/public-tracking-service";
 import { ensureOrderDispatchAssignment } from "@/server/orders/dispatch";
 import { pushSiteTrackingLinkToIiko } from "@/server/orders/iiko-sync";
@@ -198,19 +199,6 @@ async function syncStoredTrackingHref(record: StoredOrderRecord, trackingHref: s
   return nextRecord;
 }
 
-function resolvePublicSiteOrigin(explicitOrigin: string | null | undefined) {
-  const candidate =
-    explicitOrigin?.trim() ||
-    process.env.SITE_PUBLIC_URL?.trim() ||
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    null;
-
-  if (!candidate) {
-    return null;
-  }
-
-  return candidate.replace(/\/+$/, "");
-}
 
 function buildAbsoluteTrackingLink(
   relativeTrackingHref: string | null,

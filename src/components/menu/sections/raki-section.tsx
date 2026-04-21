@@ -45,16 +45,13 @@ type Props = {
   fried?: MenuSnapshotItem;
 };
 
-function findSizeGroup(entry: MenuSnapshotItem) {
-  return entry.item.modifierGroups.find((g) => g.id.endsWith("_size_tier"));
-}
-
 function buildSizeRows(
   entry: MenuSnapshotItem | undefined,
+  subcategory: RakiSubcategory,
   recipeDelta: number,
 ): SizeRowData[] {
   if (!entry) return [];
-  const group = findSizeGroup(entry);
+  const group = getSizeGroup(entry.item, subcategory);
   if (!group) return [];
   return group.options.slice(0, SIZE_ORDER.length).map((option, index) => ({
     tier: SIZE_ORDER[index],
@@ -112,7 +109,7 @@ export function RakiSection({ boiled, live, fried }: Props) {
       : null;
   const recipeDelta = selectedRecipeOption?.priceDelta ?? 0;
 
-  const rows = buildSizeRows(activeEntry, recipeDelta);
+  const rows = buildSizeRows(activeEntry, tab, recipeDelta);
 
   const handleTierAdd = useCallback(
     (tier: MenuTier) => {

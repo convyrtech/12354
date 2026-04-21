@@ -1,5 +1,6 @@
 import "server-only";
 
+import { resolvePublicSiteOrigin } from "@/lib/site-origin";
 import { getIikoAccessToken, resolveIikoOrganizationIdForDraft } from "@/server/orders/iiko";
 import { getIikoConfig, type IikoConfig } from "@/server/orders/iiko-config";
 import { persistStoredOrder } from "@/server/orders/storage";
@@ -277,16 +278,6 @@ function buildCommandNote(
   }
 }
 
-function resolvePublicSiteOriginFromEnv() {
-  const candidate =
-    process.env.SITE_PUBLIC_URL?.trim() || process.env.NEXT_PUBLIC_SITE_URL?.trim() || null;
-
-  if (!candidate) {
-    return null;
-  }
-
-  return candidate.replace(/\/+$/, "");
-}
 
 function buildAbsoluteTrackingLinkForSync(
   relativeTrackingHref: string | null,
@@ -463,7 +454,7 @@ async function recoverExternalReferenceCandidate(input: {
 
     const absoluteTrackingLink = buildAbsoluteTrackingLinkForSync(
       recordWithProviderSync.summary.trackingHref ?? null,
-      resolvePublicSiteOriginFromEnv(),
+      resolvePublicSiteOrigin(),
     );
 
     if (absoluteTrackingLink) {

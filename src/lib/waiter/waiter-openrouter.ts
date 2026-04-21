@@ -1,10 +1,16 @@
 import { z } from "zod";
+import { resolvePublicSiteOrigin } from "@/lib/site-origin";
 import { buildWaiterPrompt, WAITER_SYSTEM_PROMPT } from "@/lib/waiter/waiter-prompt";
 import { askMock } from "@/lib/waiter/waiter-mock";
 import type { WaiterContext, WaiterResponse } from "@/lib/waiter/waiter-types";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const REQUEST_TIMEOUT_MS = 8_000;
+
+const WAITER_MODEL =
+  process.env.WAITER_MODEL?.trim() || "deepseek/deepseek-chat:free";
+const SITE_ORIGIN =
+  resolvePublicSiteOrigin() ?? "http://127.0.0.1:3000";
 
 const waiterModelReplySchema = z.object({
   reply: z.string().trim().min(1).max(240),
@@ -22,21 +28,9 @@ const openRouterResponseSchema = z.object({
     .min(1),
 });
 
-function waiterModel() {
-  return process.env.WAITER_MODEL?.trim() || "deepseek/deepseek-chat:free";
-}
-
 function isRepeatLastIntent(userMessage: string | null) {
   if (!userMessage) return false;
   return userMessage.trim().toLowerCase().includes("повтор");
-}
-
-function resolveSiteOrigin() {
-  return (
-    process.env.SITE_PUBLIC_URL?.trim() ||
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    "http://127.0.0.1:3000"
-  );
 }
 
 function extractContentText(content: string | unknown[] | undefined) {
@@ -63,6 +57,7 @@ function extractContentText(content: string | unknown[] | undefined) {
 async function requestModelReply(
   userMessage: string | null,
   context: WaiterContext,
+  fallbackReply: string,
 ): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY?.trim();
   if (!apiKey) {
@@ -78,11 +73,11 @@ async function requestModelReply(
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": resolveSiteOrigin(),
+        "HTTP-Referer": SITE_ORIGIN,
         "X-Title": "The Raki",
       },
       body: JSON.stringify({
-        model: waiterModel(),
+        model: WAITER_MODEL,
         response_format: { type: "json_object" },
         temperature: 0.7,
         max_tokens: 180,
@@ -93,7 +88,7 @@ async function requestModelReply(
           },
           {
             role: "user",
-            content: buildWaiterPrompt(userMessage, context),
+            content: buildWaiterPrompt(userMessage, context, fallbackReply),
           },
         ],
       }),
@@ -124,7 +119,7 @@ export async function askOpenrouter(
   }
 
   try {
-    const reply = await requestModelReply(userMessage, context);
+    const reply = await requestModelReply(userMessage, context, scaffold.reply);
     return {
       ...scaffold,
       reply,

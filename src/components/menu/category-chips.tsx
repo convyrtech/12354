@@ -2,6 +2,10 @@
 
 import { motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  MENU_NAV_OFFSET_PX,
+  scrollToMenuAnchor,
+} from "@/components/menu/shared/scroll-to-anchor";
 
 export type CategoryChip = {
   id: string;
@@ -13,7 +17,6 @@ type Props = {
   chips: readonly CategoryChip[];
 };
 
-const NAV_OFFSET_PX = 96;
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 export function CategoryChips({ chips }: Props) {
@@ -39,7 +42,7 @@ export function CategoryChips({ chips }: Props) {
         if (!chip) return;
         setActive((prev) => (prev === chip.id ? prev : chip.id));
       },
-      { rootMargin: `-${NAV_OFFSET_PX + 32}px 0px -55% 0px`, threshold: 0.01 },
+      { rootMargin: `-${MENU_NAV_OFFSET_PX + 32}px 0px -55% 0px`, threshold: 0.01 },
     );
 
     targets.forEach((target) => observer.observe(target));
@@ -57,10 +60,7 @@ export function CategoryChips({ chips }: Props) {
   const handleClick = useCallback(
     (chip: CategoryChip) => (event: React.MouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
-      const target = document.getElementById(chip.anchor);
-      if (!target) return;
-      const y = target.getBoundingClientRect().top + window.scrollY - NAV_OFFSET_PX - 16;
-      window.scrollTo({ top: y, behavior: "smooth" });
+      scrollToMenuAnchor(chip.anchor);
       setActive(chip.id);
     },
     [],

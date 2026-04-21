@@ -1,3 +1,4 @@
+import { RAKI_RECIPE_GROUP_ID } from "@/lib/menu/recipes";
 import type {
   WaiterChip,
   WaiterContext,
@@ -13,13 +14,18 @@ import {
   RETURNING_GREETING_FALLBACK,
 } from "@/lib/waiter/waiter-templates";
 
+const BOILED_RECIPE_GROUP_ID = RAKI_RECIPE_GROUP_ID.boiled;
+const BOILED_ANCHOR_ITEM_ID = "item_crayfish_boiled";
+
 function latestAnchorRecipe(context: WaiterContext): string | undefined {
   const lastOrder = context.user?.history?.[0];
   if (!lastOrder) return undefined;
   const rakiLine = lastOrder.items.find(
-    (line) => line.itemId === "item_crayfish_boiled" && line.modifiers?.mg_boiled_recipe,
+    (line) =>
+      line.itemId === BOILED_ANCHOR_ITEM_ID &&
+      line.modifiers?.[BOILED_RECIPE_GROUP_ID],
   );
-  return rakiLine?.modifiers?.mg_boiled_recipe;
+  return rakiLine?.modifiers?.[BOILED_RECIPE_GROUP_ID];
 }
 
 function buildGreeting(context: WaiterContext): WaiterResponse {
@@ -53,14 +59,6 @@ function buildGreeting(context: WaiterContext): WaiterResponse {
   };
 }
 
-function isChipLabel(label: string): boolean {
-  return /[→]$/.test(label) || label.startsWith("Повторить");
-}
-
-// askMock — synchronous in-memory waiter. Null user message = initial
-// greeting. A message that matches one of the chip labels routes to a
-// template acknowledgement; anything else falls back to the free-form
-// deflect so the UI never shows an empty reply.
 export function askMock(
   userMessage: string | null,
   context: WaiterContext,
@@ -94,6 +92,3 @@ function greetingChips(context: WaiterContext): WaiterChip[] {
   );
   return hasHistory ? RETURNING_CHIPS : GUEST_CHIPS;
 }
-
-// Exported for tests.
-export { buildGreeting, isChipLabel };

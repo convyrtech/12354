@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDraft } from "@/components/draft-provider";
+import { dispatchCartOpen } from "@/components/cart-events";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { getProductFamilyImage } from "@/lib/category-images";
 import { getDraftCartView, getFulfillmentLabel } from "@/lib/draft-view";
@@ -183,7 +184,7 @@ export function ProductPage({ productId }: ProductPageProps) {
     if (!previewLine || !snapshot || snapshot.state !== "available") return;
     const nextLineItems = appendDraftLineItem(draft.lineItems, previewLine);
     patchDraft({ lineItems: nextLineItems, orderStage: "product" });
-    window.dispatchEvent(new CustomEvent("raki:cart-open"));
+    dispatchCartOpen();
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   }, [draft.lineItems, patchDraft, previewLine, snapshot]);
@@ -198,7 +199,7 @@ export function ProductPage({ productId }: ProductPageProps) {
         lineItems: appendDraftLineItem(draft.lineItems, lineItem),
         orderStage: "product",
       });
-      window.dispatchEvent(new CustomEvent("raki:cart-open"));
+      dispatchCartOpen();
     },
     [draft.lineItems, patchDraft, upsellItems],
   );

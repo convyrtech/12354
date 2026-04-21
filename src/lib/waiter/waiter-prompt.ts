@@ -1,7 +1,6 @@
 import { getCity } from "@/lib/cities/cities-config";
 import { getMenuItem } from "@/lib/fixtures";
 import { getMenuForCity } from "@/lib/menu/menu-queries";
-import { askMock } from "@/lib/waiter/waiter-mock";
 import { pickRecommendations } from "@/lib/waiter/waiter-recommendations";
 import type { HistoricalOrder, WaiterContext } from "@/lib/waiter/waiter-types";
 
@@ -106,8 +105,8 @@ function buildUserSummary(context: WaiterContext) {
 export function buildWaiterPrompt(
   userMessage: string | null,
   context: WaiterContext,
+  fallbackReply: string,
 ): string {
-  const scaffold = askMock(userMessage, context);
   const city = getCity(context.cityId);
   const requestLine =
     userMessage && userMessage.trim().length > 0
@@ -121,7 +120,7 @@ export function buildWaiterPrompt(
     buildCartSummary(context),
     buildRecommendationSummary(context),
     requestLine,
-    `Канонический безопасный fallback-ответ: ${scaffold.reply}`,
+    `Канонический безопасный fallback-ответ: ${fallbackReply}`,
     "Задача: напиши следующий спокойный ответ официанта для премиального сервиса.",
     "Если гость возвращается, можно мягко опереться на знакомый паттерн заказа.",
     "Если корзина уже собрана частично, можно подсказать только одно уместное дополнение.",

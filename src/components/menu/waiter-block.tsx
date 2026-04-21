@@ -9,7 +9,6 @@ import {
   useState,
 } from "react";
 import { useDraft } from "@/components/draft-provider";
-import { useCity } from "@/lib/cities/city-context";
 import { useFakeAuth } from "@/hooks/use-fake-auth";
 import { getMenuItem } from "@/lib/fixtures";
 import {
@@ -17,27 +16,18 @@ import {
   buildDraftLineItem,
   type DraftModifierSelection,
 } from "@/lib/line-item";
+import { dispatchCartOpen } from "@/components/cart-events";
+import { scrollToMenuAnchor } from "@/components/menu/shared/scroll-to-anchor";
 import { askWaiter } from "@/lib/waiter/waiter-client";
 import { askMock } from "@/lib/waiter/waiter-mock";
+import { useWaiterContext } from "@/lib/waiter/use-waiter-context";
 import type {
   ChipAction,
   HistoricalOrder,
   WaiterChip,
-  WaiterContext,
   WaiterResponse,
 } from "@/lib/waiter/waiter-types";
 import { WaiterInput } from "@/components/menu/waiter-input";
-
-const NAV_OFFSET_PX = 96;
-
-function scrollToAnchor(anchor: string) {
-  if (typeof document === "undefined") return;
-  const el = document.getElementById(anchor);
-  if (!el) return;
-  const y =
-    el.getBoundingClientRect().top + window.scrollY - NAV_OFFSET_PX - 16;
-  window.scrollTo({ top: y, behavior: "smooth" });
-}
 
 function modifiersToSelections(
   modifiers: Record<string, string> | undefined,
@@ -70,28 +60,10 @@ function applyRepeatLast(
 }
 
 export function WaiterBlock() {
-  const { state: auth, hydrated } = useFakeAuth();
-  const { cityId } = useCity();
+  const { state: auth } = useFakeAuth();
+  const { context, hydrated } = useWaiterContext();
   const { draft, patchDraft } = useDraft();
   const prefersReduced = useReducedMotion();
-
-  const context = useMemo<WaiterContext>(
-    () => ({
-      user: auth.name
-        ? {
-            name: auth.name,
-            phone: auth.phone,
-            history: auth.orderHistory,
-            paymentPreference: auth.paymentPreference,
-            preferredCity: auth.preferredCity,
-          }
-        : null,
-      cart: draft.lineItems,
-      cityId,
-      now: new Date(),
-    }),
-    [auth, cityId, draft.lineItems],
-  );
 
   // SSR-safe initial greeting so hero has copy on first paint. After
   // hydration, re-ask the waiter in case auth state brings a different
@@ -106,27 +78,22 @@ export function WaiterBlock() {
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // Keep the scaffold interactive while the background fetch runs —
+  // under `NEXT_PUBLIC_WAITER_MODE=openrouter` the server round-trip can
+  // take up to 8s, and blocking chips that whole window feels broken.
   useEffect(() => {
     if (!hydrated) return;
     let cancelled = false;
-    setBusy(true);
     askWaiter(null, context)
       .then((next) => {
         if (!cancelled) setResponse(next);
       })
-      .catch(() => {
-        /* silent */
-      })
-      .finally(() => {
-        if (!cancelled) setBusy(false);
-      });
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
-    // Re-run only when hydration completes or the demo seed flips the user
-    // identity. Cart additions shouldn't re-trigger the greeting.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, auth.name, cityId]);
+  }, [hydrated, auth.name, context.cityId]);
 
   const focusInput = useCallback(() => {
     inputRef.current?.focus();
@@ -137,11 +104,11 @@ export function WaiterBlock() {
     (chip: WaiterChip) => {
       const action: ChipAction = chip.action;
       if (action.type === "scroll-to") {
-        scrollToAnchor(action.anchor);
+        scrollToMenuAnchor(action.anchor);
         return;
       }
       if (action.type === "scroll-to-triptych") {
-        scrollToAnchor("triptych");
+        scrollToMenuAnchor("triptych");
         return;
       }
       if (action.type === "focus-waiter") {
@@ -158,9 +125,7 @@ export function WaiterBlock() {
           .then((next) => setResponse(next))
           .catch(() => {})
           .finally(() => setBusy(false));
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new CustomEvent("raki:cart-open"));
-        }
+        dispatchCartOpen();
       }
     },
     [auth.orderHistory, context, draft.lineItems, focusInput, patchDraft],

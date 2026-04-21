@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import { useDraft } from "@/components/draft-provider";
+import { dispatchCartOpen } from "@/components/cart-events";
 import type { MenuItem, MenuSnapshotItem } from "@/lib/fixtures";
 import {
   appendDraftLineItem,
@@ -16,17 +17,6 @@ export type AddByItemResult = {
   reason?: "stop-list" | "absent";
 };
 
-function dispatchCartOpen() {
-  if (typeof window === "undefined") return;
-  // CartPill listens for this event and opens the /menu/product drawer.
-  // Reusing the same name keeps one coordination channel.
-  window.dispatchEvent(new CustomEvent("raki:cart-open"));
-}
-
-// Shared hook for /menu cards. Cards inside the cream catalog no longer
-// thread an onAdd prop — they consume this directly. Stop-list entries
-// return { added: false } so the UI can decline without the card having
-// to know about draft internals.
 export function useAddToCart() {
   const { draft, patchDraft } = useDraft();
 
@@ -52,17 +42,13 @@ export function useAddToCart() {
       selections: DraftModifierSelection[],
       effectiveBasePrice?: number,
     ) => {
-      const normalized: DraftModifierSelection[] = item.modifierGroups.map(
-        (group) => {
-          const override = selections.find((s) => s.groupId === group.id);
-          if (override) return override;
-          const fallback = getDefaultModifierSelections(item).find(
-            (s) => s.groupId === group.id,
-          );
-          return fallback ?? { groupId: group.id, optionIds: [] };
-        },
+      const overrides = new Map(
+        selections.map((selection) => [selection.groupId, selection]),
       );
-      const line = buildDraftLineItem(item, normalized, effectiveBasePrice);
+      const merged = getDefaultModifierSelections(item).map(
+        (fallback) => overrides.get(fallback.groupId) ?? fallback,
+      );
+      const line = buildDraftLineItem(item, merged, effectiveBasePrice);
       patchDraft({
         lineItems: appendDraftLineItem(draft.lineItems, line),
         orderStage: "menu",

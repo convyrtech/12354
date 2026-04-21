@@ -7,6 +7,8 @@ import type { WaiterContext } from "@/lib/waiter/waiter-types";
 
 export const runtime = "nodejs";
 
+const paymentMethodSchema = z.enum(["online", "cash"]);
+
 const historicalOrderItemSchema = z.object({
   itemId: z.string().min(1),
   modifiers: z.record(z.string()).optional(),
@@ -18,14 +20,14 @@ const historicalOrderSchema = z.object({
   date: z.string().min(1),
   items: z.array(historicalOrderItemSchema),
   total: z.number().nonnegative(),
-  payment: z.enum(["online", "cash"]),
+  payment: paymentMethodSchema,
 });
 
 const waiterUserSchema = z.object({
   name: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
   history: z.array(historicalOrderSchema).optional(),
-  paymentPreference: z.enum(["online", "cash"]).optional(),
+  paymentPreference: paymentMethodSchema.optional(),
   preferredCity: z.enum(CITY_IDS).optional(),
 });
 

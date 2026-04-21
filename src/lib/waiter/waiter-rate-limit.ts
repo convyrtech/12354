@@ -4,7 +4,6 @@ const MAX_BUCKETS = 500;
 
 type RateLimitBucket = {
   hits: number[];
-  touchedAt: number;
 };
 
 type RateLimitStore = Map<string, RateLimitBucket>;
@@ -23,32 +22,32 @@ function getStore(): RateLimitStore {
 
 function pruneBucket(bucket: RateLimitBucket, now: number) {
   bucket.hits = bucket.hits.filter((timestamp) => now - timestamp < WINDOW_MS);
-  bucket.touchedAt = now;
+}
+
+// Map insertion order doubles as LRU — delete+set moves the bucket to
+// the tail so `enforceMaxBuckets` can drop the head (oldest touched).
+function touchBucket(store: RateLimitStore, key: string, bucket: RateLimitBucket) {
+  store.delete(key);
+  store.set(key, bucket);
 }
 
 function enforceMaxBuckets(store: RateLimitStore) {
-  if (store.size <= MAX_BUCKETS) {
-    return;
-  }
-
-  const oldestEntries = [...store.entries()]
-    .sort((left, right) => left[1].touchedAt - right[1].touchedAt)
-    .slice(0, store.size - MAX_BUCKETS);
-
-  for (const [key] of oldestEntries) {
-    store.delete(key);
+  while (store.size > MAX_BUCKETS) {
+    const oldestKey = store.keys().next().value;
+    if (oldestKey === undefined) break;
+    store.delete(oldestKey);
   }
 }
 
 export function checkWaiterRateLimit(ip: string, now: number = Date.now()) {
   const store = getStore();
   const key = ip.trim() || "unknown";
-  const bucket = store.get(key) ?? { hits: [], touchedAt: now };
+  const bucket = store.get(key) ?? { hits: [] };
 
   pruneBucket(bucket, now);
 
   if (bucket.hits.length >= MAX_REQUESTS) {
-    store.set(key, bucket);
+    touchBucket(store, key, bucket);
     enforceMaxBuckets(store);
 
     const retryAfterMs = WINDOW_MS - (now - bucket.hits[0]);
@@ -61,7 +60,7 @@ export function checkWaiterRateLimit(ip: string, now: number = Date.now()) {
   }
 
   bucket.hits.push(now);
-  store.set(key, bucket);
+  touchBucket(store, key, bucket);
   enforceMaxBuckets(store);
 
   return {

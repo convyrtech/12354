@@ -3,9 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import type { CityId } from "@/lib/cities/cities-config";
 import { readJson, removeKey, writeJson } from "@/lib/storage";
-import type { HistoricalOrder } from "@/lib/waiter/waiter-types";
+import type {
+  HistoricalOrder,
+  PaymentMethod,
+} from "@/lib/waiter/waiter-types";
 
-const STORAGE_KEY = "theraki_fake_auth";
+export const FAKE_AUTH_STORAGE_KEY = "theraki_fake_auth";
 
 export type FakeAuthState = {
   isAuthenticated: boolean;
@@ -13,7 +16,7 @@ export type FakeAuthState = {
   name: string | null;
   bonusBalance: number;
   orderHistory?: HistoricalOrder[];
-  paymentPreference?: "online" | "cash";
+  paymentPreference?: PaymentMethod;
   preferredCity?: CityId;
 };
 
@@ -25,7 +28,7 @@ const DEFAULT: FakeAuthState = {
 };
 
 function readStorage(): FakeAuthState {
-  const parsed = readJson<Partial<FakeAuthState>>(STORAGE_KEY);
+  const parsed = readJson<Partial<FakeAuthState>>(FAKE_AUTH_STORAGE_KEY);
   if (!parsed || typeof parsed !== "object") return DEFAULT;
   return {
     isAuthenticated: Boolean(parsed.isAuthenticated),
@@ -48,11 +51,11 @@ function readStorage(): FakeAuthState {
 }
 
 function writeStorage(next: FakeAuthState) {
-  writeJson(STORAGE_KEY, next);
+  writeJson(FAKE_AUTH_STORAGE_KEY, next);
 }
 
 function clearStorage() {
-  removeKey(STORAGE_KEY);
+  removeKey(FAKE_AUTH_STORAGE_KEY);
 }
 
 export function useFakeAuth() {
@@ -64,7 +67,7 @@ export function useFakeAuth() {
     setHydrated(true);
 
     const onStorage = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEY) {
+      if (event.key === FAKE_AUTH_STORAGE_KEY) {
         setState(readStorage());
       }
     };

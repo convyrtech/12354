@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useDraft } from "@/components/draft-provider";
+import { CART_OPEN_EVENT } from "@/components/cart-events";
 import { getProductFamilyImage } from "@/lib/category-images";
 import { getDraftCartView } from "@/lib/draft-view";
 import { getMenuSnapshotForContext } from "@/lib/fixtures";
@@ -59,8 +60,8 @@ export function CartPill() {
       }
     };
 
-    window.addEventListener("raki:cart-open", handleOpen);
-    return () => window.removeEventListener("raki:cart-open", handleOpen);
+    window.addEventListener(CART_OPEN_EVENT, handleOpen);
+    return () => window.removeEventListener(CART_OPEN_EVENT, handleOpen);
   }, [pathname]);
 
   const supportsDrawer = pathname === "/menu" || pathname.startsWith("/product/");

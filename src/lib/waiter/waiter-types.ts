@@ -1,6 +1,8 @@
 import type { CityId } from "@/lib/cities/cities-config";
 import type { DraftLineItem } from "@/lib/line-item";
 
+export type PaymentMethod = "online" | "cash";
+
 export type HistoricalOrderItem = {
   itemId: string;
   modifiers?: Record<string, string>;
@@ -12,14 +14,14 @@ export type HistoricalOrder = {
   date: string;
   items: HistoricalOrderItem[];
   total: number;
-  payment: "online" | "cash";
+  payment: PaymentMethod;
 };
 
 export type WaiterUser = {
   name?: string | null;
   phone?: string | null;
   history?: HistoricalOrder[];
-  paymentPreference?: "online" | "cash";
+  paymentPreference?: PaymentMethod;
   preferredCity?: CityId;
 };
 

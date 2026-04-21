@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { useCity } from "@/lib/cities/city-context";
 import { useDraft } from "@/components/draft-provider";
 import type { FulfillmentMode } from "@/lib/fixtures";
 import {
@@ -12,8 +11,7 @@ import { MenuHero } from "@/components/menu/menu-hero";
 import { DemoSeedHandler } from "@/components/menu/demo-seed-handler";
 import { RecommendationTriptych } from "@/components/menu/recommendation-triptych";
 import { pickRecommendations } from "@/lib/waiter/waiter-recommendations";
-import { useFakeAuth } from "@/hooks/use-fake-auth";
-import type { WaiterContext } from "@/lib/waiter/waiter-types";
+import { useWaiterContext } from "@/lib/waiter/use-waiter-context";
 import {
   CategoryChips,
   type CategoryChip,
@@ -31,9 +29,9 @@ import { GiftsSection } from "@/components/menu/sections/gifts-section";
 import { CtaFooterMenu } from "@/components/menu/cta-footer-menu";
 
 export function MenuPage() {
-  const { cityId } = useCity();
   const { draft } = useDraft();
-  const { state: auth, hydrated: authHydrated } = useFakeAuth();
+  const { context: waiterContext } = useWaiterContext();
+  const cityId = waiterContext.cityId;
 
   const fulfillmentMode: FulfillmentMode = draft.fulfillmentMode ?? "delivery";
 
@@ -59,24 +57,6 @@ export function MenuPage() {
       gifts: getCategoryItems(snapshot, "gifts"),
     };
   }, [snapshot]);
-
-  const waiterContext = useMemo<WaiterContext>(
-    () => ({
-      user: authHydrated && auth.name
-        ? {
-            name: auth.name,
-            phone: auth.phone,
-            history: auth.orderHistory,
-            paymentPreference: auth.paymentPreference,
-            preferredCity: auth.preferredCity,
-          }
-        : null,
-      cart: draft.lineItems,
-      cityId,
-      now: new Date(),
-    }),
-    [auth, authHydrated, cityId, draft.lineItems],
-  );
 
   const recommendations = useMemo(
     () => pickRecommendations(waiterContext, snapshot, 3),
