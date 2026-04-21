@@ -1,4 +1,9 @@
-import type { WaiterContext, WaiterResponse } from "@/lib/waiter/waiter-types";
+import type {
+  SerializedWaiterContext,
+  WaiterApiRequest,
+  WaiterContext,
+  WaiterResponse,
+} from "@/lib/waiter/waiter-types";
 import { askMock } from "@/lib/waiter/waiter-mock";
 
 function waiterMode(): "mock" | "openrouter" {
@@ -6,13 +11,72 @@ function waiterMode(): "mock" | "openrouter" {
   return "mock";
 }
 
-// Phase 5 will replace this stub with a fetch to /api/waiter/respond. For
-// Phase 4 every call resolves to the mock so the UI surface is stable.
+class WaiterClientError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+    this.name = "WaiterClientError";
+  }
+}
+
+function serializeWaiterContext(context: WaiterContext): SerializedWaiterContext {
+  return {
+    ...context,
+    now: context.now.toISOString(),
+  };
+}
+
+function isWaiterResponse(payload: unknown): payload is WaiterResponse {
+  if (!payload || typeof payload !== "object") return false;
+  const record = payload as Record<string, unknown>;
+  return (
+    typeof record.reply === "string" &&
+    typeof record.signature === "string" &&
+    typeof record.mode === "string" &&
+    Array.isArray(record.suggestedChips)
+  );
+}
+
 async function askOpenrouter(
   userMessage: string | null,
   context: WaiterContext,
 ): Promise<WaiterResponse> {
-  return askMock(userMessage, context);
+  let response: Response;
+
+  try {
+    const payload: WaiterApiRequest = {
+      userMessage,
+      context: serializeWaiterContext(context),
+    };
+
+    response = await fetch("/api/waiter/respond", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    throw new WaiterClientError("Waiter API is unavailable.", 0);
+  }
+
+  let payload: unknown;
+
+  try {
+    payload = await response.json();
+  } catch {
+    throw new WaiterClientError("Waiter API returned invalid JSON.", response.status);
+  }
+
+  if (!response.ok) {
+    throw new WaiterClientError("Waiter API request failed.", response.status);
+  }
+
+  if (!isWaiterResponse(payload)) {
+    throw new WaiterClientError("Waiter API response shape is invalid.", response.status);
+  }
+
+  return payload;
 }
 
 export async function askWaiter(

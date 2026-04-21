@@ -30,6 +30,15 @@ export type WaiterContext = {
   now: Date;
 };
 
+export type SerializedWaiterContext = Omit<WaiterContext, "now"> & {
+  now: string;
+};
+
+export type WaiterApiRequest = {
+  userMessage: string | null;
+  context: SerializedWaiterContext;
+};
+
 export type ChipAction =
   | { type: "repeat-last" }
   | { type: "scroll-to"; anchor: string }
