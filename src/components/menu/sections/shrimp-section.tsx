@@ -39,18 +39,26 @@ export function ShrimpSection({ entries }: Props) {
       eyebrow="дикие, Магадан"
       narrative="Дикие, не фермерские. Из открытого Охотского моря."
     >
-      {groups.map((group, idx) => (
-        <div key={group.title} style={{ marginTop: idx === 0 ? 0 : 48 }}>
-          {groups.length > 1 ? (
-            <h3 className="menu-section__subheadline">{group.title}</h3>
-          ) : null}
-          <div className="menu-section__grid-3">
-            {group.items.map((entry) => (
-              <CompactCard key={entry.item.id} entry={entry} variant="shrimp" />
-            ))}
+      {groups.map((group, idx) => {
+        const hasSubheading = groups.length > 1;
+        return (
+          <div key={group.title} style={{ marginTop: idx === 0 ? 0 : 48 }}>
+            {hasSubheading ? (
+              <h3 className="menu-section__subheadline">{group.title}</h3>
+            ) : null}
+            <div className="menu-section__grid-3">
+              {group.items.map((entry) => (
+                <CompactCard
+                  key={entry.item.id}
+                  entry={entry}
+                  variant="shrimp"
+                  titleLevel={hasSubheading ? "h4" : "h3"}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </SectionShell>
   );
 }

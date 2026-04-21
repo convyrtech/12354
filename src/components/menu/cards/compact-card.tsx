@@ -15,6 +15,7 @@ type Variant = "mussel" | "shrimp" | "small";
 type Props = {
   entry: MenuSnapshotItem;
   variant?: Variant;
+  titleLevel?: "h3" | "h4";
 };
 
 function formatMetadata(entry: MenuSnapshotItem): string {
@@ -33,11 +34,12 @@ function formatMetadata(entry: MenuSnapshotItem): string {
   return parts.join(" · ");
 }
 
-export function CompactCard({ entry, variant = "mussel" }: Props) {
+export function CompactCard({ entry, variant = "mussel", titleLevel = "h3" }: Props) {
   const { addEntry } = useAddToCart();
   const isStopList = entry.state === "sold_out";
   const image = getMenuImage(entry.item.imageKey, entry.item.name);
   const meta = formatMetadata(entry);
+  const TitleTag = titleLevel;
 
   return (
     <article
@@ -61,7 +63,7 @@ export function CompactCard({ entry, variant = "mussel" }: Props) {
       </Link>
       <div className="menu-card-compact__body">
         <div>
-          <h3 className="menu-card-compact__title">
+          <TitleTag className="menu-card-compact__title">
             {entry.item.name}
             {entry.item.badge ? (
               <>
@@ -69,7 +71,7 @@ export function CompactCard({ entry, variant = "mussel" }: Props) {
                 <NewTag badge={entry.item.badge} />
               </>
             ) : null}
-          </h3>
+          </TitleTag>
           {meta ? <div className="menu-card-compact__meta">{meta}</div> : null}
         </div>
         <div className="menu-card-compact__price">
