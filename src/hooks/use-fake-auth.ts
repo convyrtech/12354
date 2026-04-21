@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { CityId } from "@/lib/cities/cities-config";
 import { readJson, removeKey, writeJson } from "@/lib/storage";
+import type { HistoricalOrder } from "@/lib/waiter/waiter-types";
 
 const STORAGE_KEY = "theraki_fake_auth";
 
@@ -10,6 +12,9 @@ export type FakeAuthState = {
   phone: string | null;
   name: string | null;
   bonusBalance: number;
+  orderHistory?: HistoricalOrder[];
+  paymentPreference?: "online" | "cash";
+  preferredCity?: CityId;
 };
 
 const DEFAULT: FakeAuthState = {
@@ -28,6 +33,17 @@ function readStorage(): FakeAuthState {
     name: parsed.name ?? null,
     bonusBalance:
       typeof parsed.bonusBalance === "number" ? parsed.bonusBalance : 0,
+    orderHistory: Array.isArray(parsed.orderHistory)
+      ? parsed.orderHistory
+      : undefined,
+    paymentPreference:
+      parsed.paymentPreference === "online" || parsed.paymentPreference === "cash"
+        ? parsed.paymentPreference
+        : undefined,
+    preferredCity:
+      typeof parsed.preferredCity === "string"
+        ? (parsed.preferredCity as CityId)
+        : undefined,
   };
 }
 

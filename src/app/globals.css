@@ -3778,6 +3778,71 @@ body[data-menu-open="true"] .trusted-by {
   font-size: 12px;
 }
 
+.menu-hero__input-form {
+  display: grid;
+  gap: 10px;
+  max-width: 560px;
+}
+
+.menu-hero__input-field {
+  width: 100%;
+  min-height: 80px;
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(242, 232, 213, 0.16);
+  background: rgba(242, 232, 213, 0.04);
+  color: var(--text-primary);
+  font-family: var(--font-sans), sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.menu-hero__input-field:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.menu-hero__input-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.menu-hero__input-cancel,
+.menu-hero__input-submit {
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-family: var(--font-sans), sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 160ms var(--ease-out);
+}
+
+.menu-hero__input-cancel {
+  background: transparent;
+  border: 1px solid rgba(242, 232, 213, 0.16);
+  color: var(--text-primary);
+}
+
+.menu-hero__input-cancel:hover {
+  background: rgba(242, 232, 213, 0.06);
+}
+
+.menu-hero__input-submit {
+  background: var(--accent-cream);
+  border: 1px solid var(--accent-cream);
+  color: var(--color-bg-dark);
+}
+
+.menu-hero__input-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* Flip dark→cream ----------------------------------------- */
 
 .menu-hero {
@@ -4123,6 +4188,59 @@ body[data-menu-open="true"] .trusted-by {
   background: rgba(255, 255, 255, 0.5);
   transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1),
     filter 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Triptych — three editorial cards with a group-hover reveal. Hovering a
+   card scales it up and dims the other two; the underline on the title
+   draws in, the photo saturates, the CTA link swells into a teal pill.
+   400ms on neighbours, 500ms on the focused card, cubic-bezier easing. */
+
+.menu-triptych__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(18px, 2.4vw, 28px);
+}
+
+@media (max-width: 1023px) {
+  .menu-triptych__grid {
+    grid-template-columns: 1fr;
+    gap: clamp(16px, 3vw, 24px);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .menu-triptych__grid:hover .menu-card-editorial {
+    transform: scale(1);
+    filter: saturate(0.7);
+    opacity: 0.45;
+    transition-duration: 400ms;
+  }
+
+  .menu-triptych__grid .menu-card-editorial:hover {
+    transform: scale(1.04) translateY(-4px);
+    filter: saturate(1);
+    opacity: 1;
+    transition-duration: 500ms;
+  }
+
+  .menu-triptych__grid .menu-card-editorial:hover img {
+    transform: scale(1.06);
+    filter: saturate(1.15) brightness(1.03);
+  }
+
+  .menu-triptych__grid .menu-card-editorial img {
+    transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1),
+      filter 500ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-triptych__grid:hover .menu-card-editorial,
+  .menu-triptych__grid .menu-card-editorial,
+  .menu-triptych__grid .menu-card-editorial:hover {
+    transform: none !important;
+    filter: none !important;
+  }
 }
 
 .menu-card-editorial__reason {
