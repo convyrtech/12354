@@ -3696,6 +3696,7 @@ body[data-menu-open="true"] .trusted-by {
   line-height: 1.02;
   color: var(--text-on-dark);
   margin: 0;
+  text-wrap: balance;
 }
 
 .menu-hero__word {
@@ -3940,6 +3941,7 @@ body[data-menu-open="true"] .trusted-by {
   line-height: 1;
   margin: 0 0 clamp(24px, 4vh, 48px);
   color: var(--text-on-cream);
+  text-wrap: balance;
 }
 
 .menu-section__subheadline {
@@ -3950,6 +3952,7 @@ body[data-menu-open="true"] .trusted-by {
   line-height: 1.05;
   margin: 0 0 clamp(20px, 3vh, 32px);
   color: var(--text-on-cream);
+  text-wrap: balance;
 }
 
 .menu-section__narrative {
