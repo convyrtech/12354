@@ -98,6 +98,7 @@ export const WaiterInput = forwardRef<WaiterInputHandle, Props>(
             type="submit"
             className="menu-hero__input-submit"
             disabled={busy || !value.trim()}
+            aria-label={busy ? "Отправка…" : undefined}
           >
             {busy ? "…" : "Спросить"}
           </button>

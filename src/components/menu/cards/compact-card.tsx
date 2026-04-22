@@ -56,7 +56,7 @@ export function CompactCard({ entry, variant = "mussel", titleLevel = "h3" }: Pr
           src={image.src}
           width={image.width}
           height={image.height}
-          alt={image.alt}
+          alt=""
           sizes="(max-width: 1023px) 40vw, 148px"
           style={{ objectFit: "cover", width: "100%", height: "100%" }}
         />

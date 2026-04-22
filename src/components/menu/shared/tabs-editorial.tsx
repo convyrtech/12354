@@ -28,7 +28,7 @@ export function TabsEditorial<T extends string>({
 
   return (
     <div
-      role="tablist"
+      role="radiogroup"
       aria-label={ariaLabel}
       className="menu-tabs-editorial"
     >
@@ -38,8 +38,8 @@ export function TabsEditorial<T extends string>({
           <button
             key={option.id}
             type="button"
-            role="tab"
-            aria-selected={selected}
+            role="radio"
+            aria-checked={selected}
             data-selected={selected || undefined}
             onClick={() => onChange(option.id)}
             className="menu-tabs-editorial__button"
