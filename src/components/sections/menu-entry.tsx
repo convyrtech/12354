@@ -15,6 +15,7 @@ import {
   type Variants,
 } from "framer-motion";
 import { useMatchMedia } from "@/hooks/use-match-media";
+import { useSectionProgress } from "@/hooks/use-section-progress";
 import { MENU_ENTRY, MENU_ENTRY_INFO } from "@/lib/homepage-data";
 
 // ────────────────────────────────────────────────────────────────
@@ -72,22 +73,7 @@ export function MenuEntry() {
     "(min-width: 1024px) and (min-height: 720px)",
   );
 
-  const scrollYProgress = useMotionValue(0);
-  useEffect(() => {
-    let raf = 0;
-    const measure = () => {
-      const el = sectionRef.current;
-      if (el) {
-        const rect = el.getBoundingClientRect();
-        const vh = window.innerHeight || 1;
-        const p = Math.max(0, Math.min(1, (vh - rect.top) / vh));
-        scrollYProgress.set(p);
-      }
-      raf = window.requestAnimationFrame(measure);
-    };
-    raf = window.requestAnimationFrame(measure);
-    return () => window.cancelAnimationFrame(raf);
-  }, [scrollYProgress]);
+  const scrollYProgress = useSectionProgress(sectionRef, "enter");
 
   const smooth = useSpring(scrollYProgress, SPRING);
 

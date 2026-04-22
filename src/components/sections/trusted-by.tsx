@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import Image from "next/image";
 import {
   motion,
-  useMotionValue,
   useReducedMotion,
   useSpring,
   useTransform,
   type MotionValue,
 } from "framer-motion";
 import { useMatchMedia } from "@/hooks/use-match-media";
+import { useSectionProgress } from "@/hooks/use-section-progress";
 
 type Partner = {
   name: string;
@@ -72,26 +72,7 @@ export function TrustedBy() {
   const prefersReduced = useReducedMotion();
   const isMobile = useMatchMedia("(max-width: 767px)");
 
-  // Section progress via rAF + getBoundingClientRect — same Lenis-safe pattern
-  // as aquarium-to-table.tsx and brand-story.tsx (framer's useScroll desyncs
-  // under Lenis in Firefox).
-  const scrollYProgress = useMotionValue(0);
-  useEffect(() => {
-    let raf = 0;
-    const measure = () => {
-      const el = sectionRef.current;
-      if (el) {
-        const rect = el.getBoundingClientRect();
-        const total = Math.max(1, rect.height - window.innerHeight);
-        const scrolled = -rect.top;
-        const p = Math.max(0, Math.min(1, scrolled / total));
-        scrollYProgress.set(p);
-      }
-      raf = window.requestAnimationFrame(measure);
-    };
-    raf = window.requestAnimationFrame(measure);
-    return () => window.cancelAnimationFrame(raf);
-  }, [scrollYProgress]);
+  const scrollYProgress = useSectionProgress(sectionRef, "through");
 
   const smooth = useSpring(scrollYProgress, SPRING);
 

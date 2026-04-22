@@ -11,6 +11,7 @@ import {
   useTransform,
 } from "framer-motion";
 import { useMatchMedia } from "@/hooks/use-match-media";
+import { useSectionProgress } from "@/hooks/use-section-progress";
 
 const HEADING_LINE_1 = ["От", "аквариума", "до", "стола\u00A0—"] as const;
 const HEADING_LINE_2 = ["не", "больше", "двух", "часов."] as const;
@@ -110,59 +111,7 @@ export function AquariumToTable({ children }: AquariumToTableProps) {
 
   const useFallback = Boolean(prefersReduced) || isMobile;
 
-  // Section progress measured via rAF instead of framer's useScroll. Lenis
-  // (src/components/smooth-scroll-provider.tsx) runs its own rAF loop; when
-  // framer's useScroll is combined with Lenis it can desync in Firefox and
-  // report progress = 1 before the user has actually scrolled the full
-  // section. Reading getBoundingClientRect() once per frame gives us
-  // deterministic cross-browser progress driven purely by layout state.
-  const scrollYProgress = useMotionValue(0);
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-    // Resolve the .home-main ancestor once. Its computed transform + the
-    // body data-menu-open attribute together flag when the home-menu tilt
-    // is active (open, the 700ms close transition, AND a small safety
-    // cooldown after that). Otherwise getBoundingClientRect would return
-    // an axis-aligned bbox of the rotated section (rect.top negative,
-    // rect.height inflated) and drive the hero→cream flip with no real
-    // scroll input — the visible symptom is a flicker of cream-pause
-    // during menu open/close.
-    const homeMain = el.closest<HTMLElement>(".home-main");
-    const MENU_SAFE_WINDOW_MS = 900; // 700ms transition + rAF slack
-    let menuTransformUntil = 0;
-    let raf = 0;
-    const measure = () => {
-      const now = performance.now();
-      const menuOpen =
-        typeof document !== "undefined" &&
-        document.body.dataset.menuOpen === "true";
-      const ancestorTransform = homeMain
-        ? getComputedStyle(homeMain).transform
-        : "none";
-      const hasTransform = ancestorTransform && ancestorTransform !== "none";
-      // Any signal that menu-tilt is in play extends the safe window. The
-      // window also keeps pinning progress to 0 for a short tail after the
-      // transform settles, which masks any residual layout-settle frame
-      // where getComputedStyle briefly reports identity but the ancestor
-      // paint hasn't yet caught up.
-      if (menuOpen || hasTransform) {
-        menuTransformUntil = now + MENU_SAFE_WINDOW_MS;
-      }
-      if (now < menuTransformUntil) {
-        scrollYProgress.set(0);
-      } else {
-        const rect = el.getBoundingClientRect();
-        const total = Math.max(1, rect.height - window.innerHeight);
-        const scrolled = -rect.top;
-        const p = Math.max(0, Math.min(1, scrolled / total));
-        scrollYProgress.set(p);
-      }
-      raf = window.requestAnimationFrame(measure);
-    };
-    raf = window.requestAnimationFrame(measure);
-    return () => window.cancelAnimationFrame(raf);
-  }, [scrollYProgress]);
+  const scrollYProgress = useSectionProgress(sectionRef, "through", { menuOpenGuard: true });
 
   const smooth = useSpring(scrollYProgress, {
     stiffness: 90,

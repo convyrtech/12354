@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type MutableRefObject } from "react";
+import { useSectionProgress } from "@/hooks/use-section-progress";
 import {
   motion,
   useMotionValue,
@@ -284,7 +285,7 @@ function Cinematic() {
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const closingRef = useRef<HTMLParagraphElement | null>(null);
 
-  const scrollYProgress = useMotionValue(0);
+  const scrollYProgress = useSectionProgress(sectionRef, "through");
   const headingProx = useMotionValue(1);
   const bodyProx = useMotionValue(1);
   const closingProx = useMotionValue(1);
@@ -307,27 +308,16 @@ function Cinematic() {
     };
 
     const measure = () => {
-      const section = sectionRef.current;
       const vh = window.innerHeight;
-
-      if (section) {
-        const rect = section.getBoundingClientRect();
-        const total = Math.max(1, rect.height - vh);
-        const scrolled = -rect.top;
-        const p = Math.max(0, Math.min(1, scrolled / total));
-        scrollYProgress.set(p);
-      }
-
       measureProx(headingRef as MutableRefObject<HTMLElement | null>, headingProx, vh);
       measureProx(bodyRef as MutableRefObject<HTMLElement | null>, bodyProx, vh);
       measureProx(closingRef as MutableRefObject<HTMLElement | null>, closingProx, vh);
-
       raf = window.requestAnimationFrame(measure);
     };
 
     raf = window.requestAnimationFrame(measure);
     return () => window.cancelAnimationFrame(raf);
-  }, [scrollYProgress, headingProx, bodyProx, closingProx]);
+  }, [headingProx, bodyProx, closingProx]);
 
   const smoothProgress = useSpring(scrollYProgress, SPRING);
   const flowY = useTransform(smoothProgress, (p) =>
