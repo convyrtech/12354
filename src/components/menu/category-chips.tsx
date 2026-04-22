@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   MENU_NAV_OFFSET_PX,
@@ -20,6 +20,7 @@ type Props = {
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 export function CategoryChips({ chips }: Props) {
+  const prefersReduced = useReducedMotion();
   const [active, setActive] = useState<string | null>(chips[0]?.id ?? null);
   const chipRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const trackRef = useRef<HTMLDivElement | null>(null);
@@ -53,7 +54,7 @@ export function CategoryChips({ chips }: Props) {
     if (!active) return;
     const chipEl = chipRefs.current.get(active);
     if (chipEl && trackRef.current) {
-      chipEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      chipEl.scrollIntoView({ behavior: prefersReduced ? "instant" : "smooth", block: "nearest", inline: "center" });
     }
   }, [active]);
 
@@ -91,7 +92,7 @@ export function CategoryChips({ chips }: Props) {
                 <motion.span
                   layoutId="menu-sticky-nav-underline"
                   className="menu-sticky-nav__chip-underline"
-                  transition={{ duration: 0.3, ease: EASE }}
+                  transition={{ duration: prefersReduced ? 0 : 0.3, ease: EASE }}
                   aria-hidden
                 />
               ) : null}

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useId } from "react";
 
 export type TabOption<T extends string> = {
@@ -24,6 +24,7 @@ export function TabsEditorial<T extends string>({
   ariaLabel,
 }: Props<T>) {
   const instanceId = useId();
+  const prefersReduced = useReducedMotion();
 
   return (
     <div
@@ -48,7 +49,7 @@ export function TabsEditorial<T extends string>({
               <motion.span
                 layoutId={`menu-tab-underline-${instanceId}`}
                 className="menu-tabs-editorial__underline"
-                transition={SPRING}
+                transition={prefersReduced ? { duration: 0 } : SPRING}
                 aria-hidden
               />
             ) : null}

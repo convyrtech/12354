@@ -11,5 +11,6 @@ export function scrollToMenuAnchor(anchor: string) {
     window.scrollY -
     MENU_NAV_OFFSET_PX -
     SCROLL_GAP_PX;
-  window.scrollTo({ top: y, behavior: "smooth" });
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.scrollTo({ top: y, behavior: reduced ? "instant" : "smooth" });
 }
