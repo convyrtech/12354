@@ -29,15 +29,9 @@ export function CartPill() {
   const justAdded = count > prevCount.current;
   const [open, setOpen] = useState(false);
   const [portalReady, setPortalReady] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     setPortalReady(true);
-    const mq = window.matchMedia("(max-width: 767px)");
-    setIsMobile(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
   }, []);
 
   useEffect(() => {
@@ -156,9 +150,9 @@ export function CartPill() {
           transition={{ duration: 0.28 }}
           style={{
             position: "fixed",
-            ...(isMobile
-              ? { bottom: 24, left: "50%", transform: "translateX(-50%)" }
-              : { right: "var(--space-lg)", top: "50%", transform: "translateY(-50%)" }),
+            right: "var(--space-lg)",
+            top: "50%",
+            transform: "translateY(-50%)",
             zIndex: 70,
             display: "flex",
             alignItems: "center",
@@ -247,8 +241,7 @@ export function CartPill() {
                 top: 18,
                 right: 18,
                 bottom: 18,
-                left: isMobile ? 18 : undefined,
-                width: isMobile ? undefined : 428,
+                width: 428,
                 borderRadius: "28px",
                 border: "1px solid rgba(255,255,255,0.08)",
                 backgroundColor: "rgba(8, 14, 18, 0.985)",
