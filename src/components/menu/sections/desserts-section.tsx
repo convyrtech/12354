@@ -12,7 +12,7 @@ export function DessertsSection({ entries }: Props) {
   if (entries.length === 0) return null;
 
   return (
-    <SectionShell id="desserts" title="Десерты.">
+    <SectionShell id="desserts" title="Десерты." eyebrow="шоколад и ягоды">
       <div className="menu-section__grid-2">
         {entries.map((entry) => (
           <CompactCard key={entry.item.id} entry={entry} variant="small" />

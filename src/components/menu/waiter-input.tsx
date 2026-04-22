@@ -10,22 +10,29 @@ import {
   type KeyboardEvent,
 } from "react";
 
+export type WaiterInputHandle = { focus: () => void };
+
 type Props = {
   onSubmit: (text: string) => Promise<void> | void;
   busy?: boolean;
 };
 
-export const WaiterInput = forwardRef<HTMLTextAreaElement, Props>(
+export const WaiterInput = forwardRef<WaiterInputHandle, Props>(
   function WaiterInput({ onSubmit, busy }, ref) {
     const [expanded, setExpanded] = useState(false);
     const [value, setValue] = useState("");
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-    useImperativeHandle(ref, () => textareaRef.current as HTMLTextAreaElement);
+    useImperativeHandle(ref, () => ({
+      focus() {
+        setExpanded(true);
+      },
+    }));
 
     useEffect(() => {
       if (!expanded) return;
       textareaRef.current?.focus();
+      textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, [expanded]);
 
     const submit = async (event?: FormEvent<HTMLFormElement>) => {

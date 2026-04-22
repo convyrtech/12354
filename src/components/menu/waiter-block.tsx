@@ -27,7 +27,7 @@ import type {
   WaiterChip,
   WaiterResponse,
 } from "@/lib/waiter/waiter-types";
-import { WaiterInput } from "@/components/menu/waiter-input";
+import { WaiterInput, type WaiterInputHandle } from "@/components/menu/waiter-input";
 
 function modifiersToSelections(
   modifiers: Record<string, string> | undefined,
@@ -76,7 +76,7 @@ export function WaiterBlock() {
 
   const [response, setResponse] = useState<WaiterResponse>(initialResponse);
   const [busy, setBusy] = useState(false);
-  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const inputRef = useRef<WaiterInputHandle | null>(null);
 
   // Keep the scaffold interactive while the background fetch runs —
   // under `NEXT_PUBLIC_WAITER_MODE=openrouter` the server round-trip can
@@ -97,7 +97,6 @@ export function WaiterBlock() {
 
   const focusInput = useCallback(() => {
     inputRef.current?.focus();
-    inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, []);
 
   const handleChip = useCallback(

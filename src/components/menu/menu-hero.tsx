@@ -18,6 +18,7 @@ function formatEyebrowDate(now: Date): string {
   return new Intl.DateTimeFormat("ru-RU", {
     day: "numeric",
     month: "long",
+    timeZone: "Europe/Moscow",
   }).format(now);
 }
 

@@ -37,7 +37,7 @@ export function DrinksSection({ entries }: Props) {
     return null;
 
   return (
-    <SectionShell id="drinks" title={main.title}>
+    <SectionShell id="drinks" title={main.title} eyebrow="к столу">
       {main.items.length > 0 ? (
         <div className="menu-section__grid-2">
           {main.items.map((entry) => (
