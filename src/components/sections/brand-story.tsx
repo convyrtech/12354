@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type MutableRefObject } from "react";
-import { useSectionProgress } from "@/hooks/use-section-progress";
 import {
   motion,
   useMotionValue,
@@ -285,11 +284,13 @@ function Cinematic() {
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const closingRef = useRef<HTMLParagraphElement | null>(null);
 
-  const scrollYProgress = useSectionProgress(sectionRef, "through");
+  const scrollYProgress = useMotionValue(0);
   const headingProx = useMotionValue(1);
   const bodyProx = useMotionValue(1);
   const closingProx = useMotionValue(1);
 
+  // Single rAF loop for section progress + per-block proximity. Kept inline
+  // (not useSectionProgress) so layout reads are batched in one callback.
   useEffect(() => {
     let raf = 0;
 
@@ -308,7 +309,16 @@ function Cinematic() {
     };
 
     const measure = () => {
+      const section = sectionRef.current;
       const vh = window.innerHeight;
+
+      if (section) {
+        const rect = section.getBoundingClientRect();
+        const total = Math.max(1, rect.height - vh);
+        const p = Math.max(0, Math.min(1, -rect.top / total));
+        scrollYProgress.set(p);
+      }
+
       measureProx(headingRef as MutableRefObject<HTMLElement | null>, headingProx, vh);
       measureProx(bodyRef as MutableRefObject<HTMLElement | null>, bodyProx, vh);
       measureProx(closingRef as MutableRefObject<HTMLElement | null>, closingProx, vh);
@@ -317,7 +327,7 @@ function Cinematic() {
 
     raf = window.requestAnimationFrame(measure);
     return () => window.cancelAnimationFrame(raf);
-  }, [headingProx, bodyProx, closingProx]);
+  }, [scrollYProgress, headingProx, bodyProx, closingProx]);
 
   const smoothProgress = useSpring(scrollYProgress, SPRING);
   const flowY = useTransform(smoothProgress, (p) =>

@@ -56,7 +56,7 @@ export function CategoryChips({ chips }: Props) {
     if (chipEl && trackRef.current) {
       chipEl.scrollIntoView({ behavior: prefersReduced ? "instant" : "smooth", block: "nearest", inline: "center" });
     }
-  }, [active]);
+  }, [active, prefersReduced]);
 
   const handleClick = useCallback(
     (chip: CategoryChip) => (event: React.MouseEvent<HTMLButtonElement>) => {
