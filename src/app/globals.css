@@ -2776,8 +2776,25 @@ body[data-menu-open="true"] button[aria-label="Открыть заказ"] {
   transition: width 200ms var(--ease-out);
 }
 
-/* Cream-surface palette swap: AquariumToTable pinned cream, or the
-   menu panel open (panel fills the right column under the trigger). */
+/* Cream-surface palette swap: AquariumToTable pinned cream, static cream
+   pages (contact, account, etc.), or menu panel open. Nav text flips dark. */
+body[data-surface="cream"] .nav-brand__wordmark {
+  color: var(--text-on-cream);
+}
+body[data-surface="cream"] .nav-brand__wordmark em {
+  color: var(--text-on-cream);
+}
+body[data-surface="cream"] .nav-link {
+  color: rgba(16, 28, 30, 0.72);
+}
+body[data-surface="cream"] .nav-link:hover,
+body[data-surface="cream"] .nav-link[data-active="true"] {
+  color: var(--text-on-cream);
+}
+body[data-surface="cream"] .nav-shell {
+  border-bottom-color: rgba(16, 28, 30, 0.1);
+}
+
 body[data-surface="cream"] .home-menu-trigger,
 body[data-menu-open="true"] .home-menu-trigger {
   color: rgba(16, 28, 30, 0.92);

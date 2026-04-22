@@ -1,6 +1,9 @@
+import { BodySurfaceTag } from "@/components/shared/body-surface-tag";
+
 export function ContactPage() {
   return (
     <main className="cream-page">
+      <BodySurfaceTag surface="cream" />
       <div className="cream-page__shell">
         <p className="cream-page__eyebrow">Связь</p>
         <h1 className="cream-page__title">Звоните, пишите, заезжайте.</h1>
