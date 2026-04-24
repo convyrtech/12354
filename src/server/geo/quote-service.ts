@@ -7,55 +7,68 @@ import {
   evaluateDeliveryPolicyDecision,
   getDeliveryPolicy,
 } from "@/lib/delivery-policy";
-import { getLocation } from "@/lib/fixtures";
+import { findNearestActiveKitchen, getLocation } from "@/lib/fixtures";
+import { generateId } from "@/lib/ids";
 import { getGeoRuntimeConfig } from "@/server/geo/config";
 import { GeoValidationError } from "@/server/geo/errors";
 import { quoteRoute } from "@/server/geo/routing-service";
 import { findZone } from "@/server/geo/zone-service";
 
-const PREP_MINUTES = 40;
+// ETA = cook + route + handoff. Premium audience never sees decomposition;
+// label is "Будем у вас к HH:MM" formatted in Moscow time.
+const COOK_MINUTES = 20;
+const HANDOFF_MINUTES = 10;
+const SPREAD_MINUTES = 15;
+// Sanity cap — if the route quote says >3 hours, something is wrong (stale
+// draft with foreign coords, misrouted kitchen, Haversine overshoot). Showing
+// "Будем у вас к 08:27" (24h modulo) is worse than hiding the label entirely.
+const MAX_REASONABLE_ROUTE_MINUTES = 180;
+
+// Stateless; sharing one formatter avoids allocating on every quote request.
+const MOSCOW_HHMM_FORMATTER = new Intl.DateTimeFormat("ru-RU", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: "Europe/Moscow",
+});
 
 function createRequestId() {
-  const raw =
-    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2, 10);
-
-  return `quote_${raw}`;
+  return `quote_${generateId()}`;
 }
 
-function resolveBufferMinutes(zoneId: string | null) {
-  return zoneId === "zone_rublevka" ? 12 : 8;
+export function formatMoscowArrivalLabel(minutesFromNow: number): string {
+  const arrival = new Date(Date.now() + minutesFromNow * 60_000);
+  return `Будем у вас к ${MOSCOW_HHMM_FORMATTER.format(arrival)}`;
 }
 
-function buildEta(input: {
+export function buildEta(input: {
   routeMinutesLive: number | null;
-  zoneId: string | null;
   deliveryState: DeliveryQuote["zone"]["deliveryState"];
 }) {
-  const prepMinutes = PREP_MINUTES;
-  const bufferMinutes = resolveBufferMinutes(input.zoneId);
-
-  if (input.deliveryState === "out-of-zone" || input.routeMinutesLive === null) {
+  if (
+    input.deliveryState === "out-of-zone" ||
+    input.routeMinutesLive === null ||
+    input.routeMinutesLive > MAX_REASONABLE_ROUTE_MINUTES
+  ) {
     return {
-      prepMinutes,
-      bufferMinutes,
+      cookMinutes: COOK_MINUTES,
+      handoffMinutes: HANDOFF_MINUTES,
       etaMinMinutes: null,
       etaMaxMinutes: null,
       etaLabel: null,
     };
   }
 
-  const etaMinMinutes = prepMinutes + bufferMinutes + input.routeMinutesLive;
-  const etaSpreadMinutes = input.zoneId === "zone_rublevka" ? 20 : 15;
-  const etaMaxMinutes = etaMinMinutes + etaSpreadMinutes;
+  const etaMinMinutes =
+    COOK_MINUTES + input.routeMinutesLive + HANDOFF_MINUTES;
+  const etaMaxMinutes = etaMinMinutes + SPREAD_MINUTES;
 
   return {
-    prepMinutes,
-    bufferMinutes,
+    cookMinutes: COOK_MINUTES,
+    handoffMinutes: HANDOFF_MINUTES,
     etaMinMinutes,
     etaMaxMinutes,
-    etaLabel: `${etaMinMinutes}-${etaMaxMinutes} мин`,
+    etaLabel: formatMoscowArrivalLabel(etaMinMinutes),
   };
 }
 
@@ -103,11 +116,21 @@ export async function buildDeliveryQuote(
     { signal: options?.signal },
   );
 
-  const kitchenLocation = getLocation(zone.kitchenId);
+  // Override the zone's default kitchen with the geographically closest
+  // active one, so the demo visibly routes to Реутов for an east-Moscow
+  // address and to Осоргино for a west-Moscow one. When the zone resolver
+  // returns no kitchen (out-of-zone) we leave the override null so the
+  // route stays empty.
+  const nearest =
+    zone.deliveryState === "out-of-zone"
+      ? null
+      : findNearestActiveKitchen({ lat: request.lat, lng: request.lng });
+  const resolvedKitchenId = nearest?.id ?? zone.kitchenId;
+  const kitchenLocation = nearest ?? getLocation(zone.kitchenId);
   let providerLatencyMs: number | null = null;
 
   const routing =
-    zone.kitchenId && kitchenLocation?.lat !== undefined && kitchenLocation?.lng !== undefined
+    resolvedKitchenId && kitchenLocation?.lat !== undefined && kitchenLocation?.lng !== undefined
       ? await (async () => {
           const startedAt = Date.now();
           const result = await quoteRoute(
@@ -139,7 +162,6 @@ export async function buildDeliveryQuote(
   };
   const eta = buildEta({
     routeMinutesLive: routing.routeMinutesLive,
-    zoneId: zone.zoneId,
     deliveryState: zone.deliveryState,
   });
   const decision = evaluateDeliveryPolicyDecision({
@@ -170,7 +192,7 @@ export async function buildDeliveryQuote(
     zone,
     routing,
     kitchen: {
-      kitchenId: zone.kitchenId,
+      kitchenId: resolvedKitchenId,
       kitchenLabel: kitchenLocation?.name ?? null,
       lat: kitchenLocation?.lat ?? null,
       lng: kitchenLocation?.lng ?? null,

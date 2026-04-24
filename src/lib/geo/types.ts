@@ -39,6 +39,14 @@ export type GeoApiErrorCode =
   | "provider_misconfigured"
   | "provider_rate_limited";
 
+export type GeoApiError = {
+  code: GeoApiErrorCode;
+  message: string;
+  /** True for transient failures where an immediate retry is reasonable
+   *  (timeout, 5xx). False for terminal failures (rate limit, misconfig). */
+  retriable: boolean;
+};
+
 export type GeoLngLat = [lng: number, lat: number];
 
 export type GeoPolygon = {
@@ -113,8 +121,8 @@ export type DeliveryQuote = {
     minimumOrderAmount: number | null;
   };
   eta: {
-    prepMinutes: number;
-    bufferMinutes: number;
+    cookMinutes: number;
+    handoffMinutes: number;
     etaMinMinutes: number | null;
     etaMaxMinutes: number | null;
     etaLabel: string | null;
@@ -159,6 +167,22 @@ export type GeoFindZoneRequest = {
 };
 
 export type GeoFindZoneResponse = ZoneMatch;
+
+export type GeoReverseRequest = {
+  lat: number;
+  lng: number;
+  sessionToken?: string;
+};
+
+export type GeoReverseResponse = {
+  address: GeoAddressSuggestion | null;
+  meta: {
+    provider: GeoAddressProviderName | null;
+    cacheHit: boolean;
+    resolvedAt: string;
+  };
+  error?: GeoApiError;
+};
 
 export type DeliveryQuoteFromSuggestionRequest = {
   mode: "suggestion";

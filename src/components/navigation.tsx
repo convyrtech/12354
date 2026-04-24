@@ -125,29 +125,43 @@ export function Navigation() {
   const menuHref = "/menu";
 
   const links = useMemo<NavLink[]>(
-    () => [
-      {
-        href: menuHref,
-        label: "Меню",
-        active: pathname === "/menu" || pathname.startsWith("/product/"),
-      },
-      {
-        href: "/delivery/address",
-        label: "Доставка",
-        active: pathname.startsWith("/delivery"),
-      },
-      {
-        href: "/pickup/points",
-        label: "Самовывоз",
-        active: pathname.startsWith("/pickup"),
-      },
-      {
-        href: "/cart",
-        label: pathname === "/checkout" ? "Оформление" : "Заказ",
-        active: pathname === "/cart" || pathname === "/checkout",
-      },
-    ],
-    [pathname],
+    () => {
+      const menuLinks: NavLink[] = [
+        {
+          href: menuHref,
+          label: "Меню",
+          active: pathname === "/menu" || pathname.startsWith("/product/"),
+        },
+      ];
+
+      if (pathname === "/menu") {
+        menuLinks.push({
+          href: "/menu-editorial",
+          label: "Витрина",
+          active: false,
+        });
+      }
+
+      return [
+        ...menuLinks,
+        {
+          href: "/delivery/address",
+          label: "Доставка",
+          active: pathname.startsWith("/delivery"),
+        },
+        {
+          href: "/pickup/points",
+          label: "Самовывоз",
+          active: pathname.startsWith("/pickup"),
+        },
+        {
+          href: "/cart",
+          label: pathname === "/checkout" ? "Оформление" : "Заказ",
+          active: pathname === "/cart" || pathname === "/checkout",
+        },
+      ];
+    },
+    [menuHref, pathname],
   );
 
   return (

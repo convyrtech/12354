@@ -16,6 +16,14 @@ function isPointOnSegment(
     return false;
   }
 
+  const squaredLength =
+    (endLng - startLng) * (endLng - startLng) +
+    (endLat - startLat) * (endLat - startLat);
+
+  if (squaredLength <= 1e-20) {
+    return Math.abs(pointLng - startLng) <= 1e-10 && Math.abs(pointLat - startLat) <= 1e-10;
+  }
+
   const dot =
     (pointLng - startLng) * (endLng - startLng) +
     (pointLat - startLat) * (endLat - startLat);
@@ -23,10 +31,6 @@ function isPointOnSegment(
   if (dot < 0) {
     return false;
   }
-
-  const squaredLength =
-    (endLng - startLng) * (endLng - startLng) +
-    (endLat - startLat) * (endLat - startLat);
 
   return dot <= squaredLength;
 }

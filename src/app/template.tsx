@@ -14,6 +14,10 @@ function getRouteMeta(pathname: string) {
     return { eyebrow: "Каталог", label: "Подбор заказа" };
   }
 
+  if (pathname === "/menu-editorial") {
+    return { eyebrow: "Меню", label: "Витрина The Raki" };
+  }
+
   if (pathname.startsWith("/product/")) {
     return { eyebrow: "Позиция", label: "Выбор подачи" };
   }

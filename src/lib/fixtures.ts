@@ -127,6 +127,9 @@ export type ModifierOption = {
   id: string;
   label: string;
   priceDelta: number;
+  summaryLabel?: string | null;
+  weightAbsoluteKg?: number;
+  weightDeltaKg?: number;
 };
 
 export type ModifierGroupKind = "core" | "secondary";
@@ -292,9 +295,9 @@ export const legalEntities: LegalEntity[] = [
 export const locations: Location[] = [
   {
     id: "loc_lesnoy_01",
-    name: "Осоргино, 202",
-    addressLabel: "Осоргино, 202",
-    regionLabel: "Одинцовский кластер",
+    name: "деревня Осоргино, 202",
+    addressLabel: "деревня Осоргино, 202",
+    regionLabel: "Запад Подмосковья",
     lat: 55.6584,
     lng: 37.2318,
     status: "active",
@@ -302,10 +305,21 @@ export const locations: Location[] = [
     servicePointIds: ["sp_lesnoy_dispatch_01", "sp_lesnoy_pickup_01"],
   },
   {
+    id: "loc_reutov_01",
+    name: "Реутов, ул. Октября 1",
+    addressLabel: "Реутов, ул. Октября 1",
+    regionLabel: "Восток Москвы и ближнее Подмосковье",
+    lat: 55.7589,
+    lng: 37.8567,
+    status: "active",
+    operatingHours: { open: "12:00", close: "23:00" },
+    servicePointIds: ["sp_reutov_dispatch_01"],
+  },
+  {
     id: "loc_moscow_west_01",
     name: "Москва Запад",
     addressLabel: "Кутузовский / Рублёвка",
-    regionLabel: "Западный кластер Москвы",
+    regionLabel: "Запад Москвы",
     lat: 55.7381,
     lng: 37.4084,
     status: "planned",
@@ -316,7 +330,7 @@ export const locations: Location[] = [
     id: "loc_moscow_center_01",
     name: "Москва Центр",
     addressLabel: "Центр Москвы",
-    regionLabel: "Центральный кластер Москвы",
+    regionLabel: "Центр Москвы",
     lat: 55.7567,
     lng: 37.6187,
     status: "planned",
@@ -340,6 +354,14 @@ export const servicePoints: ServicePoint[] = [
     locationId: "loc_lesnoy_01",
     legalEntityId: "le_raki_core",
     pointType: "pickup_counter",
+    status: "active",
+  },
+  {
+    id: "sp_reutov_dispatch_01",
+    label: "Кухня в Реутове, ул. Октября 1",
+    locationId: "loc_reutov_01",
+    legalEntityId: "le_raki_core",
+    pointType: "dispatch_kitchen",
     status: "active",
   },
   {
@@ -900,17 +922,12 @@ export const timingSlots: TimingSlot[] = [
   },
 ];
 
-const crayfishSeasonalRule: SeasonalProductRequestRule = {
-  label: "Только самки",
-  seasonLabel: "ноябрь-март",
-  activeMonths: [11, 12, 1, 2, 3],
-  note: "Запрос работает только в сезон и остаётся пожеланием без гарантии по текущей партии, а не жёстким обещанием.",
-};
-
 const crayfishWeightOptions: ModifierOption[] = [
-  { id: "weight_1kg", label: "1 кг", priceDelta: 0 },
-  { id: "weight_1_5kg", label: "1.5 кг", priceDelta: 2450 },
-  { id: "weight_2kg", label: "2 кг", priceDelta: 4900 },
+  { id: "weight_1kg", label: "1 кг", priceDelta: 0, weightAbsoluteKg: 1 },
+  { id: "weight_1_5kg", label: "1.5 кг", priceDelta: 2450, weightAbsoluteKg: 1.5 },
+  { id: "weight_2kg", label: "2 кг", priceDelta: 4900, weightAbsoluteKg: 2 },
+  { id: "weight_2_5kg", label: "2.5 кг", priceDelta: 7350, weightAbsoluteKg: 2.5 },
+  { id: "weight_3kg", label: "3 кг", priceDelta: 9800, weightAbsoluteKg: 3 },
 ];
 
 const boiledCrayfishSizeOptions: ModifierOption[] = [
@@ -1010,25 +1027,20 @@ export const menuItems: MenuItem[] = [
     subcategory: "boiled",
     productFamily: "boiled",
     name: "Варёные раки",
-    description:
-      "Главная линия The Raki: размер от S до XXL, реальный рецепт варки и вес подтверждаются ещё до корзины.",
-    editorialNote:
-      "Шеф варит раков 15 лет. Размерный ряд без компромиссов — S для плотных ужинов парой, XXL для стола на шесть.",
+    description: "Классические варёные раки с выбором размера и рецепта.",
+    editorialNote: "Классическая варка.",
     basePrice: 4900,
     isSignature: true,
     availableFor: ["delivery", "pickup"],
-    metadata: { origin: "Ростов-Дон", serving: "горячо к столу" },
+    metadata: { origin: "Ростов-Дон", serving: "варёные" },
     imageKey: "raki-boiled",
     bundledAccessories: [glovesAccessory],
     upsellAccessories: rakiSauceUpsells,
-    note: "Минимальный заказ — 1 кг. Дальше вес добирается шагом 0.5 кг. Размерный ряд идёт через S-XXL, а старые граммы остаются только внутренним мостом.",
-    bestEffortRequests: ["Только самки — только в сезон и без гарантии по конкретной партии."],
     commercialRules: {
       orderingModel: "weight_based",
       minimumWeightKg: 1,
       weightStepKg: 0.5,
       recipeAffectsPrice: true,
-      seasonalRequest: crayfishSeasonalRule,
     },
     servicePointAvailability: [
       {
@@ -1044,7 +1056,6 @@ export const menuItems: MenuItem[] = [
           kind: "core",
           minSelections: 1,
           maxSelections: 1,
-          helpText: "Подберите размер под ваш стол и формат подачи.",
           options: boiledCrayfishSizeOptions,
         },
         {
@@ -1053,7 +1064,6 @@ export const menuItems: MenuItem[] = [
           kind: "core",
           minSelections: 1,
           maxSelections: 1,
-          helpText: "Выберите рецепт, который лучше подходит к этой подаче.",
           options: boiledRecipeOptions,
         },
       {
@@ -1062,7 +1072,6 @@ export const menuItems: MenuItem[] = [
         kind: "core",
         minSelections: 1,
         maxSelections: 1,
-        helpText: "Начинаем с 1 кг, дальше можно добавить по 0.5 кг.",
         options: crayfishWeightOptions,
       },
       {
@@ -1100,24 +1109,19 @@ export const menuItems: MenuItem[] = [
     subcategory: "fried",
     productFamily: "fried",
     name: "Жареные раки",
-    description:
-      "Жареная линия тоже строится вокруг размера и веса: тот же размерный ряд, но уже более плотная и насыщенная подача.",
-    editorialNote:
-      "Плотнее варёных, под сливки и травы. Хорошо идут поздним вечером, когда стол уже собран и нужен более сочный акцент.",
+    description: "Жареные раки с выбором размера и рецепта.",
+    editorialNote: "Жареные раки с выбором рецепта.",
     basePrice: 5700,
     availableFor: ["delivery", "pickup"],
-    metadata: { origin: "Ростов-Дон", serving: "горячо к столу" },
+    metadata: { origin: "Ростов-Дон", serving: "жареные" },
     imageKey: "raki-fried",
     bundledAccessories: [glovesAccessory],
     upsellAccessories: rakiSauceUpsells,
-    note: "Минимальный заказ — 1 кг. Размер идёт от S до XXL. Жареная линия держится на размере, весе и сезонном пожелании без гарантии.",
-    bestEffortRequests: ["Только самки — только в сезон и без гарантии по конкретной партии."],
     commercialRules: {
       orderingModel: "weight_based",
       minimumWeightKg: 1,
       weightStepKg: 0.5,
       recipeAffectsPrice: true,
-      seasonalRequest: crayfishSeasonalRule,
     },
     servicePointAvailability: [
       {
@@ -1133,7 +1137,6 @@ export const menuItems: MenuItem[] = [
         kind: "core",
         minSelections: 1,
         maxSelections: 1,
-        helpText: "Размерный ряд должен совпадать с текущей шкалой: S, M, L, XL, XXL.",
         options: friedCrayfishSizeOptions,
       },
       {
@@ -1142,7 +1145,6 @@ export const menuItems: MenuItem[] = [
         kind: "core",
         minSelections: 1,
         maxSelections: 1,
-        helpText: "Выберите рецепт. Сливки-чеснок — базовая подача.",
         options: friedRecipeOptions,
       },
       {
@@ -1151,7 +1153,6 @@ export const menuItems: MenuItem[] = [
         kind: "core",
         minSelections: 1,
         maxSelections: 1,
-        helpText: "Начинаем с 1 кг, дальше можно добавить по 0.5 кг.",
         options: crayfishWeightOptions,
       },
       {
@@ -1176,23 +1177,18 @@ export const menuItems: MenuItem[] = [
     subcategory: "live",
     productFamily: "live",
     name: "Живые раки",
-    description:
-      "Свежая линия для тех, кто хочет получить живого рака. Здесь главное — размерный ряд и вес, а не комментарии по рецепту.",
-    editorialNote:
-      "Прибывают живыми, хранятся в аквариуме до выезда. Специи кухня пришлёт отдельно — добавляются к заказу по запросу.",
+    description: "Живые раки с выбором размера и веса.",
+    editorialNote: "Живые раки.",
     basePrice: 4700,
     availableFor: ["delivery", "pickup"],
-    metadata: { origin: "Ростов-Дон", serving: "живые, в аквариуме" },
+    metadata: { origin: "Ростов-Дон", serving: "живые" },
     imageKey: "raki-live",
     bundledAccessories: [glovesAccessory],
-    note: "Минимальный заказ — 1 кг. Размерный ряд идёт от S до XXL. Самовывоз для живых раков пока ограничен.",
-    bestEffortRequests: ["Только самки — только в сезон и без гарантии по текущей партии."],
     commercialRules: {
       orderingModel: "weight_based",
       minimumWeightKg: 1,
       weightStepKg: 0.5,
       recipeAffectsPrice: true,
-      seasonalRequest: crayfishSeasonalRule,
     },
     servicePointAvailability: [
       {
@@ -1208,7 +1204,6 @@ export const menuItems: MenuItem[] = [
         kind: "core",
         minSelections: 1,
         maxSelections: 1,
-        helpText: "Размер и вес — главные параметры живой линии.",
         options: liveCrayfishSizeOptions,
       },
       {
@@ -1217,7 +1212,6 @@ export const menuItems: MenuItem[] = [
         kind: "core",
         minSelections: 1,
         maxSelections: 1,
-        helpText: "Рецепт подбирается по желанию. Классический — базовая подача.",
         options: liveSpicesOptions,
       },
       {
@@ -1226,7 +1220,6 @@ export const menuItems: MenuItem[] = [
         kind: "core",
         minSelections: 1,
         maxSelections: 1,
-        helpText: "Начинаем с 1 кг, дальше можно добавить по 0.5 кг.",
         options: crayfishWeightOptions,
       },
     ],
@@ -1520,9 +1513,8 @@ export const menuItems: MenuItem[] = [
     categorySlug: "crab",
     productFamily: "crab",
     name: "Фаланга камчатского краба L5",
-    description: "Премиальная якорная линия из текущего меню, которая должна звучать спокойно и дорого.",
-    editorialNote:
-      "Самая крупная фаланга. Мяса до 90 процентов. Приходит живой, готовим под стол: в бульоне, на льду или живым.",
+    description: "Фаланга камчатского краба.",
+    editorialNote: "Крупная фаланга камчатского краба.",
     basePrice: 10500,
     availableFor: ["delivery"],
     metadata: { weight: { value: 1, unit: "kg" }, origin: "Камчатка", serving: "отварная" },
@@ -1567,8 +1559,8 @@ export const menuItems: MenuItem[] = [
     categorySlug: "crab",
     productFamily: "crab",
     name: "Камчатский краб целиком 2 кг",
-    description: "Большая якорная позиция для тех, кто приходит в The Raki за редким и дорогим продуктом.",
-    editorialNote: "Для стола на шестерых и больше. Подача — целиком: в бульоне, на льду или живым.",
+    description: "Камчатский краб целиком, 2 кг.",
+    editorialNote: "Краб целиком.",
     basePrice: 16000,
     availableFor: ["delivery"],
     badge: "hit",
@@ -1604,10 +1596,10 @@ export const menuItems: MenuItem[] = [
     categorySlug: "mussels",
     productFamily: "mussels",
     name: "Мидии в соусе Блю Чиз / 1 кг",
-    description: "Реальная соседняя линия меню, которая показывает ресторанную ширину каталога рядом с главной раковой линией.",
+    description: "Мидии в соусе блю чиз.",
     basePrice: 3000,
     availableFor: ["delivery", "pickup"],
-    metadata: { weight: { value: 1, unit: "kg" }, origin: "Мурманск", serving: "горячо" },
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Мурманск", serving: "блю чиз" },
     imageKey: "mussels-blue-cheese",
     bundledAccessories: [breadToastAccessory],
     modifierGroups: [
@@ -1630,10 +1622,10 @@ export const menuItems: MenuItem[] = [
     categorySlug: "mussels",
     productFamily: "mussels",
     name: "Мидии в соусе Томат — Зелень / 1 кг",
-    description: "Более яркая томатная линия для гостей, которым нужна тёплая гастрономическая подача.",
+    description: "Мидии в томатном соусе с зеленью.",
     basePrice: 3000,
     availableFor: ["delivery", "pickup"],
-    metadata: { weight: { value: 1, unit: "kg" }, origin: "Мурманск", serving: "горячо" },
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Мурманск", serving: "томат" },
     imageKey: "mussels-tomato-greens",
     bundledAccessories: [breadToastAccessory],
     modifierGroups: [
@@ -1656,11 +1648,11 @@ export const menuItems: MenuItem[] = [
     categorySlug: "mussels",
     productFamily: "mussels",
     name: "Мидии в соусе Песто / 1 кг",
-    description: "Зелёная линия мидий для тех, кто ищет более мягкую и свежую подачу.",
+    description: "Мидии в соусе песто.",
     basePrice: 3000,
     availableFor: ["delivery", "pickup"],
     isSignature: true,
-    metadata: { weight: { value: 1, unit: "kg" }, origin: "Мурманск", serving: "горячо" },
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Мурманск", serving: "песто" },
     imageKey: "mussels-pesto",
     bundledAccessories: [breadToastAccessory],
     modifierGroups: [
@@ -1683,10 +1675,10 @@ export const menuItems: MenuItem[] = [
     categorySlug: "mussels",
     productFamily: "mussels",
     name: "Мидии в соусе Том Ям / 1 кг",
-    description: "Острый вариант мидий для тех, кто хочет более яркую и пряную подачу.",
+    description: "Мидии в соусе том ям.",
     basePrice: 3000,
     availableFor: ["delivery", "pickup"],
-    metadata: { weight: { value: 1, unit: "kg" }, origin: "Мурманск", serving: "остро, горячо" },
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Мурманск", serving: "том ям" },
     imageKey: "mussels-tom-yam",
     bundledAccessories: [breadToastAccessory],
     modifierGroups: [
@@ -1735,10 +1727,10 @@ export const menuItems: MenuItem[] = [
     categorySlug: "vongole",
     productFamily: "mussels",
     name: "Вонголе в сливочно-сырном соусе / 1 кг",
-    description: "Более мягкая кремовая линия для спокойного ресторанного заказа.",
+    description: "Вонголе в сливочно-сырном соусе.",
     basePrice: 2400,
     availableFor: ["delivery", "pickup"],
-    metadata: { weight: { value: 1, unit: "kg" }, origin: "Средиземноморье", serving: "горячо" },
+    metadata: { weight: { value: 1, unit: "kg" }, origin: "Средиземноморье", serving: "сливочно-сырный" },
     imageKey: "vongole-creamy",
     bundledAccessories: [breadToastAccessory],
     modifierGroups: [
@@ -1787,7 +1779,7 @@ export const menuItems: MenuItem[] = [
     categorySlug: "caviar",
     productFamily: "caviar",
     name: "Икра красная Горбуши / 250 гр",
-    description: "Красная икра как деликатесная линия рядом с крабом и раками.",
+    description: "Зернистая красная икра горбуши.",
     basePrice: 3500,
     availableFor: ["delivery", "pickup"],
     metadata: { weight: { value: 250, unit: "g" }, origin: "Сахалин", serving: "охлаждённая" },
@@ -1811,8 +1803,8 @@ export const menuItems: MenuItem[] = [
     category: "Икра",
     categorySlug: "caviar",
     productFamily: "caviar",
-    name: "Икра черная 250 зернистая русского осетра пластик",
-    description: "Тихая чёрная линия для дорогого деликатесного заказа.",
+    name: "Икра чёрная зернистая русского осетра / 250 гр",
+    description: "Зернистая чёрная икра русского осетра.",
     basePrice: 15000,
     availableFor: ["delivery", "pickup"],
     metadata: { weight: { value: 250, unit: "g" }, origin: "Русский осётр", serving: "охлаждённая" },
@@ -1861,7 +1853,7 @@ export const menuItems: MenuItem[] = [
     categorySlug: "desserts",
     productFamily: "dessert",
     name: "Малина в молочном шоколаде",
-    description: "Сладкая линия для тех, кто хочет закончить заказ мягко и аккуратно.",
+    description: "Малина в молочном шоколаде.",
     basePrice: 1500,
     availableFor: ["delivery", "pickup"],
     metadata: { weight: { value: 130, unit: "g" }, serving: "комнатная" },
@@ -1886,7 +1878,7 @@ export const menuItems: MenuItem[] = [
     subcategory: "non-alcoholic",
     productFamily: "drink",
     name: "Боржоми",
-    description: "Спокойное сопровождение к заказу без лишнего внимания к себе.",
+    description: "Минеральная вода.",
     basePrice: 250,
     availableFor: ["delivery", "pickup"],
     metadata: { weight: { value: 500, unit: "g" }, origin: "Грузия", serving: "охлаждённая" },
@@ -1912,7 +1904,7 @@ export const menuItems: MenuItem[] = [
     subcategory: "non-alcoholic",
     productFamily: "drink",
     name: "Сок YOGA Вишня 0,2",
-    description: "Спокойное сопровождение для заказа, которое не спорит за внимание с главным продуктом.",
+    description: "Вишнёвый сок.",
     basePrice: 490,
     availableFor: ["delivery", "pickup"],
     metadata: { weight: { value: 200, unit: "g" }, origin: "Италия", serving: "охлаждённый" },
@@ -2013,34 +2005,11 @@ export function getProductCommercialTruth(item: MenuItem, referenceDate = new Da
   const truthLines: string[] = [];
 
   if (["boiled", "fried", "live"].includes(item.productFamily)) {
-    truthChips.push("размеры S-XXL");
-    truthLines.push("Размерный ряд идёт по текущей шкале: от S до XXL.");
+    truthChips.push("S-XXL");
   }
 
   if (rules?.minimumWeightKg) {
     truthChips.push(`от ${formatWeightKg(rules.minimumWeightKg)}`);
-    truthLines.push(`Минимальный заказ — ${formatWeightKg(rules.minimumWeightKg)}.`);
-  }
-
-  if (rules?.weightStepKg) {
-    truthChips.push(`шаг ${formatWeightKg(rules.weightStepKg)}`);
-    truthLines.push(`Дальше вес добирается шагом ${formatWeightKg(rules.weightStepKg)}.`);
-  }
-
-  if (rules?.recipeAffectsPrice) {
-    truthChips.push("рецепт меняет цену");
-    truthLines.push("Выбранный рецепт влияет на цену строки заказа.");
-  }
-
-  if (seasonalRequest) {
-    truthChips.push(
-      seasonalActive ? `${seasonalRequest.label}: сезон активен` : `${seasonalRequest.label}: вне сезона`,
-    );
-      truthLines.push(
-        seasonalActive
-          ? `${seasonalRequest.label} сейчас допустимы только как пожелание без гарантии в сезон ${seasonalRequest.seasonLabel}.`
-          : `${seasonalRequest.label} сейчас вне сезона ${seasonalRequest.seasonLabel} и не должны звучать как рабочее обещание.`,
-      );
   }
 
   return {
@@ -2076,6 +2045,34 @@ export function getLegalEntity(legalEntityId: string | null) {
 export function getLocation(locationId: string | null) {
   if (!locationId) return undefined;
   return locationsById.get(locationId);
+}
+
+/**
+ * Pick the closest currently-active kitchen to the given destination by
+ * straight-line distance. Used by the quote service to demonstrate auto-
+ * routing — drop a pin near Реутов, get reutov; drop near Одинцово, get
+ * лесной. Returns null when no active kitchen exists (shouldn't happen
+ * in production but keeps the type honest).
+ */
+export function findNearestActiveKitchen(input: {
+  lat: number;
+  lng: number;
+}): Location | null {
+  let best: { location: Location; distance: number } | null = null;
+  for (const location of locations) {
+    if (location.status !== "active") continue;
+    if (location.lat === undefined || location.lng === undefined) continue;
+    const dx = location.lat - input.lat;
+    const dy = location.lng - input.lng;
+    // Squared euclidean is enough to rank — equator-vs-pole skew doesn't
+    // matter inside a single metro region. Avoids the trig of Haversine
+    // for a hot path called once per quote.
+    const distance = dx * dx + dy * dy;
+    if (!best || distance < best.distance) {
+      best = { location, distance };
+    }
+  }
+  return best?.location ?? null;
 }
 
 export function getServicePoint(servicePointId: string | null) {

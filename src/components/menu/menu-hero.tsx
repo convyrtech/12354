@@ -44,7 +44,7 @@ export function MenuHero() {
   const wordAnimate = { opacity: 1, y: 0, filter: "blur(0px)" };
 
   return (
-    <section className="menu-hero" aria-label="Hero — welcome">
+    <section className="menu-hero" aria-label="Меню The Raki">
       <div className="menu-hero__inner">
         <EditorialLabel tone="dark">
           подача на {formatEyebrowDate(today)}

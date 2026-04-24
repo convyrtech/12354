@@ -53,8 +53,16 @@ export function CategoryChips({ chips }: Props) {
   useEffect(() => {
     if (!active) return;
     const chipEl = chipRefs.current.get(active);
-    if (chipEl && trackRef.current) {
-      chipEl.scrollIntoView({ behavior: prefersReduced ? "instant" : "smooth", block: "nearest", inline: "center" });
+    const trackEl = trackRef.current;
+    if (chipEl && trackEl) {
+      const left =
+        chipEl.offsetLeft -
+        trackEl.clientWidth / 2 +
+        chipEl.clientWidth / 2;
+      trackEl.scrollTo({
+        left: Math.max(0, left),
+        behavior: prefersReduced ? "auto" : "smooth",
+      });
     }
   }, [active, prefersReduced]);
 
