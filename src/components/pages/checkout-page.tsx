@@ -1,12 +1,14 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { dispatchCartOpen } from "@/components/cart-events";
 import { useDraft } from "@/components/draft-provider";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { useFakeAuth } from "@/hooks/use-fake-auth";
-import { isValidRuPhone, normalizeRuPhone } from "@/lib/checkout";
+import { getCheckoutIssues, isValidRuPhone, normalizeRuPhone } from "@/lib/checkout";
 import { getProductFamilyImage } from "@/lib/category-images";
 import { getDraftCartView, hasResolvedServiceContext } from "@/lib/draft-view";
 import { formatMoney, getMenuSnapshotForContext, type MenuSnapshotItem } from "@/lib/fixtures";
@@ -14,9 +16,15 @@ import {
   appendDraftLineItem,
   buildDraftLineItem,
   getDefaultModifierSelections,
+  type DraftLineItem,
 } from "@/lib/line-item";
 import type { SubmitOrderResponse, SubmittedOrderSummary } from "@/lib/orders";
 import { getContextUpsellItems, getUpsellNote } from "@/lib/upsells";
+
+type ModifierRow = {
+  label: string;
+  value: string;
+};
 
 const PAYMENT_OPTIONS = [
   {
@@ -32,129 +40,201 @@ const PAYMENT_OPTIONS = [
   {
     id: "sbp" as const,
     label: "Переводом после звонка",
-    note: "Для чувствительных маршрутов и крупных заказов",
+    note: "Для крупных столов и чувствительных маршрутов",
   },
 ] as const;
 
 const READY_ITEMS = [
   "Имя и телефон для подтверждения.",
   "Подтвержденный адрес доставки или точка самовывоза.",
-  "Собранный заказ в корзине.",
+  "Собранный заказ в вашем столе.",
 ] as const;
 
-const cardStyle = {
-  borderRadius: "var(--radius-xl)",
-  border: "1px solid var(--border)",
-  backgroundColor: "rgba(10, 18, 24, 0.84)",
-} as const;
+const SUMMARY_LABEL_MAP: Record<string, string> = {
+  "Рецепт варки": "Рецепт",
+  "Рецепт обжарки": "Рецепт",
+  "Рецепт жарки": "Рецепт",
+  "Степень соли": "Соль",
+  "Степень остроты": "Острота",
+  "Базовый соус": "Соус",
+  "Соусы к подаче": "Соусы",
+  Добрать: "Вес",
+};
+
+function parseSummaryLine(line: string): ModifierRow | null {
+  const separatorIndex = line.indexOf(":");
+
+  if (separatorIndex === -1) {
+    const trimmed = line.trim();
+    return trimmed ? { label: "Параметр", value: trimmed } : null;
+  }
+
+  const rawLabel = line.slice(0, separatorIndex).trim();
+  const value = line.slice(separatorIndex + 1).trim();
+
+  if (!value) return null;
+
+  return {
+    label: SUMMARY_LABEL_MAP[rawLabel] ?? rawLabel,
+    value,
+  };
+}
 
 function getServiceModeLabel(mode: string | null) {
   if (mode === "pickup") return "Самовывоз";
   if (mode === "delivery") return "Доставка";
-  return "Уточняется";
+  return "Сервис";
 }
 
 function getHandoffStatusLabel(order: SubmittedOrderSummary) {
-  if (order.handoffStatus === "submitted") return "передан в систему";
-  if (order.handoffStatus === "sync_failed") return "на ручной проверке";
-  return "принят командой";
+  if (order.handoffStatus === "submitted") return "Передан в систему";
+  if (order.handoffStatus === "sync_failed") return "На ручной проверке";
+  return "Принят командой";
 }
 
-function HeroCard({
+function getContextHref(fulfillmentMode: string | null) {
+  return fulfillmentMode === "pickup" ? "/pickup/points" : "/delivery/address";
+}
+
+function getIssueLabel(count: number) {
+  if (count <= 0) return null;
+
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+
+  if (mod10 === 1 && mod100 !== 11) {
+    return `Проверим ${count} позицию перед подтверждением`;
+  }
+
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+    return `Проверим ${count} позиции перед подтверждением`;
+  }
+
+  return `Проверим ${count} позиций перед подтверждением`;
+}
+
+function getLineProductImage(
+  lineItem: DraftLineItem,
+  visibleItems: ReturnType<typeof getMenuSnapshotForContext>["visibleItems"],
+) {
+  const family =
+    visibleItems.find((entry) => entry.item.id === lineItem.itemId)?.item.productFamily ?? "boiled";
+
+  return getProductFamilyImage(family);
+}
+
+function CheckoutControls({
+  contextHref,
+  lineCount,
+  showOrderButton = true,
+}: {
+  contextHref: string;
+  lineCount: number;
+  showOrderButton?: boolean;
+}) {
+  return (
+    <div className="menu-editorial__controls product-editorial__controls checkout-editorial__controls">
+      <Link href="/menu-editorial" className="menu-editorial__control menu-editorial__control--menu">
+        <span className="product-editorial__back-arrow" aria-hidden>
+          ←
+        </span>
+        <span>Меню</span>
+      </Link>
+
+      <div className="menu-editorial__control-stack">
+        <Link href={contextHref} className="menu-editorial__icon-control" aria-label="Адрес и подача">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M12 20s6-5.1 6-10.2A6 6 0 0 0 6 9.8C6 14.9 12 20 12 20Z"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinejoin="round"
+            />
+            <circle cx="12" cy="9.8" r="2.2" stroke="currentColor" strokeWidth="1.6" />
+          </svg>
+        </Link>
+
+        {showOrderButton && lineCount > 0 ? (
+          <button
+            type="button"
+            className="menu-editorial__control menu-editorial__control--cart"
+            onClick={() => dispatchCartOpen()}
+            aria-label="Открыть ваш стол"
+          >
+            <span>Ваш стол</span>
+            <strong>{lineCount}</strong>
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function CheckoutStateScreen({
+  contextHref,
+  lineCount,
+  heroImage,
   eyebrow,
   title,
   body,
   actions,
+  sideEyebrow,
+  sideTitle,
+  sideBody,
+  children,
 }: {
+  contextHref: string;
+  lineCount: number;
+  heroImage: string;
   eyebrow: string;
   title: string;
   body: string;
-  actions?: ReactNode;
-}) {
-  return (
-    <div
-      style={{
-        ...cardStyle,
-        padding: "calc(var(--space-2xl) + 6px)",
-        background:
-          "radial-gradient(circle at top left, rgba(99, 188, 197, 0.12) 0%, rgba(99, 188, 197, 0) 44%), rgba(15, 26, 34, 0.84)",
-      }}
-    >
-      <span className="text-eyebrow block" style={{ marginBottom: "var(--space-xs)" }}>
-        {eyebrow}
-      </span>
-      <h1 className="text-h1" style={{ marginBottom: "var(--space-sm)", maxWidth: 640 }}>
-        {title}
-      </h1>
-      <p
-        className="text-muted"
-        style={{ marginBottom: actions ? "var(--space-lg)" : 0, lineHeight: 1.8, maxWidth: 620 }}
-      >
-        {body}
-      </p>
-      {actions}
-    </div>
-  );
-}
-
-function SideInfo({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle: string;
+  actions: ReactNode;
+  sideEyebrow: string;
+  sideTitle: string;
+  sideBody?: string;
   children: ReactNode;
 }) {
   return (
-    <div
-      style={{
-        ...cardStyle,
-        padding: "calc(var(--space-xl) + 4px)",
-        display: "grid",
-        gap: "var(--space-sm)",
-        alignContent: "start",
-      }}
-    >
-      <div style={{ paddingBottom: "var(--space-sm)", borderBottom: "1px solid var(--border)" }}>
-        <span className="text-eyebrow block" style={{ marginBottom: 6 }}>
-          {subtitle}
-        </span>
-        <strong style={{ display: "block", fontSize: 22, lineHeight: 1.2 }}>{title}</strong>
-      </div>
-      {children}
-    </div>
-  );
-}
+    <main className="checkout-editorial checkout-editorial--state">
+      <CheckoutControls contextHref={contextHref} lineCount={lineCount} />
 
-function SummaryMetric({
-  eyebrow,
-  title,
-  lines,
-}: {
-  eyebrow: string;
-  title: string;
-  lines: string[];
-}) {
-  return (
-    <div
-      style={{
-        padding: "var(--space-md)",
-        borderRadius: "var(--radius-lg)",
-        border: "1px solid rgba(255,255,255,0.07)",
-        backgroundColor: "rgba(255,255,255,0.025)",
-      }}
-    >
-      <span className="text-eyebrow block" style={{ marginBottom: 6 }}>
-        {eyebrow}
-      </span>
-      <strong style={{ display: "block", fontSize: 18, marginBottom: 8 }}>{title}</strong>
-      <div className="text-muted" style={{ lineHeight: 1.7, display: "grid", gap: 4 }}>
-        {lines.map((line) => (
-          <div key={line}>{line}</div>
-        ))}
-      </div>
-    </div>
+      <section className="checkout-editorial__state-hero">
+        <div
+          className="checkout-editorial__hero-media"
+          style={{
+            backgroundImage: `linear-gradient(180deg, rgba(5, 10, 13, 0.16) 0%, rgba(5, 10, 13, 0.5) 42%, rgba(5, 10, 13, 0.94) 100%), url("${heroImage}")`,
+          }}
+        />
+        <div className="checkout-editorial__hero-overlay" />
+        <div className="checkout-editorial__hero-grain" />
+
+        <div className="checkout-editorial__state-inner">
+          <ScrollReveal>
+            <div className="checkout-editorial__state-grid">
+              <div className="checkout-editorial__state-copy">
+                <span className="checkout-editorial__brand">The Raki</span>
+                <span className="checkout-editorial__eyebrow">{eyebrow}</span>
+                <h1 className="checkout-editorial__title">{title}</h1>
+                <p className="checkout-editorial__description">{body}</p>
+                <div className="checkout-editorial__state-actions">{actions}</div>
+              </div>
+
+              <aside className="checkout-editorial__state-card">
+                <div className="checkout-editorial__section-head checkout-editorial__section-head--tight">
+                  <div>
+                    <span className="checkout-editorial__panel-eyebrow">{sideEyebrow}</span>
+                    <h2>{sideTitle}</h2>
+                  </div>
+                </div>
+                {sideBody ? <p className="checkout-editorial__panel-copy">{sideBody}</p> : null}
+                <div className="checkout-editorial__state-list">{children}</div>
+              </aside>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+    </main>
   );
 }
 
@@ -162,8 +242,8 @@ export function CheckoutPage() {
   const { draft, patchDraft } = useDraft();
   const cart = getDraftCartView(draft);
   const serviceResolved = hasResolvedServiceContext(draft);
-  const contextHref = draft.fulfillmentMode === "pickup" ? "/pickup/points" : "/delivery/address";
-  const menuHref = draft.fulfillmentMode === "pickup" ? "/menu?fulfillment=pickup" : "/menu?fulfillment=delivery";
+  const contextHref = getContextHref(draft.fulfillmentMode);
+  const menuHref = "/menu-editorial";
 
   const [name, setName] = useState(draft.customerName);
   const [phone, setPhone] = useState(draft.customerPhone);
@@ -194,30 +274,52 @@ export function CheckoutPage() {
   }, [draft.paymentMethod]);
 
   const phoneValid = isValidRuPhone(phone);
-  const canSubmit =
-    name.trim().length > 0 && phoneValid && cart.lineItems.length > 0 && !submitting;
 
-  // Fake-auth lookup: if the typed phone matches a stored entry, show
-  // "welcome back" with bonus balance. Otherwise greet as first-time.
+  // Run the full `getCheckoutIssues` gate against a forward-looking draft:
+  // local form state (name, phone) plus everything already persisted in the
+  // saved draft (fulfillmentMode, coords, address). This catches the delivery
+  // case where the user arrived at /checkout without a confirmed geo point —
+  // e.g. they cleared localStorage, went back and skipped /delivery/address,
+  // or the quote failed silently. Without this the operator gets "Точка на
+  // карте" with null coords and has to call the guest back.
+  const checkoutIssues = useMemo(
+    () =>
+      getCheckoutIssues({
+        ...draft,
+        customerName: name,
+        customerPhone: phoneValid ? normalizeRuPhone(phone) : phone,
+      }),
+    [draft, name, phone, phoneValid],
+  );
+  const deliveryAddressIssue = checkoutIssues.find(
+    (issue) =>
+      issue.field === "delivery_coordinates" ||
+      issue.field === "delivery_address",
+  );
+  const canSubmit = checkoutIssues.length === 0 && !submitting;
   const normalizedPhone = phoneValid ? normalizeRuPhone(phone) : null;
-  const knownAuth =
-    authHydrated && normalizedPhone ? lookupAuth(normalizedPhone) : null;
+  const knownAuth = authHydrated && normalizedPhone ? lookupAuth(normalizedPhone) : null;
   const phoneLookupMessage = !authHydrated || !phoneValid
     ? null
     : knownAuth
-      ? `С возвращением${knownAuth.name ? `, ${knownAuth.name}` : ""}. На вашем счету: ${knownAuth.bonusBalance.toLocaleString("ru-RU")} ₽ бонусов.`
-      : "Это ваш первый заказ — зарегистрируем вас при оформлении.";
+      ? `С возвращением${knownAuth.name ? `, ${knownAuth.name}` : ""}. На счёте ${knownAuth.bonusBalance.toLocaleString("ru-RU")} ₽ бонусов.`
+      : "Это ваш первый заказ — зарегистрируем вас при подтверждении.";
+
   const serviceLabel =
     cart.serviceLabel ||
     (draft.fulfillmentMode === "pickup"
-      ? "Точку выдачи уточним перед подтверждением"
-      : "Адрес уточним перед подтверждением");
+      ? "Самовывоз"
+      : "Адрес не выбран");
   const timingLabel =
     cart.serviceTimingLabel ||
     cart.etaLabel ||
     (draft.fulfillmentMode === "pickup"
-      ? "Окно выдачи подтвердим после точки"
-      : "Время подтвердим после адреса");
+      ? "Выберите окно"
+      : "Выберите адрес");
+  const serviceModeLabel = getServiceModeLabel(draft.fulfillmentMode);
+  const issueLabel = getIssueLabel(cart.revalidationIssues.length);
+  const selectedPayment =
+    PAYMENT_OPTIONS.find((option) => option.id === paymentMethod) ?? PAYMENT_OPTIONS[0];
 
   const snapshot = useMemo(
     () =>
@@ -228,6 +330,15 @@ export function CheckoutPage() {
       }),
     [draft.fulfillmentMode, draft.locationId, draft.servicePointId],
   );
+
+  const heroImage = useMemo(() => {
+    if (cart.lineItems.length === 0) {
+      return getProductFamilyImage("boiled");
+    }
+
+    return getLineProductImage(cart.lineItems[0], snapshot.visibleItems);
+  }, [cart.lineItems, snapshot.visibleItems]);
+
   const checkoutUpsellItems = useMemo(
     () =>
       getContextUpsellItems({
@@ -239,6 +350,19 @@ export function CheckoutPage() {
         limit: 2,
       }),
     [cart.lineItems, snapshot.visibleItems],
+  );
+
+  const previewLines = useMemo(
+    () =>
+      cart.lineItems.map((item, index) => ({
+        item,
+        imageSrc: getLineProductImage(item, snapshot.visibleItems),
+        modifierRows: item.summaryLines
+          .map((line) => parseSummaryLine(line))
+          .filter((row): row is ModifierRow => Boolean(row)),
+        bundledSubItems: cart.bundledSubItems[index] ?? [],
+      })),
+    [cart.bundledSubItems, cart.lineItems, snapshot.visibleItems],
   );
 
   const handleUpsellAdd = useCallback(
@@ -259,6 +383,7 @@ export function CheckoutPage() {
 
   const handleSubmit = useCallback(async () => {
     if (!canSubmit) return;
+
     const nextDraft = {
       ...draft,
       customerName: name.trim(),
@@ -267,6 +392,18 @@ export function CheckoutPage() {
       paymentMethod,
       orderStage: "pending_ack" as const,
     };
+
+    // Last-chance re-validation right before the network call, against the
+    // exact payload we're about to send. Defends against state drift between
+    // canSubmit's memo and the click handler firing (e.g. draft patched by
+    // another tab between render and click). If anything is wrong, surface
+    // the first issue inline and bail.
+    const finalIssues = getCheckoutIssues(nextDraft);
+    if (finalIssues.length > 0) {
+      setSubmitError(finalIssues[0].message);
+      return;
+    }
+
     setSubmitting(true);
     setSubmitError(null);
 
@@ -292,13 +429,9 @@ export function CheckoutPage() {
         orderStage: "accepted",
       });
       setSubmittedOrder(payload.order);
-      // Fake auth: record the phone as a known customer after a successful
-      // order so future visits greet them by name/bonus balance.
       loginAuth(nextDraft.customerPhone);
     } catch (error) {
-      setSubmitError(
-        error instanceof Error ? error.message : "Не удалось передать заказ команде.",
-      );
+      setSubmitError(error instanceof Error ? error.message : "Не удалось передать заказ команде.");
     } finally {
       setSubmitting(false);
     }
@@ -306,629 +439,497 @@ export function CheckoutPage() {
 
   if (cart.lineItems.length === 0) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          maxWidth: 1240,
-          margin: "0 auto",
-          padding: "132px var(--space-lg) var(--space-lg)",
-        }}
+      <CheckoutStateScreen
+        contextHref={contextHref}
+        lineCount={0}
+        heroImage={heroImage}
+        eyebrow="Оформление"
+        title="Сначала соберите стол."
+        body="После этого здесь останутся только контакт, оплата и подтверждение подачи."
+        actions={
+          <>
+            <Link href={menuHref} className="checkout-editorial__submit">
+              Открыть меню
+            </Link>
+            <Link href={contextHref} className="checkout-editorial__secondary-action">
+              Уточнить сервис
+            </Link>
+          </>
+        }
+        sideEyebrow="Перед этим шагом"
+        sideTitle="Проверяем три вещи"
+        sideBody="Нужны адрес, контакт и оплата."
       >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1.08fr) minmax(320px, 0.9fr)",
-            gap: "var(--space-sm)",
-            alignItems: "stretch",
-          }}
-        >
-          <HeroCard
-            eyebrow="Оформление"
-            title="Здесь подтверждаем контакт и передаем заказ команде."
-            body="Сначала соберите заказ, затем вернитесь сюда для контакта, оплаты и финального подтверждения."
-            actions={
-              <div className="flex" style={{ gap: "var(--space-sm)", flexWrap: "wrap" }}>
-                <Link href={menuHref} className="cta cta--primary">
-                  Открыть каталог
-                </Link>
-                <Link href={contextHref} className="cta cta--ghost">
-                  Уточнить адрес
-                </Link>
-              </div>
-            }
-          />
-
-          <SideInfo
-            title="Перед этим шагом проверяем три вещи"
-            subtitle="Что нужно перед этим шагом"
-          >
-            {READY_ITEMS.map((item, index) => (
-              <div
-                key={item}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "36px minmax(0, 1fr)",
-                  gap: "var(--space-sm)",
-                  alignItems: "start",
-                }}
-              >
-                <div
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: "50%",
-                    border: "1px solid rgba(99, 188, 197, 0.26)",
-                    color: "var(--accent)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 13,
-                    fontWeight: 700,
-                  }}
-                >
-                  0{index + 1}
-                </div>
-                <div className="text-muted" style={{ paddingTop: 7, lineHeight: 1.7 }}>
-                  {item}
-                </div>
-              </div>
-            ))}
-
-            <div
-              style={{
-                marginTop: "var(--space-sm)",
-                paddingTop: "var(--space-md)",
-                borderTop: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <span className="text-eyebrow block" style={{ marginBottom: 6 }}>
-                Сейчас по сервису
-              </span>
-              <div className="text-muted" style={{ lineHeight: 1.7 }}>
-                <div>{getServiceModeLabel(draft.fulfillmentMode)}</div>
-                <div>{serviceLabel}</div>
-                <div>{timingLabel}</div>
-              </div>
-            </div>
-          </SideInfo>
-        </div>
-      </div>
+        {READY_ITEMS.map((item, index) => (
+          <div key={item} className="checkout-editorial__state-row">
+            <span className="checkout-editorial__state-index">0{index + 1}</span>
+            <span>{item}</span>
+          </div>
+        ))}
+      </CheckoutStateScreen>
     );
   }
 
   if (!serviceResolved) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          maxWidth: 1240,
-          margin: "0 auto",
-          padding: "132px var(--space-lg) var(--space-lg)",
-        }}
+      <CheckoutStateScreen
+        contextHref={contextHref}
+        lineCount={cart.lineCount}
+        heroImage={heroImage}
+        eyebrow="Оформление"
+        title="Сначала закрепим адрес или точку выдачи."
+        body="Сначала подтвердим место и время, затем завершим заказ."
+        actions={
+          <>
+            <Link href={contextHref} className="checkout-editorial__submit">
+              Уточнить сервис
+            </Link>
+            <Link href={menuHref} className="checkout-editorial__secondary-action">
+              Вернуться в меню
+            </Link>
+          </>
+        }
+        sideEyebrow="По вашему столу"
+        sideTitle="Место и время"
+        sideBody="После подтверждения покажем точные условия."
       >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1.08fr) minmax(320px, 0.9fr)",
-            gap: "var(--space-sm)",
-            alignItems: "stretch",
-          }}
-        >
-          <HeroCard
-            eyebrow="Оформление"
-            title="Сначала закрепим адрес или точку выдачи."
-            body="Сумма, доступность позиций и время должны опираться на реальный сервис, а не на предположение."
-            actions={
-              <div className="flex" style={{ gap: "var(--space-sm)", flexWrap: "wrap" }}>
-                <Link href={contextHref} className="cta cta--primary">
-                  Уточнить адрес
-                </Link>
-                <Link href="/cart" className="cta cta--ghost">
-                  Вернуться в заказ
-                </Link>
-              </div>
-            }
-          />
-
-          <SideInfo title="Состав, стоимость и время уже привязаны к сервису" subtitle="По вашему заказу">
-            <div className="text-muted" style={{ lineHeight: 1.8, display: "grid", gap: 10 }}>
-              <div>Проверяем, какие позиции можно подтвердить именно сейчас.</div>
-              <div>Считаем честное окно доставки или выдачи без лишних обещаний.</div>
-              <div>Сумма уже учитывает текущий сервис, маршрут и окно обслуживания.</div>
-            </div>
-            <div
-              style={{
-                marginTop: "var(--space-sm)",
-                paddingTop: "var(--space-md)",
-                borderTop: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <span className="text-eyebrow block" style={{ marginBottom: 6 }}>
-                Сейчас по сервису
-              </span>
-              <div className="text-muted" style={{ lineHeight: 1.7 }}>
-                <div>{getServiceModeLabel(draft.fulfillmentMode)}</div>
-                <div>{serviceLabel}</div>
-                <div>{timingLabel}</div>
-              </div>
-            </div>
-          </SideInfo>
+        <div className="checkout-editorial__state-row checkout-editorial__state-row--stack">
+          <strong>{serviceModeLabel}</strong>
+          <span>{serviceLabel}</span>
         </div>
-      </div>
+        <div className="checkout-editorial__state-row checkout-editorial__state-row--stack">
+          <strong>Окно</strong>
+          <span>{timingLabel}</span>
+        </div>
+        <div className="checkout-editorial__state-row checkout-editorial__state-row--stack">
+          <strong>Сумма</strong>
+          <span>{cart.totalLabel}</span>
+        </div>
+      </CheckoutStateScreen>
     );
   }
 
   if (submittedOrder) {
     return (
-      <div className="flex items-center justify-center" style={{ minHeight: "100vh", padding: "var(--space-lg)" }}>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.92, y: 18 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          style={{
-            maxWidth: 980,
-            width: "100%",
-            padding: "calc(var(--space-2xl) + 6px)",
-            borderRadius: "var(--radius-xl)",
-            border: "1px solid var(--border)",
-            background:
-              "linear-gradient(180deg, rgba(99, 188, 197, 0.08) 0%, rgba(15, 26, 34, 0.9) 100%)",
-            display: "grid",
-            gap: "var(--space-xl)",
-          }}
-        >
+      <main className="checkout-editorial checkout-editorial--complete">
+        <CheckoutControls contextHref={contextHref} lineCount={0} showOrderButton={false} />
+
+        <section className="checkout-editorial__hero checkout-editorial__hero--complete">
           <div
+            className="checkout-editorial__hero-media"
             style={{
-              display: "grid",
-              gridTemplateColumns: "minmax(0, 1.1fr) minmax(260px, 0.74fr)",
-              gap: "var(--space-lg)",
-              alignItems: "start",
+              backgroundImage: `linear-gradient(180deg, rgba(5, 10, 13, 0.18) 0%, rgba(5, 10, 13, 0.54) 42%, rgba(5, 10, 13, 0.94) 100%), url("${heroImage}")`,
             }}
-          >
-            <div>
-              <motion.div
-                initial={{ scale: 0.86, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.12, duration: 0.38 }}
-                style={{
-                  width: 84,
-                  height: 84,
-                  borderRadius: "50%",
-                  backgroundColor: "var(--accent)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: "var(--space-lg)",
-                  fontSize: 36,
-                  color: "var(--bg)",
-                  boxShadow: "0 0 24px rgba(99, 188, 197, 0.28)",
-                }}
-              >
-                ✓
-              </motion.div>
+          />
+          <div className="checkout-editorial__hero-overlay" />
+          <div className="checkout-editorial__hero-grain" />
 
-              <span className="text-eyebrow" style={{ display: "block", marginBottom: "var(--space-xs)" }}>
-                Заказ принят
-              </span>
-              <h1 className="text-h1" style={{ marginBottom: "var(--space-sm)", maxWidth: 620 }}>
-                Заказ {submittedOrder.reference} принят.
-              </h1>
-              <p
-                className="text-muted"
-                style={{ fontSize: 16, lineHeight: 1.75, maxWidth: 620 }}
-              >
-                Команда уже получила заявку. Уточним детали, финальное время и способ передачи по подтвержденному адресу или точке выдачи.
-              </p>
-            </div>
+          <div className="checkout-editorial__hero-inner">
+            <ScrollReveal>
+              <div className="checkout-editorial__complete-card">
+                <motion.div
+                  className="checkout-editorial__complete-badge"
+                  initial={{ scale: 0.88, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  ✓
+                </motion.div>
 
-            <div
-              style={{
-                padding: "18px 0 0",
-                borderTop: "1px solid rgba(255,255,255,0.08)",
-                display: "grid",
-                gap: "var(--space-sm)",
-                alignContent: "start",
-              }}
-            >
-              <span className="text-eyebrow block">Передача</span>
-              <strong style={{ display: "block", fontSize: 22, lineHeight: 1.2 }}>
-                {submittedOrder.handoffLabel}
-              </strong>
-              <div className="text-muted" style={{ lineHeight: 1.75, display: "grid", gap: 6 }}>
-                <div>{getHandoffStatusLabel(submittedOrder)}</div>
-                <div>{submittedOrder.externalReference ? `Внешний id: ${submittedOrder.externalReference}` : `К оплате: ${submittedOrder.totalLabel}`}</div>
-                <div>{submittedOrder.guestLabel}</div>
+                <span className="checkout-editorial__eyebrow">Заказ принят</span>
+                <h1 className="checkout-editorial__title">Заказ {submittedOrder.reference} принят.</h1>
+                <p className="checkout-editorial__description">
+                  Заказ уже в работе. Если нужно, свяжемся по указанному номеру.
+                </p>
+
+                <div className="checkout-editorial__complete-grid">
+                  <div className="checkout-editorial__complete-metric">
+                    <span className="checkout-editorial__panel-eyebrow">Сервис</span>
+                    <strong>{submittedOrder.fulfillmentLabel}</strong>
+                    <span>{submittedOrder.serviceLabel}</span>
+                    <span>{timingLabel}</span>
+                  </div>
+
+                  <div className="checkout-editorial__complete-metric">
+                    <span className="checkout-editorial__panel-eyebrow">Передача</span>
+                    <strong>{submittedOrder.handoffLabel}</strong>
+                    <span>{getHandoffStatusLabel(submittedOrder)}</span>
+                    <span>
+                      {submittedOrder.externalReference
+                        ? `Номер заказа: ${submittedOrder.externalReference}`
+                        : `К оплате: ${submittedOrder.totalLabel}`}
+                    </span>
+                  </div>
+
+                  <div className="checkout-editorial__complete-metric">
+                    <span className="checkout-editorial__panel-eyebrow">Гость</span>
+                    <strong>{submittedOrder.guestLabel}</strong>
+                    <span>{phone}</span>
+                    <span>{submittedOrder.lineCount} поз. в заказе</span>
+                  </div>
+                </div>
+
+                <div className="checkout-editorial__complete-actions">
+                  {submittedOrder.trackingHref ? (
+                    <Link href={submittedOrder.trackingHref} className="checkout-editorial__submit">
+                      Отслеживать доставку
+                    </Link>
+                  ) : null}
+                  <Link href={menuHref} className="checkout-editorial__secondary-action">
+                    Вернуться в меню
+                  </Link>
+                  <Link href="/" className="checkout-editorial__secondary-action">
+                    На главную
+                  </Link>
+                </div>
+
+                <div className="checkout-editorial__complete-secondary">
+                  <a href="tel:+79808880588" className="checkout-editorial__inline-link">
+                    Позвонить команде
+                  </a>
+                  <a href="https://t.me/The_raki" className="checkout-editorial__inline-link" rel="noreferrer" target="_blank">
+                    Telegram
+                  </a>
+                </div>
               </div>
-            </div>
+            </ScrollReveal>
           </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: "var(--space-sm)",
-            }}
-          >
-            <SummaryMetric
-              eyebrow="Сервис"
-              title={submittedOrder.fulfillmentLabel}
-              lines={[submittedOrder.serviceLabel, timingLabel]}
-            />
-            <SummaryMetric
-              eyebrow="Передача"
-              title={submittedOrder.handoffLabel}
-              lines={[
-                getHandoffStatusLabel(submittedOrder),
-                submittedOrder.externalReference
-                  ? `Внешний id: ${submittedOrder.externalReference}`
-                  : `К оплате: ${submittedOrder.totalLabel}`,
-              ]}
-            />
-            <SummaryMetric
-              eyebrow="Гость"
-              title={submittedOrder.guestLabel}
-              lines={[phone, `${submittedOrder.lineCount} поз. в заказе`]}
-            />
-          </div>
-
-          <div
-            className="flex justify-center"
-            style={{
-              gap: "var(--space-sm)",
-              flexWrap: "wrap",
-              paddingTop: "var(--space-lg)",
-              borderTop: "1px solid rgba(255,255,255,0.08)",
-            }}
-          >
-            {submittedOrder.trackingHref ? (
-              <Link href={submittedOrder.trackingHref} className="cta cta--primary">
-                Отслеживать доставку
-              </Link>
-            ) : null}
-            <Link href={menuHref} className="cta cta--ghost">
-              Вернуться в каталог
-            </Link>
-            <Link href="/" className="cta cta--ghost">
-              На главную
-            </Link>
-          </div>
-
-          <div className="flex justify-center" style={{ gap: "var(--space-sm)", flexWrap: "wrap" }}>
-            <a href="tel:+79808880588" className="cta cta--ghost">
-              Позвонить команде
-            </a>
-            <a href="https://t.me/The_raki" className="cta cta--ghost" rel="noreferrer" target="_blank">
-              Telegram
-            </a>
-          </div>
-        </motion.div>
-      </div>
+        </section>
+      </main>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", maxWidth: 1320, margin: "0 auto", padding: "108px var(--space-lg) var(--space-xl)" }}>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) 360px",
-          gap: "var(--space-xl)",
-          alignItems: "flex-start",
-        }}
-      >
-        <div style={{ display: "grid", gap: "var(--space-lg)" }}>
-          <ScrollReveal>
-            <div
-              style={{
-                ...cardStyle,
-                padding: "calc(var(--space-xl) + 8px)",
-                background:
-                  "radial-gradient(circle at top left, rgba(99, 188, 197, 0.08) 0%, rgba(99, 188, 197, 0) 38%), rgba(15, 26, 34, 0.74)",
-              }}
-            >
-              <span className="text-eyebrow block" style={{ marginBottom: "var(--space-xs)" }}>
-                Оформление
-              </span>
-              <h1 className="text-h1" style={{ marginBottom: "var(--space-sm)", maxWidth: 760 }}>
-                Последний шаг перед подтверждением.
-              </h1>
-              <p
-                className="text-muted"
-                style={{ fontSize: 16, maxWidth: 760, lineHeight: 1.8, marginBottom: "var(--space-lg)" }}
-              >
-                Проверьте контакт, выберите удобный способ оплаты и мы спокойно передадим заказ
-                команде без лишних звонков и повторных уточнений.
-              </p>
+    <main className="checkout-editorial">
+      <CheckoutControls contextHref={contextHref} lineCount={cart.lineCount} />
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                  gap: "var(--space-lg)",
-                }}
-              >
-                <div
-                  style={{
-                    paddingTop: "var(--space-md)",
-                    borderTop: "1px solid rgba(255,255,255,0.1)",
-                    display: "grid",
-                    gap: 8,
-                  }}
-                >
-                  <span className="text-eyebrow">Подача</span>
-                  <strong style={{ display: "block", fontSize: 24, lineHeight: 1.18 }}>
-                    {serviceLabel}
-                  </strong>
-                  <div className="text-muted" style={{ lineHeight: 1.75 }}>
-                    <div>{getServiceModeLabel(draft.fulfillmentMode)}</div>
-                    <div>{timingLabel}</div>
+      <section className="checkout-editorial__hero">
+        <motion.div
+          className="checkout-editorial__hero-media"
+          animate={{ scale: [1.02, 1.05, 1.02] }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          style={{
+            backgroundImage: `linear-gradient(180deg, rgba(5, 10, 13, 0.12) 0%, rgba(5, 10, 13, 0.46) 42%, rgba(5, 10, 13, 0.92) 100%), url("${heroImage}")`,
+          }}
+        />
+        <div className="checkout-editorial__hero-overlay" />
+        <div className="checkout-editorial__hero-grain" />
+
+        <div className="checkout-editorial__hero-inner">
+          <ScrollReveal>
+            <div className="checkout-editorial__hero-grid">
+              <div className="checkout-editorial__hero-copy">
+                <span className="checkout-editorial__brand">The Raki</span>
+                <span className="checkout-editorial__eyebrow">Оформление</span>
+                <h1 className="checkout-editorial__title">Проверьте заказ и оформите его.</h1>
+                <p className="checkout-editorial__description">
+                  Контакт, способ оплаты и окно подачи. Всё остальное уже собрано.
+                </p>
+
+                <div className="checkout-editorial__hero-stats">
+                  <div className="checkout-editorial__hero-stat">
+                    <span className="checkout-editorial__panel-eyebrow">Сервис</span>
+                    <strong>{serviceModeLabel}</strong>
+                    <span>{serviceLabel}</span>
                   </div>
-                </div>
-                <div
-                  style={{
-                    paddingTop: "var(--space-md)",
-                    borderTop: "1px solid rgba(255,255,255,0.1)",
-                    display: "grid",
-                    gap: 8,
-                  }}
-                >
-                  <span className="text-eyebrow">Оплата</span>
-                  <strong style={{ display: "block", fontSize: 24, lineHeight: 1.18 }}>
-                    После подтверждения
-                  </strong>
-                  <div className="text-muted" style={{ lineHeight: 1.75 }}>
-                    <div>Наличными, картой или переводом.</div>
-                    <div>Финальный вариант фиксируем перед передачей заказа.</div>
+
+                  <div className="checkout-editorial__hero-stat">
+                    <span className="checkout-editorial__panel-eyebrow">Окно</span>
+                    <strong>{timingLabel}</strong>
+                    <span>{issueLabel ?? "Без лишних уточнений"}</span>
                   </div>
-                </div>
-                <div
-                  style={{
-                    paddingTop: "var(--space-md)",
-                    borderTop: "1px solid rgba(255,255,255,0.1)",
-                    display: "grid",
-                    gap: 8,
-                  }}
-                >
-                  <span className="text-eyebrow">Сумма</span>
-                  <strong style={{ display: "block", fontSize: 24, lineHeight: 1.18 }}>
-                    {cart.totalLabel}
-                  </strong>
-                  <div className="text-muted" style={{ lineHeight: 1.75 }}>
-                    <div>{cart.lineCount} позиций в заказе.</div>
-                    <div>После подтверждения команда сразу собирает заказ и выходит на связь.</div>
+
+                  <div className="checkout-editorial__hero-stat">
+                    <span className="checkout-editorial__panel-eyebrow">К оплате</span>
+                    <strong>{cart.totalLabel}</strong>
+                    <span>{cart.lineCount} поз. в заказе</span>
                   </div>
                 </div>
               </div>
+
+              <aside className="checkout-editorial__service-card">
+                <div className="checkout-editorial__service-head">
+                  <span className="checkout-editorial__panel-eyebrow">В этом заказе</span>
+                  <strong>{cart.totalLabel}</strong>
+                </div>
+
+                <div className="checkout-editorial__service-grid">
+                  <div className="checkout-editorial__service-item">
+                    <span className="checkout-editorial__panel-eyebrow">Стол</span>
+                    <strong>{cart.lineCount} поз.</strong>
+                    <span>{cart.itemLabel ?? "Состав уточняется"}</span>
+                  </div>
+                  <div className="checkout-editorial__service-item">
+                    <span className="checkout-editorial__panel-eyebrow">Оплата</span>
+                    <strong>{selectedPayment.label}</strong>
+                    <span>{selectedPayment.note}</span>
+                  </div>
+                  <div className="checkout-editorial__service-item">
+                    <span className="checkout-editorial__panel-eyebrow">Контакт</span>
+                    <strong>{phoneValid ? "Готов" : "Нужен номер"}</strong>
+                    <span>{name.trim() || "Добавьте имя"}</span>
+                  </div>
+                  <div className="checkout-editorial__service-item">
+                    <span className="checkout-editorial__panel-eyebrow">Сервис</span>
+                    <strong>{serviceModeLabel}</strong>
+                    <span>{timingLabel}</span>
+                  </div>
+                </div>
+              </aside>
             </div>
           </ScrollReveal>
+        </div>
+      </section>
 
-          <ScrollReveal delay={0.08}>
-            <div
-              style={{
-                padding: "var(--space-xl)",
-                borderRadius: "var(--radius-xl)",
-                border: "1px solid var(--border)",
-                background:
-                  "linear-gradient(180deg, rgba(15, 26, 34, 0.74) 0%, rgba(10, 18, 24, 0.88) 100%)",
-                backdropFilter: "blur(16px)",
-              }}
-            >
-              <div style={{ marginBottom: "var(--space-lg)" }}>
-                <span className="text-eyebrow block" style={{ marginBottom: 6 }}>
-                  Контакт для подтверждения
-                </span>
-                <div className="text-muted" style={{ lineHeight: 1.7, maxWidth: 640 }}>
-                  По этим данным подтверждаем окно, оплату и аккуратную передачу заказа без лишней суеты.
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                  gap: "var(--space-md)",
-                  marginBottom: "var(--space-lg)",
-                }}
-              >
+      <section className="checkout-editorial__workbench">
+        <div className="checkout-editorial__workbench-inner">
+          <ScrollReveal className="checkout-editorial__summary-shell">
+            <aside id="checkout-summary" className="checkout-editorial__summary">
+              <div className="checkout-editorial__summary-head">
                 <div>
-                  <label className="text-eyebrow block" style={{ marginBottom: "var(--space-xs)", color: "var(--text-muted)" }}>
-                    Имя
-                  </label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    placeholder="Как к вам обращаться"
-                    style={{
-                      width: "100%",
-                      padding: "14px 18px",
-                      backgroundColor: "var(--bg)",
-                      color: "var(--text-primary)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--radius-md)",
-                      fontSize: 16,
-                    }}
-                  />
+                  <span className="checkout-editorial__panel-eyebrow">Ваш стол</span>
+                  <strong className="checkout-editorial__summary-total-price">{cart.totalLabel}</strong>
+                </div>
+                <span className="checkout-editorial__summary-count">{cart.lineCount} поз.</span>
+              </div>
+
+              <div className="checkout-editorial__summary-service">
+                <span className="checkout-editorial__panel-eyebrow">{serviceModeLabel}</span>
+                <strong>{serviceLabel}</strong>
+                <span>{timingLabel}</span>
+              </div>
+
+              <div className="checkout-editorial__summary-lines">
+                {previewLines.map(({ item, imageSrc, modifierRows, bundledSubItems }, index) => (
+                  <article key={`${item.itemId}-${index}`} className="checkout-editorial__line">
+                    <div className="checkout-editorial__line-head">
+                      <div className="checkout-editorial__thumb" aria-hidden="true">
+                        <Image
+                          src={imageSrc}
+                          alt=""
+                          fill
+                          sizes="72px"
+                          className="checkout-editorial__thumb-image"
+                        />
+                      </div>
+
+                      <div className="checkout-editorial__line-copy">
+                        <div className="checkout-editorial__line-top">
+                          <strong className="checkout-editorial__line-name">{item.itemName}</strong>
+                          <span className="checkout-editorial__line-qty">×{item.quantity}</span>
+                        </div>
+
+                        {modifierRows.length > 0 ? (
+                          <div className="checkout-editorial__modifier-list">
+                            {modifierRows.map((row, rowIndex) => (
+                              <div
+                                key={`${row.label}-${row.value}-${rowIndex}`}
+                                className="checkout-editorial__modifier-row"
+                              >
+                                <span>{row.label}</span>
+                                <strong>{row.value}</strong>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+
+                        {bundledSubItems.length > 0 ? (
+                          <div className="checkout-editorial__bundle-list">
+                            {bundledSubItems.map((subItem) => (
+                              <span
+                                key={`${subItem.parentItemId}-${subItem.id}`}
+                                className="checkout-editorial__bundle-tag"
+                              >
+                                {subItem.title} ×{subItem.quantity}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="checkout-editorial__line-price">{formatMoney(item.totalPrice)}</div>
+                  </article>
+                ))}
+              </div>
+
+              <div className="checkout-editorial__summary-totals">
+                <div className="checkout-editorial__total-row">
+                  <span>Позиции</span>
+                  <strong>{cart.subtotalLabel}</strong>
                 </div>
 
-                <div>
-                  <label className="text-eyebrow block" style={{ marginBottom: "var(--space-xs)", color: "var(--text-muted)" }}>
-                    Телефон
-                  </label>
-                  <div style={{ position: "relative" }}>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(event) => setPhone(event.target.value)}
-                      placeholder="+7 (___) ___-__-__"
-                      style={{
-                        width: "100%",
-                        padding: "14px 18px",
-                        paddingRight: 48,
-                        backgroundColor: "var(--bg)",
-                        color: "var(--text-primary)",
-                        border: `1px solid ${phone.length > 3 ? (phoneValid ? "var(--accent)" : "var(--border)") : "var(--border)"}`,
-                        borderRadius: "var(--radius-md)",
-                        fontSize: 16,
-                      }}
-                    />
-                    <AnimatePresence>
-                      {phoneValid ? (
-                        <motion.span
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          style={{
-                            position: "absolute",
-                            right: 14,
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            color: "var(--accent)",
-                            fontSize: 20,
-                          }}
-                        >
-                          ✓
-                        </motion.span>
-                      ) : null}
-                    </AnimatePresence>
-                  </div>
-                  {phoneLookupMessage ? (
-                    <p
-                      style={{
-                        marginTop: "var(--space-xs)",
-                        fontSize: 13,
-                        lineHeight: 1.5,
-                        color: knownAuth ? "var(--accent)" : "var(--text-muted)",
-                      }}
-                    >
-                      {phoneLookupMessage}
-                    </p>
-                  ) : null}
+                <div className="checkout-editorial__total-row">
+                  <span>{draft.fulfillmentMode === "pickup" ? "Самовывоз" : "Доставка"}</span>
+                  <strong>
+                    {draft.fulfillmentMode === "pickup"
+                      ? "0 ₽"
+                      : cart.fee > 0
+                        ? formatMoney(cart.fee)
+                        : "уточним"}
+                  </strong>
+                </div>
+
+                <div className="checkout-editorial__total-row checkout-editorial__total-row--grand">
+                  <span>Итого</span>
+                  <strong>{cart.totalLabel}</strong>
                 </div>
               </div>
 
-              <div style={{ marginBottom: "var(--space-lg)" }}>
-                <label className="text-eyebrow block" style={{ marginBottom: "var(--space-xs)", color: "var(--text-muted)" }}>
-                  Комментарий
-                </label>
-                <textarea
-                  value={comment}
-                  onChange={(event) => setComment(event.target.value)}
-                  placeholder="Подъезд, звонок, Telegram, пожелания по выдаче"
-                  rows={3}
-                  style={{
-                    width: "100%",
-                    padding: "14px 18px",
-                    backgroundColor: "var(--bg)",
-                    color: "var(--text-primary)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "var(--radius-md)",
-                    fontSize: 16,
-                    resize: "vertical",
-                  }}
-                />
-              </div>
+              {issueLabel ? (
+                <div className="checkout-editorial__summary-note checkout-editorial__summary-note--warning">
+                  {issueLabel}
+                </div>
+              ) : null}
 
-              <div style={{ marginBottom: "var(--space-xl)" }}>
-                <span className="text-eyebrow block" style={{ marginBottom: "var(--space-xs)", color: "var(--text-muted)" }}>
-                  Предпочтительный способ оплаты
-                </span>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                    gap: "var(--space-xs)",
-                  }}
+              <div className="checkout-editorial__summary-actions">
+                <button
+                  type="button"
+                  className="checkout-editorial__secondary-action checkout-editorial__secondary-action--dark"
+                  onClick={() => dispatchCartOpen()}
                 >
+                  Изменить состав
+                </button>
+                <Link href={contextHref} className="checkout-editorial__inline-link">
+                  Сервис
+                </Link>
+              </div>
+            </aside>
+          </ScrollReveal>
+
+          <div className="checkout-editorial__form">
+            <ScrollReveal delay={0.05}>
+              <section className="checkout-editorial__section">
+                <div className="checkout-editorial__section-head">
+                  <div>
+                    <span className="checkout-editorial__panel-eyebrow">Контакт</span>
+                    <h2>Контакт для заказа.</h2>
+                  </div>
+                </div>
+
+                <div className="checkout-editorial__field-grid">
+                  <label className="checkout-editorial__field">
+                    <span className="checkout-editorial__field-label">Имя</span>
+                    <input
+                      className="checkout-editorial__input"
+                      type="text"
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      placeholder="Как к вам обращаться"
+                    />
+                  </label>
+
+                  <label className="checkout-editorial__field">
+                    <span className="checkout-editorial__field-label">Телефон</span>
+                    <div className="checkout-editorial__phone-wrap">
+                      <input
+                        className="checkout-editorial__input"
+                        data-valid={phone.length > 3 ? String(phoneValid) : undefined}
+                        type="tel"
+                        value={phone}
+                        onChange={(event) => setPhone(event.target.value)}
+                        placeholder="+7 (___) ___-__-__"
+                      />
+
+                      <AnimatePresence>
+                        {phoneValid ? (
+                          <motion.span
+                            className="checkout-editorial__phone-ok"
+                            initial={{ scale: 0.7, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.7, opacity: 0 }}
+                          >
+                            ✓
+                          </motion.span>
+                        ) : null}
+                      </AnimatePresence>
+                    </div>
+
+                    {phoneLookupMessage ? (
+                      <p
+                        className="checkout-editorial__field-note"
+                        data-tone={knownAuth ? "accent" : "muted"}
+                      >
+                        {phoneLookupMessage}
+                      </p>
+                    ) : null}
+                  </label>
+
+                  <label className="checkout-editorial__field checkout-editorial__field--full">
+                    <span className="checkout-editorial__field-label">Комментарий</span>
+                    <textarea
+                      className="checkout-editorial__textarea"
+                      value={comment}
+                      onChange={(event) => setComment(event.target.value)}
+                      placeholder="Подъезд, звонок, Telegram, пожелания к выдаче"
+                      rows={4}
+                    />
+                  </label>
+                </div>
+              </section>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.09}>
+              <section className="checkout-editorial__section">
+                <div className="checkout-editorial__section-head">
+                  <div>
+                    <span className="checkout-editorial__panel-eyebrow">Оплата</span>
+                    <h2>Зафиксируйте удобный способ.</h2>
+                  </div>
+                </div>
+
+                <div className="checkout-editorial__payment-grid">
                   {PAYMENT_OPTIONS.map((option) => {
                     const active = option.id === paymentMethod;
+
                     return (
                       <button
                         key={option.id}
                         type="button"
+                        className="checkout-editorial__payment-option"
+                        data-active={String(active)}
                         onClick={() => setPaymentMethod(option.id)}
-                        style={{
-                          textAlign: "left",
-                          padding: "var(--space-md)",
-                          borderRadius: "var(--radius-md)",
-                          border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
-                          backgroundColor: active ? "rgba(99, 188, 197, 0.08)" : "var(--bg)",
-                          cursor: "pointer",
-                        }}
                       >
-                        <strong style={{ display: "block", marginBottom: 6 }}>{option.label}</strong>
-                        <span className="text-muted" style={{ fontSize: 13, lineHeight: 1.6 }}>
-                          {option.note}
-                        </span>
+                        <span className="checkout-editorial__panel-eyebrow">Вариант</span>
+                        <strong>{option.label}</strong>
+                        <span>{option.note}</span>
                       </button>
                     );
                   })}
                 </div>
-              </div>
+              </section>
+            </ScrollReveal>
 
-              {checkoutUpsellItems.length > 0 ? (
-                <div style={{ marginBottom: "var(--space-xl)" }}>
-                  <div style={{ marginBottom: "var(--space-sm)" }}>
-                    <span className="text-eyebrow block" style={{ marginBottom: 6, color: "var(--text-muted)" }}>
-                      Перед подтверждением
-                    </span>
-                    <strong style={{ display: "block", fontSize: 22, lineHeight: 1.2 }}>
-                      Можно добавить к заказу.
-                    </strong>
+            {checkoutUpsellItems.length > 0 ? (
+              <ScrollReveal delay={0.13}>
+                <section className="checkout-editorial__section">
+                  <div className="checkout-editorial__section-head">
+                    <div>
+                      <span className="checkout-editorial__panel-eyebrow">Еще к столу</span>
+                      <h2>Можно добавить.</h2>
+                    </div>
                   </div>
 
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                      gap: "var(--space-sm)",
-                    }}
-                  >
+                  <div className="checkout-editorial__upsell-grid">
                     {checkoutUpsellItems.map((entry) => (
-                      <article
-                        key={entry.item.id}
-                        style={{
-                          overflow: "hidden",
-                          borderRadius: "var(--radius-lg)",
-                          border: "1px solid rgba(255,255,255,0.07)",
-                          backgroundColor: "rgba(255,255,255,0.025)",
-                        }}
-                      >
+                      <article key={entry.item.id} className="checkout-editorial__upsell-card">
                         <div
+                          className="checkout-editorial__upsell-media"
                           style={{
-                            height: 120,
-                            backgroundImage: `linear-gradient(180deg, rgba(8,16,20,0.08) 0%, rgba(8,16,20,0.52) 100%), url("${getProductFamilyImage(entry.item.productFamily)}")`,
-                            backgroundSize: "cover",
-                            backgroundPosition: "center",
+                            backgroundImage: `linear-gradient(180deg, rgba(8, 16, 20, 0.08) 0%, rgba(8, 16, 20, 0.6) 100%), url("${getProductFamilyImage(entry.item.productFamily)}")`,
                           }}
                         />
-                        <div style={{ padding: "var(--space-md)" }}>
-                          <span className="text-eyebrow block" style={{ marginBottom: 6 }}>
-                            {entry.item.category}
-                          </span>
-                          <strong
-                            style={{
-                              display: "block",
-                              fontSize: 18,
-                              lineHeight: 1.18,
-                              marginBottom: 8,
-                              fontFamily: "var(--font-display), serif",
-                            }}
-                          >
-                            {entry.item.name}
-                          </strong>
-                          <div className="text-muted" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: "var(--space-sm)" }}>
-                            {getUpsellNote(entry)}
-                          </div>
-                          <div
-                            className="flex items-center justify-between"
-                            style={{ gap: "var(--space-xs)", flexWrap: "wrap" }}
-                          >
-                            <strong style={{ fontSize: 18 }}>{formatMoney(entry.effectiveBasePrice)}</strong>
+
+                        <div className="checkout-editorial__upsell-body">
+                          <span className="checkout-editorial__panel-eyebrow">{entry.item.category}</span>
+                          <strong>{entry.item.name}</strong>
+                          <p>{getUpsellNote(entry)}</p>
+
+                          <div className="checkout-editorial__upsell-footer">
+                            <strong>от {formatMoney(entry.effectiveBasePrice)}</strong>
                             <button
                               type="button"
-                              className="cta cta--ghost"
-                              style={{ padding: "10px 14px" }}
+                              className="checkout-editorial__secondary-action"
                               onClick={() => handleUpsellAdd(entry)}
                             >
                               В заказ
@@ -938,205 +939,67 @@ export function CheckoutPage() {
                       </article>
                     ))}
                   </div>
-                </div>
-              ) : null}
+                </section>
+              </ScrollReveal>
+            ) : null}
 
-              {submitError ? (
-                <div
-                  style={{
-                    marginBottom: "var(--space-lg)",
-                    padding: "var(--space-md)",
-                    borderRadius: "var(--radius-md)",
-                    border: "1px solid rgba(255, 118, 118, 0.22)",
-                    backgroundColor: "rgba(110, 24, 24, 0.26)",
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  {submitError}
-                </div>
-              ) : null}
-
-              <div className="flex" style={{ gap: "var(--space-sm)" }}>
-                <button
-                  type="button"
-                  className="cta cta--primary"
-                  onClick={handleSubmit}
-                  disabled={!canSubmit}
-                  style={{
-                    flex: 1,
-                    opacity: canSubmit ? 1 : 0.5,
-                    cursor: canSubmit ? "pointer" : "not-allowed",
-                  }}
-                >
-                  {submitting ? "Сохраняем заявку..." : "Передать заказ команде"}
-                </button>
-                <Link href="/cart" className="cta cta--ghost">
-                  Назад в заказ
-                </Link>
-              </div>
-            </div>
-          </ScrollReveal>
-        </div>
-
-        <ScrollReveal delay={0.05}>
-          <aside
-            style={{
-              width: 360,
-              position: "sticky",
-              top: 108,
-              display: "grid",
-              gap: "var(--space-xs)",
-            }}
-          >
-            <div
-              style={{
-                padding: "22px 20px 22px",
-                borderRadius: "var(--radius-xl)",
-                border: "1px solid rgba(255,255,255,0.07)",
-                background:
-                  "radial-gradient(circle at top left, rgba(99, 188, 197, 0.1) 0%, rgba(99, 188, 197, 0) 44%), linear-gradient(180deg, rgba(15, 26, 34, 0.96) 0%, rgba(10, 18, 24, 0.9) 100%)",
-                boxShadow: "0 24px 64px rgba(0, 0, 0, 0.18)",
-                backdropFilter: "blur(16px)",
-              }}
-            >
-              <div
-                style={{
-                  display: "grid",
-                  gap: "var(--space-sm)",
-                  marginBottom: "var(--space-lg)",
-                  paddingBottom: "var(--space-md)",
-                  borderBottom: "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                <div
-                  className="flex justify-between"
-                  style={{ gap: "var(--space-sm)", alignItems: "flex-start" }}
-                >
+            <ScrollReveal delay={0.17}>
+              <section className="checkout-editorial__section checkout-editorial__section--submit">
+                <div className="checkout-editorial__section-head">
                   <div>
-                    <span className="text-eyebrow block" style={{ marginBottom: 6 }}>
-                      Ваш заказ
-                    </span>
-                    <strong
-                      className="font-display"
-                      style={{ display: "block", fontSize: 40, lineHeight: 0.98 }}
+                    <span className="checkout-editorial__panel-eyebrow">Подтверждение</span>
+                    <h2>Передать заказ.</h2>
+                  </div>
+                </div>
+
+                <p className="checkout-editorial__panel-copy">Проверьте контакт, оплату и адрес.</p>
+
+                {deliveryAddressIssue ? (
+                  <div
+                    className="checkout-editorial__error checkout-editorial__error--address"
+                    role="alert"
+                  >
+                    <p>{deliveryAddressIssue.message}</p>
+                    <Link
+                      href={contextHref}
+                      className="checkout-editorial__inline-link"
                     >
-                      {cart.totalLabel}
-                    </strong>
+                      Вернуться на шаг адреса →
+                    </Link>
                   </div>
-                  <div
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: "var(--radius-full)",
-                      border: "1px solid rgba(99, 188, 197, 0.18)",
-                      backgroundColor: "rgba(99, 188, 197, 0.06)",
-                      color: "var(--accent)",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                      whiteSpace: "nowrap",
-                    }}
+                ) : null}
+
+                {submitError ? (
+                  <div className="checkout-editorial__error">{submitError}</div>
+                ) : null}
+
+                <div className="checkout-editorial__submit-row">
+                  <button
+                    type="button"
+                    className="checkout-editorial__submit"
+                    onClick={handleSubmit}
+                    disabled={!canSubmit}
                   >
-                    {cart.lineCount} поз.
-                  </div>
-                </div>
+                    {submitting ? "Передаём заказ..." : "Передать заказ команде"}
+                  </button>
 
-                <div
-                  style={{
-                    display: "grid",
-                    gap: "var(--space-2xs)",
-                    padding: "12px 14px",
-                    borderRadius: "var(--radius-lg)",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                    backgroundColor: "rgba(255,255,255,0.025)",
-                  }}
-                >
-                  <span className="text-eyebrow">Сервис</span>
-                  <strong style={{ fontSize: 16, lineHeight: 1.35 }}>{serviceLabel}</strong>
-                  <div className="text-muted" style={{ fontSize: 13, lineHeight: 1.7 }}>
-                    <div>{getServiceModeLabel(draft.fulfillmentMode)}</div>
-                    <div>{timingLabel}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gap: "var(--space-xs)",
-                  paddingBottom: "var(--space-md)",
-                  marginBottom: "var(--space-md)",
-                  borderBottom: "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                {cart.lineItems.map((item, index) => (
-                  <div
-                    key={`${item.itemId}-${index}`}
-                    className="flex justify-between"
-                    style={{ gap: "var(--space-sm)", fontSize: 14 }}
+                  <button
+                    type="button"
+                    className="checkout-editorial__secondary-action"
+                    onClick={() => dispatchCartOpen()}
                   >
-                    <span className="text-muted" style={{ flex: 1 }}>
-                      {item.itemName} × {item.quantity}
-                    </span>
-                    <span style={{ fontVariantNumeric: "tabular-nums" }}>
-                      {formatMoney(item.totalPrice)}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                    Изменить стол
+                  </button>
 
-              <div className="flex justify-between" style={{ marginTop: "var(--space-sm)", fontSize: 15 }}>
-                <span className="text-muted">Товары</span>
-                <span style={{ fontVariantNumeric: "tabular-nums" }}>{cart.subtotalLabel}</span>
-              </div>
-
-              {draft.fulfillmentMode === "delivery" ? (
-                <div className="flex justify-between" style={{ marginTop: "var(--space-sm)", fontSize: 15 }}>
-                  <span className="text-muted">Доставка</span>
-                  <span style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {cart.fee > 0 ? formatMoney(cart.fee) : "Уточняется"}
-                  </span>
+                  <Link href={contextHref} className="checkout-editorial__inline-link">
+                    Уточнить сервис
+                  </Link>
                 </div>
-              ) : null}
-
-              <div
-                className="flex justify-between"
-                style={{
-                  marginTop: "var(--space-md)",
-                  paddingTop: "var(--space-sm)",
-                  borderTop: "1px solid var(--border)",
-                  fontSize: 18,
-                  fontWeight: 700,
-                }}
-              >
-                <span>К оплате</span>
-                <span style={{ fontVariantNumeric: "tabular-nums" }}>{cart.totalLabel}</span>
-              </div>
-            </div>
-
-            <div
-              style={{
-                padding: "16px 18px",
-                borderRadius: "var(--radius-xl)",
-                border: "1px solid rgba(255,255,255,0.07)",
-                backgroundColor: "rgba(12, 22, 28, 0.82)",
-              }}
-            >
-              <span className="text-eyebrow block" style={{ marginBottom: 6 }}>
-                По заказу
-              </span>
-              <div
-                className="text-muted"
-                style={{ fontSize: 13, lineHeight: 1.72, display: "grid", gap: 4 }}
-              >
-                <span>{serviceLabel}</span>
-                <span>Способ оплаты и окно подтверждаем перед передачей заказа.</span>
-                <span>После этого команда сразу собирает подачу и выходит на связь.</span>
-              </div>
-            </div>
-          </aside>
-        </ScrollReveal>
-      </div>
-    </div>
+              </section>
+            </ScrollReveal>
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }

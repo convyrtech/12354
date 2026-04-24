@@ -26,13 +26,19 @@ type ScrollRevealProps = {
   as?: "div" | "section" | "article";
 };
 
+const MOTION_BY_TAG = {
+  div: motion.div,
+  section: motion.section,
+  article: motion.article,
+} as const;
+
 export function ScrollReveal({
   children,
   delay = 0,
   className,
   as = "div",
 }: ScrollRevealProps) {
-  const Component = motion.create(as);
+  const Component = MOTION_BY_TAG[as];
 
   return (
     <Component

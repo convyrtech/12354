@@ -1,5 +1,7 @@
 "use client";
 
+import "maplibre-gl/dist/maplibre-gl.css";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GeoDeliveryState, GeoZoneGeometry } from "@/lib/geo/types";
 
@@ -22,6 +24,19 @@ type DeliveryMapPinCommit = {
   sourceAddressLabel: string | null;
 };
 
+/**
+ * Viewport reaction when the destination/quote changes.
+ *
+ *   fit-bounds — recompute bounds (kitchen + destination + zone) with padding.
+ *                Use for bootstrap and any source the user hasn't manually framed.
+ *   fly-to     — animated centre on the destination, keep current zoom (or zoom in
+ *                slightly if too far out). Use after suggest pick — user hasn't
+ *                touched the map yet, but expects motion confirming the choice.
+ *   preserve   — leave the camera alone. Use after map_pin commit — the user just
+ *                framed exactly what they want; snapping to fitBounds would erase it.
+ */
+export type DeliveryMapViewportPolicy = "fit-bounds" | "preserve" | "fly-to";
+
 type DeliveryMaplibreCanvasProps = {
   focusKey: string;
   kitchenLat: number | null;
@@ -30,14 +45,13 @@ type DeliveryMaplibreCanvasProps = {
   destinationLat: number | null;
   destinationLng: number | null;
   destinationLabel?: string | null;
-  addressLine?: string | null;
-  serviceLine?: string | null;
-  zoneLabel?: string | null;
-  etaLabel?: string | null;
   zoneGeometry?: GeoZoneGeometry | null;
   deliveryState?: GeoDeliveryState | null;
   alternativePins?: DeliveryMaplibreAlternativePin[];
   isRequoting?: boolean;
+  /** How the camera should react when destinationPoint/focusKey changes.
+   *  Defaults to "fit-bounds" for back-compat. */
+  viewportPolicy?: DeliveryMapViewportPolicy;
   onDestinationCommit?: (next: DeliveryMapPinCommit) => void;
 };
 
@@ -63,6 +77,11 @@ type LatLngPoint = {
 const DEFAULT_CENTER: [number, number] = [37.618423, 55.751244];
 const DEFAULT_MAP_STYLE_URL =
   process.env.NEXT_PUBLIC_MAP_STYLE_URL || "/map-styles/raki-investor-dark.json";
+// Stable empty-array reference used as default for the optional prop. A fresh
+// `[]` in the destructure would identity-change every render, invalidate
+// `syncMapData`'s useCallback deps, and remount the map on every parent
+// re-render (e.g. per keystroke in the address input).
+const EMPTY_ALTERNATIVE_PINS: DeliveryMaplibreAlternativePin[] = [];
 
 const MAP_COPY = {
   nextWindow: "\u0421\u043b\u0435\u0434\u0443\u044e\u0449\u0435\u0435 \u043e\u043a\u043d\u043e",
@@ -129,32 +148,68 @@ function createEmptyFeatureCollection(): GeoJsonFeatureCollection {
   };
 }
 
+// Kitchen marker: «РК» monogram on a brand-gold square. Square shape reads as
+// "a place", not "a dropped pin", so users can tell kitchen apart from
+// destination at a glance. Fraunces italic for brand identity.
 function createKitchenMarkerElement() {
   const element = document.createElement("div");
-  element.style.width = "18px";
-  element.style.height = "18px";
-  element.style.borderRadius = "999px";
-  element.style.border = "2px solid rgba(99, 188, 197, 0.95)";
-  element.style.background = "rgba(8, 16, 20, 0.92)";
-  element.style.boxShadow = "0 0 0 5px rgba(99, 188, 197, 0.12)";
-  element.style.backdropFilter = "blur(10px)";
+  element.setAttribute("aria-label", "Кухня The Raki");
+  element.style.width = "22px";
+  element.style.height = "22px";
+  element.style.borderRadius = "4px";
+  element.style.border = "1.5px solid rgba(190, 150, 103, 0.7)";
+  element.style.background = "rgba(8, 15, 18, 0.94)";
+  element.style.boxShadow = "0 0 0 4px rgba(190, 150, 103, 0.10)";
+  element.style.display = "flex";
+  element.style.alignItems = "center";
+  element.style.justifyContent = "center";
+  element.style.fontFamily =
+    'var(--font-poster), "Fraunces", "Cormorant Garamond", serif';
+  element.style.fontStyle = "italic";
+  element.style.fontSize = "9px";
+  element.style.letterSpacing = "-0.02em";
+  element.style.color = "#be9667";
+  element.style.lineHeight = "1";
+  element.style.textRendering = "optimizeLegibility";
+  element.style.setProperty("-webkit-font-smoothing", "antialiased");
+  element.textContent = "РК";
   element.title = MAP_COPY.activeKitchen;
   return element;
 }
 
+// Destination marker: golden SVG teardrop pin + animated pulse halo on commit.
+// The pin shape anchors at the tip (bottom-center), so the map-space point
+// visually aligns with the actual coordinates — not the marker centre.
 function createDestinationMarkerElement() {
-  const element = document.createElement("div");
-  element.style.width = "34px";
-  element.style.height = "34px";
-  element.style.borderRadius = "999px";
-  element.style.border = "2px solid rgba(245, 242, 236, 0.94)";
-  element.style.background =
-    "radial-gradient(circle at 30% 30%, rgba(255,255,255,1) 0%, rgba(245,242,236,0.98) 38%, rgba(230,228,223,0.94) 100%)";
-  element.style.boxShadow =
-    "0 16px 32px rgba(0,0,0,0.28), 0 0 0 10px rgba(245, 242, 236, 0.08)";
-  element.style.cursor = "grab";
-  element.title = MAP_COPY.dropoffPoint;
-  return element;
+  const wrapper = document.createElement("div");
+  wrapper.setAttribute("aria-label", "Точка доставки");
+  wrapper.style.width = "36px";
+  wrapper.style.height = "44px";
+  wrapper.style.cursor = "grab";
+  wrapper.style.position = "relative";
+  wrapper.style.filter =
+    "drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4))";
+  wrapper.style.transition = "filter 220ms cubic-bezier(0.22, 1, 0.36, 1)";
+  wrapper.classList.add("raki-destination-pin");
+  wrapper.title = MAP_COPY.dropoffPoint;
+
+  wrapper.innerHTML = `
+    <svg width="36" height="44" viewBox="0 0 36 44" fill="none" aria-hidden="true" style="position:absolute;inset:0;">
+      <path d="M18 2C9.163 2 2 9.163 2 18c0 11 16 24 16 24s16-13 16-24C34 9.163 26.837 2 18 2Z"
+        fill="#be9667" stroke="#080f12" stroke-width="1.5"/>
+      <circle cx="18" cy="18" r="5" fill="#080f12" opacity="0.7"/>
+    </svg>
+    <span class="raki-destination-pin__halo" aria-hidden="true"></span>
+  `;
+  return wrapper;
+}
+
+// Trigger a one-shot pulse halo after a commit (drag / suggest / geo).
+function playDestinationPulse(element: HTMLElement) {
+  element.classList.remove("raki-destination-pin--pulse");
+  // Force reflow so the animation restarts on repeat commits.
+  void element.offsetWidth;
+  element.classList.add("raki-destination-pin--pulse");
 }
 
 function buildZoneFeatureCollection(
@@ -259,24 +314,26 @@ export function DeliveryMaplibreCanvas({
   destinationLat,
   destinationLng,
   destinationLabel,
-  addressLine,
-  serviceLine,
-  zoneLabel,
-  etaLabel,
   zoneGeometry,
   deliveryState,
-  alternativePins = [],
+  alternativePins = EMPTY_ALTERNATIVE_PINS,
   isRequoting = false,
+  viewportPolicy = "fit-bounds",
   onDestinationCommit,
 }: DeliveryMaplibreCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  // `matchMedia` was previously read per drag tick (60 Hz during drag).
+  // Capture the MediaQueryList once at mount and read .matches off it live.
+  const reducedMotionRef = useRef<MediaQueryList | null>(null);
   const mapModuleRef = useRef<MapLibreModule | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const kitchenMarkerRef = useRef<MapLibreMarker | null>(null);
   const destinationMarkerRef = useRef<MapLibreMarker | null>(null);
   const previewDestinationRef = useRef<LatLngPoint | null>(null);
   const lastFocusKeyRef = useRef<string | null>(null);
-  const syncMapDataRef = useRef<(shouldFitBounds: boolean) => void>(() => undefined);
+  const syncMapDataRef = useRef<(policy: DeliveryMapViewportPolicy) => void>(
+    () => undefined,
+  );
   const onDestinationCommitRef = useRef<typeof onDestinationCommit>(onDestinationCommit);
   const destinationLabelRef = useRef<string | null | undefined>(destinationLabel);
   const [isDraggingPin, setIsDraggingPin] = useState(false);
@@ -299,7 +356,7 @@ export function DeliveryMaplibreCanvas({
   }, [destinationLat, destinationLng]);
 
   const syncMapData = useCallback(
-    (shouldFitBounds: boolean) => {
+    (policy: DeliveryMapViewportPolicy) => {
       const map = mapRef.current;
       const maplibregl = mapModuleRef.current;
 
@@ -319,13 +376,18 @@ export function DeliveryMaplibreCanvas({
 
       if (kitchenPoint) {
         if (!kitchenMarkerRef.current) {
+          // MapLibre v5 requires setLngLat() BEFORE addTo() — otherwise the
+          // internal bind reads `this._lngLat.lng` on an undefined value and
+          // the whole canvas crashes into MapErrorBoundary.
           kitchenMarkerRef.current = new maplibregl.Marker({
             element: createKitchenMarkerElement(),
             anchor: "center",
-          }).addTo(map);
+          })
+            .setLngLat([kitchenPoint.lng, kitchenPoint.lat])
+            .addTo(map);
+        } else {
+          kitchenMarkerRef.current.setLngLat([kitchenPoint.lng, kitchenPoint.lat]);
         }
-
-        kitchenMarkerRef.current.setLngLat([kitchenPoint.lng, kitchenPoint.lat]);
         kitchenMarkerRef.current.getElement().title = kitchenLabel ?? MAP_COPY.activeKitchen;
       } else {
         kitchenMarkerRef.current?.remove();
@@ -334,11 +396,17 @@ export function DeliveryMaplibreCanvas({
 
       if (activeDestination) {
         if (!destinationMarkerRef.current) {
+          // Same MapLibre v5 constraint: setLngLat before addTo.
           destinationMarkerRef.current = new maplibregl.Marker({
             element: createDestinationMarkerElement(),
             anchor: "center",
-            draggable: Boolean(onDestinationCommit),
-          }).addTo(map);
+            // Check ref so keeping the callback stable across re-renders
+            // doesn't force marker re-creation (parent closure identity
+            // changes with every keystroke when query is in its deps).
+            draggable: Boolean(onDestinationCommitRef.current),
+          })
+            .setLngLat([activeDestination.lng, activeDestination.lat])
+            .addTo(map);
 
           destinationMarkerRef.current.on("dragstart", () => {
             setIsDraggingPin(true);
@@ -352,7 +420,8 @@ export function DeliveryMaplibreCanvas({
             }
 
             previewDestinationRef.current = { lat: lngLat.lat, lng: lngLat.lng };
-            syncMapDataRef.current(false);
+            // Live route line update during drag — never reframe the camera mid-gesture.
+            syncMapDataRef.current("preserve");
           });
 
           destinationMarkerRef.current.on("dragend", () => {
@@ -364,26 +433,47 @@ export function DeliveryMaplibreCanvas({
             }
 
             previewDestinationRef.current = { lat: lngLat.lat, lng: lngLat.lng };
-            syncMapDataRef.current(false);
+            // After drop, leave the user's framing as-is. Parent re-runs the quote
+            // (with viewportPolicy="preserve" in effect) and the new zone draws
+            // without snapping the viewport away from the dropped pin.
+            syncMapDataRef.current("preserve");
+            const element = destinationMarkerRef.current?.getElement();
+            if (element) playDestinationPulse(element);
             onDestinationCommitRef.current?.({
               lat: lngLat.lat,
               lng: lngLat.lng,
               sourceAddressLabel: destinationLabelRef.current ?? null,
             });
           });
+        } else {
+          destinationMarkerRef.current.setLngLat([activeDestination.lng, activeDestination.lat]);
         }
-
-        destinationMarkerRef.current.setLngLat([activeDestination.lng, activeDestination.lat]);
         destinationMarkerRef.current.getElement().title = destinationLabel ?? MAP_COPY.dropoffPoint;
       } else {
         destinationMarkerRef.current?.remove();
         destinationMarkerRef.current = null;
       }
 
-      if (!shouldFitBounds) {
+      if (policy === "preserve") {
         return;
       }
 
+      // prefers-reduced-motion → drop animation duration to 0 (still essential).
+      const reducedMotion = reducedMotionRef.current?.matches ?? false;
+      const flyDuration = reducedMotion ? 0 : 700;
+      const fitDuration = reducedMotion ? 0 : 900;
+
+      if (policy === "fly-to" && activeDestination) {
+        map.flyTo({
+          center: [activeDestination.lng, activeDestination.lat],
+          zoom: Math.max(map.getZoom(), 13.4),
+          duration: flyDuration,
+          essential: true,
+        });
+        return;
+      }
+
+      // fit-bounds (default): frame everything we have.
       const bounds = new maplibregl.LngLatBounds();
       let hasBounds = false;
 
@@ -405,14 +495,14 @@ export function DeliveryMaplibreCanvas({
         map.easeTo({
           center: DEFAULT_CENTER,
           zoom: 10.2,
-          duration: 900,
+          duration: fitDuration,
         });
         return;
       }
 
       map.fitBounds(bounds, {
         padding: { top: 80, right: 88, bottom: 88, left: 88 },
-        duration: 900,
+        duration: fitDuration,
         maxZoom: activeDestination && !zoneGeometry ? 13.6 : 12.8,
       });
     },
@@ -423,8 +513,12 @@ export function DeliveryMaplibreCanvas({
       destinationPoint,
       kitchenLabel,
       kitchenPoint,
-      onDestinationCommit,
       zoneGeometry,
+      // `onDestinationCommit` intentionally omitted — it's consumed via
+      // `onDestinationCommitRef.current` inside so the callback can change
+      // identity (parent re-creates it every render because its own deps
+      // include `query`) without invalidating this useCallback, which would
+      // cascade into map re-mounts.
     ],
   );
 
@@ -436,6 +530,16 @@ export function DeliveryMaplibreCanvas({
 
   useEffect(() => {
     let cancelled = false;
+
+    if (
+      reducedMotionRef.current === null &&
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function"
+    ) {
+      reducedMotionRef.current = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      );
+    }
 
     async function bootstrapMap() {
       if (!containerRef.current || mapRef.current) {
@@ -455,6 +559,10 @@ export function DeliveryMaplibreCanvas({
         style: DEFAULT_MAP_STYLE_URL,
         center: DEFAULT_CENTER,
         zoom: 10.2,
+        // Widen the camera box to cover Moscow + near-Moscow delivery
+        // territory. Too narrow → users lose context when zooming out;
+        // too wide → accidental drags to Africa. [west, south, east, north].
+        maxBounds: [35.5, 54.9, 39.5, 57.0],
         attributionControl: false,
         dragRotate: false,
       });
@@ -474,6 +582,10 @@ export function DeliveryMaplibreCanvas({
             type: "geojson",
             data: createEmptyFeatureCollection() as never,
           });
+          // Zone fill + outline colour per delivery state:
+          //   in-zone    → brand gold (--signal), quiet (trustworthy, not a badge)
+          //   cutoff     → terracotta   (heads-up: next window)
+          //   out-of-zone → muted red   (stop sign without shouting)
           map.addLayer({
             id: "raki-zone-fill",
             type: "fill",
@@ -483,10 +595,10 @@ export function DeliveryMaplibreCanvas({
                 "match",
                 ["get", "state"],
                 "cutoff",
-                "#c7694a",
+                "#c97a4e",
                 "out-of-zone",
-                "#b7594c",
-                "#63bcc5",
+                "#b44a4a",
+                "#be9667",
               ],
               "fill-opacity": [
                 "match",
@@ -494,8 +606,8 @@ export function DeliveryMaplibreCanvas({
                 "cutoff",
                 0.08,
                 "out-of-zone",
-                0.08,
-                0.05,
+                0.07,
+                0.06,
               ],
             },
           });
@@ -510,11 +622,27 @@ export function DeliveryMaplibreCanvas({
                 "cutoff",
                 "#d28763",
                 "out-of-zone",
-                "#b7594c",
-                "#63bcc5",
+                "#c05050",
+                "#be9667",
               ],
-              "line-width": 2,
-              "line-opacity": 0.82,
+              "line-width": [
+                "match",
+                ["get", "state"],
+                "cutoff",
+                2,
+                "out-of-zone",
+                2,
+                1.8,
+              ],
+              "line-opacity": [
+                "match",
+                ["get", "state"],
+                "cutoff",
+                0.7,
+                "out-of-zone",
+                0.65,
+                0.55,
+              ],
             },
           });
         }
@@ -574,7 +702,12 @@ export function DeliveryMaplibreCanvas({
           });
         }
 
-        syncMapData(true);
+        // Read through the ref so the bootstrap effect itself can stay on []
+        // deps — otherwise `syncMapData`'s identity (which depends on
+        // destinationPoint, destinationLabel, onDestinationCommit) would
+        // change on every parent re-render and tear down + recreate the
+        // entire MapLibre instance on every keystroke.
+        syncMapDataRef.current("fit-bounds");
       });
     }
 
@@ -589,13 +722,22 @@ export function DeliveryMaplibreCanvas({
       destinationMarkerRef.current = null;
       mapRef.current = null;
     };
-  }, [syncMapData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (lastFocusKeyRef.current !== focusKey) {
+      // New quote source — drop any drag preview, react per parent's policy.
+      const isInitialMount = lastFocusKeyRef.current === null;
       previewDestinationRef.current = null;
       lastFocusKeyRef.current = focusKey;
-      syncMapData(true);
+      syncMapDataRef.current(viewportPolicy);
+      // Pulse the destination on any new commit that isn't the initial mount
+      // (a bootstrap restore from draft shouldn't feel like a celebration).
+      if (!isInitialMount) {
+        const element = destinationMarkerRef.current?.getElement();
+        if (element) playDestinationPulse(element);
+      }
       return;
     }
 
@@ -607,8 +749,10 @@ export function DeliveryMaplibreCanvas({
       previewDestinationRef.current = null;
     }
 
-    syncMapData(false);
-  }, [destinationPoint, focusKey, syncMapData]);
+    // Same focusKey, just a data refresh (re-render with same destination):
+    // never reframe — preserve the current camera.
+    syncMapDataRef.current("preserve");
+  }, [destinationPoint, focusKey, viewportPolicy]);
 
   const stateTone = getStateChipTone(deliveryState);
 

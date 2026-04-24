@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, JetBrains_Mono, Manrope } from "next/font/google";
 import { AppProviders } from "@/components/app-providers";
-import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
 const manrope = Manrope({

@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -8,54 +9,234 @@ import { createPortal } from "react-dom";
 import { useDraft } from "@/components/draft-provider";
 import { CART_OPEN_EVENT } from "@/components/cart-events";
 import { getProductFamilyImage } from "@/lib/category-images";
-import { getDraftCartView } from "@/lib/draft-view";
-import { getMenuSnapshotForContext } from "@/lib/fixtures";
+import { getDraftCartView, hasResolvedServiceContext } from "@/lib/draft-view";
+import { formatMoney, getMenuSnapshotForContext } from "@/lib/fixtures";
 import {
   appendDraftLineItem,
   buildDefaultDraftLineItem,
   decrementDraftLineItemQuantity,
   incrementDraftLineItemQuantity,
   removeDraftLineItem,
+  type DraftLineItem,
 } from "@/lib/line-item";
 import { getContextUpsellItems, getUpsellNote } from "@/lib/upsells";
+
+type ModifierRow = {
+  label: string;
+  value: string;
+};
+
+const SUMMARY_LABEL_MAP: Record<string, string> = {
+  "Рецепт варки": "Рецепт",
+  "Рецепт обжарки": "Рецепт",
+  "Рецепт жарки": "Рецепт",
+  "Степень соли": "Соль",
+  "Степень остроты": "Острота",
+  "Базовый соус": "Соус",
+  "Соусы к подаче": "Соусы",
+  Добрать: "Вес",
+};
+
+function parseSummaryLine(line: string): ModifierRow | null {
+  const separatorIndex = line.indexOf(":");
+
+  if (separatorIndex === -1) {
+    const trimmed = line.trim();
+    return trimmed ? { label: "Параметр", value: trimmed } : null;
+  }
+
+  const rawLabel = line.slice(0, separatorIndex).trim();
+  const value = line.slice(separatorIndex + 1).trim();
+
+  if (!value) return null;
+
+  return {
+    label: SUMMARY_LABEL_MAP[rawLabel] ?? rawLabel,
+    value,
+  };
+}
+
+function getContextHref(fulfillmentMode: string | null) {
+  return fulfillmentMode === "pickup" ? "/pickup/points" : "/delivery/address";
+}
+
+function getServiceEyebrow(fulfillmentMode: string | null) {
+  return fulfillmentMode === "pickup" ? "Самовывоз" : "Доставка";
+}
+
+function getIssueLabel(count: number) {
+  if (count <= 0) return null;
+
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+
+  if (mod10 === 1 && mod100 !== 11) {
+    return `Проверьте ${count} позицию`;
+  }
+
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+    return `Проверьте ${count} позиции`;
+  }
+
+  return `Проверьте ${count} позиций`;
+}
+
+function getServiceMeta(input: {
+  fulfillmentMode: string | null;
+  serviceResolved: boolean;
+  serviceLabel: string | null;
+  etaLabel: string | null;
+  issueCount: number;
+}) {
+  const issueLabel = getIssueLabel(input.issueCount);
+  if (issueLabel) return issueLabel;
+
+  if (!input.serviceResolved) {
+    return null;
+  }
+
+  return [input.serviceLabel, input.etaLabel].filter(Boolean).join(" · ");
+}
+
+function scrollToEditorialCatalog() {
+  if (typeof document === "undefined") return;
+  const node = document.getElementById("editorial-catalog");
+  if (!node) return;
+
+  const y = node.getBoundingClientRect().top + window.scrollY - 36;
+  window.scrollTo({ top: y, behavior: "smooth" });
+}
+
+function getLineProductImage(
+  lineItem: DraftLineItem,
+  visibleItems: ReturnType<typeof getMenuSnapshotForContext>["visibleItems"],
+) {
+  const family =
+    visibleItems.find((entry) => entry.item.id === lineItem.itemId)?.item.productFamily ?? "boiled";
+
+  return getProductFamilyImage(family);
+}
 
 export function CartPill() {
   const router = useRouter();
   const pathname = usePathname();
   const { draft, patchDraft } = useDraft();
   const cart = useMemo(() => getDraftCartView(draft), [draft]);
-  const prevCount = useRef(draft.lineItems.length);
-  const count = draft.lineItems.length;
-  const justAdded = count > prevCount.current;
+  const lineCount = draft.lineItems.length;
+  const prevCount = useRef(lineCount);
   const [open, setOpen] = useState(false);
   const [portalReady, setPortalReady] = useState(false);
+
+  const justAdded = lineCount > prevCount.current;
+  const isEditorialMenu = pathname === "/menu-editorial";
+  const isProductPage = pathname.startsWith("/product/");
+  const supportsDrawer =
+    pathname === "/menu" ||
+    pathname === "/menu-editorial" ||
+    pathname.startsWith("/product/") ||
+    pathname === "/checkout";
+  const shouldHide =
+    pathname === "/" ||
+    pathname === "/cart" ||
+    pathname === "/demo" ||
+    pathname === "/investor-demo" ||
+    pathname === "/contact" ||
+    pathname === "/account" ||
+    pathname === "/delivery/address" ||
+    pathname === "/delivery/result" ||
+    pathname === "/pickup" ||
+    pathname.startsWith("/pickup/") ||
+    pathname.startsWith("/track/");
+  const shouldRenderPill = pathname !== "/checkout" && !isEditorialMenu && !isProductPage && lineCount > 0;
+
+  const contextSnapshot = useMemo(
+    () =>
+      getMenuSnapshotForContext({
+        fulfillmentMode: draft.fulfillmentMode ?? "delivery",
+        locationId: draft.locationId,
+        servicePointId: draft.servicePointId,
+      }),
+    [draft.fulfillmentMode, draft.locationId, draft.servicePointId],
+  );
+
+  const drawerUpsell = useMemo(() => {
+    const anchorFamilies = draft.lineItems
+      .map((lineItem) =>
+        contextSnapshot.visibleItems.find((entry) => entry.item.id === lineItem.itemId)?.item.productFamily,
+      )
+      .filter((family): family is string => Boolean(family));
+
+    if (anchorFamilies.length === 0) {
+      return null;
+    }
+
+    return (
+      getContextUpsellItems({
+        visibleItems: contextSnapshot.visibleItems,
+        excludedItemIds: draft.lineItems.map((lineItem) => lineItem.itemId),
+        anchorFamilies,
+        limit: 1,
+      })[0] ?? null
+    );
+  }, [contextSnapshot.visibleItems, draft.lineItems]);
+
+  const serviceResolved = hasResolvedServiceContext(draft);
+  const serviceEyebrow = getServiceEyebrow(draft.fulfillmentMode);
+  const serviceMeta = getServiceMeta({
+    fulfillmentMode: draft.fulfillmentMode,
+    serviceResolved,
+    serviceLabel: cart.serviceLabel,
+    etaLabel: cart.etaLabel ?? cart.serviceTimingLabel,
+    issueCount: cart.revalidationIssues.length,
+  });
+
+  const primaryHref =
+    lineCount === 0
+      ? null
+      : serviceResolved
+        ? "/checkout"
+        : getContextHref(draft.fulfillmentMode);
+  const primaryLabel =
+    lineCount === 0
+      ? null
+      : serviceResolved
+        ? "Оформить"
+        : draft.fulfillmentMode === "pickup"
+          ? "Подтвердить самовывоз"
+          : "Подтвердить адрес";
+  const serviceFeeLabel =
+    draft.fulfillmentMode === "pickup"
+      ? "0 ₽"
+      : cart.fee > 0
+        ? formatMoney(cart.fee)
+        : "уточним";
 
   useEffect(() => {
     setPortalReady(true);
   }, []);
 
   useEffect(() => {
-    prevCount.current = count;
-  }, [count]);
+    prevCount.current = lineCount;
+  }, [lineCount]);
 
   useEffect(() => {
     if (!open) return;
+
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
     return () => {
       document.body.style.overflow = previousOverflow;
     };
   }, [open]);
 
   useEffect(() => {
-    if (count === 0) {
-      setOpen(false);
-    }
-  }, [count]);
+    setOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const handleOpen = () => {
-      if (pathname === "/menu" || pathname.startsWith("/product/")) {
+      if (pathname === "/menu" || pathname === "/menu-editorial" || pathname.startsWith("/product/")) {
         setOpen(true);
       }
     };
@@ -64,450 +245,346 @@ export function CartPill() {
     return () => window.removeEventListener(CART_OPEN_EVENT, handleOpen);
   }, [pathname]);
 
-  const supportsDrawer = pathname === "/menu" || pathname.startsWith("/product/");
-  const shouldHide =
-    pathname === "/" ||
-    pathname === "/cart" ||
-    pathname === "/checkout" ||
-    pathname === "/demo" ||
-    pathname === "/investor-demo" ||
-    pathname === "/delivery/address" ||
-    pathname === "/delivery/result" ||
-    pathname.startsWith("/pickup/") ||
-    pathname.startsWith("/track/");
-
-  const contextSnapshot = useMemo(() => {
-    return getMenuSnapshotForContext({
-      fulfillmentMode: draft.fulfillmentMode ?? "delivery",
-      locationId: draft.locationId,
-      servicePointId: draft.servicePointId,
-    });
-  }, [draft.fulfillmentMode, draft.locationId, draft.servicePointId]);
-
-  const drawerUpsells = useMemo(() => {
-    const anchorFamilies = draft.lineItems
-      .map((lineItem) =>
-        contextSnapshot.visibleItems.find((entry) => entry.item.id === lineItem.itemId)?.item.productFamily,
-      )
-      .filter((family): family is string => Boolean(family));
-
-    if (anchorFamilies.length === 0) {
-      return [];
-    }
-
-    return getContextUpsellItems({
-      visibleItems: contextSnapshot.visibleItems,
-      excludedItemIds: draft.lineItems.map((lineItem) => lineItem.itemId),
-      anchorFamilies,
-      limit: 3,
-    });
-  }, [contextSnapshot.visibleItems, draft.lineItems]);
-
-  if (shouldHide || count === 0) return null;
-
-  const goToCart = () => {
-    setOpen(false);
-    router.push("/cart");
-  };
+  if (shouldHide || (!supportsDrawer && lineCount === 0)) {
+    return null;
+  }
 
   const handleUpsellAdd = (itemId: string) => {
     const entry = contextSnapshot.visibleItems.find((candidate) => candidate.item.id === itemId);
 
-    if (!entry) {
-      return;
-    }
+    if (!entry) return;
 
     patchDraft({
-      lineItems: appendDraftLineItem(
-        draft.lineItems,
-        buildDefaultDraftLineItem(entry.item),
-      ),
+      lineItems: appendDraftLineItem(draft.lineItems, buildDefaultDraftLineItem(entry.item)),
     });
   };
 
-  const serviceLabel =
-    draft.fulfillmentMode === "pickup"
-      ? "Самовывоз"
-      : draft.normalizedAddress || draft.typedAddress
-        ? "Доставка подтверждается по адресу"
-        : "Доставка";
+  const handleContinueChoosing = () => {
+    setOpen(false);
+    if (isEditorialMenu) {
+      scrollToEditorialCatalog();
+    }
+  };
 
   return portalReady
     ? createPortal(
         <>
-      <AnimatePresence>
-        <motion.button
-          type="button"
-          onClick={() => (supportsDrawer ? setOpen(true) : router.push("/cart"))}
-          aria-label="Открыть заказ"
-          initial={{ x: 18, opacity: 0 }}
-          animate={{
-            x: 0,
-            opacity: 1,
-            scale: justAdded ? [1, 1.06, 1] : 1,
-          }}
-          exit={{ x: 18, opacity: 0 }}
-          transition={{ duration: 0.28 }}
-          style={{
-            position: "fixed",
-            right: "var(--space-lg)",
-            top: "50%",
-            transform: "translateY(-50%)",
-            zIndex: 70,
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            padding: "10px 12px 10px 14px",
-            minWidth: 176,
-            borderRadius: "999px",
-            border: "1px solid rgba(255,255,255,0.1)",
-            backgroundColor: "rgba(248, 245, 238, 0.94)",
-            color: "var(--bg)",
-            boxShadow: "0 26px 60px rgba(0,0,0,0.28)",
-            backdropFilter: "blur(20px)",
-            cursor: "pointer",
-          }}
-        >
-          <span
-            aria-hidden="true"
-            style={{
-              width: 36,
-              height: 36,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: "50%",
-              backgroundColor: "rgba(8, 16, 20, 0.08)",
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M7 9.5h10l-.9 9.2a1.4 1.4 0 0 1-1.39 1.3H9.29a1.4 1.4 0 0 1-1.39-1.3L7 9.5Z"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M9.2 9.3V7.9A2.8 2.8 0 0 1 12 5.1a2.8 2.8 0 0 1 2.8 2.8v1.4"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-              />
-            </svg>
-          </span>
-          <span style={{ display: "grid", gap: 2, textAlign: "left", minWidth: 0, flex: 1 }}>
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 800,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                color: "rgba(8,16,20,0.56)",
-              }}
-            >
-              Заказ
-            </span>
-            <strong style={{ fontSize: 13, lineHeight: 1.2, whiteSpace: "nowrap" }}>
-              {count} поз.
-            </strong>
-          </span>
-          <strong style={{ fontSize: 15, lineHeight: 1.2, whiteSpace: "nowrap" }}>{cart.totalLabel}</strong>
-        </motion.button>
-      </AnimatePresence>
+          <AnimatePresence>
+            {shouldRenderPill ? (
+              <motion.button
+                type="button"
+                className="cart-pill"
+                onClick={() => (supportsDrawer ? setOpen(true) : router.push("/cart"))}
+                aria-label="Открыть заказ"
+                initial={{ x: 18, opacity: 0 }}
+                animate={{
+                  x: 0,
+                  opacity: 1,
+                  scale: justAdded ? [1, 1.05, 1] : 1,
+                }}
+                exit={{ x: 18, opacity: 0 }}
+                transition={{ duration: 0.28 }}
+              >
+                <span className="cart-pill__icon" aria-hidden="true">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M7 9.5h10l-.9 9.2a1.4 1.4 0 0 1-1.39 1.3H9.29a1.4 1.4 0 0 1-1.39-1.3L7 9.5Z"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M9.2 9.3V7.9A2.8 2.8 0 0 1 12 5.1a2.8 2.8 0 0 1 2.8 2.8v1.4"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
 
-      <AnimatePresence>
-        {supportsDrawer && open ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            style={{
-              position: "fixed",
-              inset: 0,
-              zIndex: 95,
-              backgroundColor: "rgba(3, 7, 10, 0.6)",
-              backdropFilter: "blur(6px)",
-            }}
-            onClick={() => setOpen(false)}
-          >
-            <motion.aside
-              initial={{ x: 44, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 44, opacity: 0 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              style={{
-                position: "absolute",
-                top: 18,
-                right: 18,
-                bottom: 18,
-                width: 428,
-                borderRadius: "28px",
-                border: "1px solid rgba(255,255,255,0.08)",
-                backgroundColor: "rgba(8, 14, 18, 0.985)",
-                boxShadow: "0 32px 90px rgba(0,0,0,0.34)",
-                display: "grid",
-                gridTemplateRows: "auto 1fr auto",
-                overflow: "hidden",
-              }}
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div style={{ padding: "20px 20px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-                <div className="flex items-start justify-between" style={{ gap: "var(--space-md)" }}>
-                  <div>
-                    <span className="text-eyebrow block" style={{ marginBottom: 6 }}>
-                      {serviceLabel}
-                    </span>
-                    <h3 className="font-display" style={{ fontSize: 28, lineHeight: 0.98, marginBottom: 6 }}>
-                      Ваш заказ.
-                    </h3>
-                    <p className="text-muted" style={{ fontSize: 12, lineHeight: 1.55, maxWidth: 260 }}>
-                      Можно спокойно поправить позиции, добавить ещё пару вещей к столу и перейти к оформлению.
-                    </p>
+                <span className="cart-pill__copy">
+                  <span className="cart-pill__eyebrow">Ваш стол</span>
+                  <strong className="cart-pill__count">{lineCount} поз.</strong>
+                </span>
+
+                <strong className="cart-pill__total">{cart.totalLabel}</strong>
+              </motion.button>
+            ) : null}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {supportsDrawer && open ? (
+              <motion.div
+                className="cart-drawer__backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.22 }}
+                onClick={() => setOpen(false)}
+              >
+                <motion.aside
+                  className="cart-drawer"
+                  initial={{ x: 44, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: 44, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="cart-drawer__header">
+                    <div className="cart-drawer__header-copy">
+                      <span className="cart-drawer__eyebrow">{serviceEyebrow}</span>
+                      <h3 className="cart-drawer__title">Ваш стол</h3>
+                      {serviceMeta ? (
+                        <p className="cart-drawer__service">{serviceMeta}</p>
+                      ) : null}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="cart-drawer__close"
+                      aria-label="Закрыть корзину"
+                      onClick={() => setOpen(false)}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path
+                          d="M3.5 3.5 12.5 12.5M12.5 3.5 3.5 12.5"
+                          stroke="currentColor"
+                          strokeWidth="1.45"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
                   </div>
 
-                  <button
-                    type="button"
-                    className="cta cta--ghost"
-                    style={{ padding: "10px 12px", minWidth: 44 }}
-                    onClick={() => setOpen(false)}
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
+                  <div className="cart-drawer__body">
+                    {lineCount === 0 ? (
+                      <section className="cart-drawer__empty">
+                        <span className="cart-drawer__eyebrow">Пока пусто</span>
+                        <h4 className="cart-drawer__empty-title">Добавьте первую позицию к столу.</h4>
+                        <p className="cart-drawer__empty-copy">Выберите первую позицию из меню.</p>
+                        <button
+                          type="button"
+                          className="cart-drawer__ghost-button"
+                          onClick={handleContinueChoosing}
+                        >
+                          Смотреть меню
+                        </button>
+                      </section>
+                    ) : (
+                      <>
+                        <div className="cart-drawer__list">
+                          {draft.lineItems.map((item, index) => {
+                            const modifierRows = item.summaryLines
+                              .map((line) => parseSummaryLine(line))
+                              .filter((row): row is ModifierRow => Boolean(row));
+                            const bundledSubItems = cart.bundledSubItems[index] ?? [];
 
-              <div style={{ padding: "16px 16px 18px", overflowY: "auto", display: "grid", gap: 8 }}>
-                {draft.lineItems.map((item, index) => (
-                  <article
-                    key={`${item.itemId}-${index}`}
-                    style={{
-                      padding: index === 0 ? "4px 0 12px" : "12px 0 12px",
-                      borderBottom:
-                        index === draft.lineItems.length - 1 ? "none" : "1px solid rgba(255,255,255,0.07)",
-                      display: "grid",
-                      gap: 10,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "56px minmax(0, 1fr) auto",
-                        gap: 12,
-                        alignItems: "start",
-                      }}
-                    >
-                      <div
-                        aria-hidden="true"
-                          style={{
-                          width: 52,
-                          height: 52,
-                          borderRadius: "14px",
-                          overflow: "hidden",
-                          border: "1px solid rgba(255,255,255,0.08)",
-                          backgroundColor: "rgba(18, 29, 36, 0.92)",
-                        }}
-                      >
-                        <img
-                          src={getProductFamilyImage(
-                            contextSnapshot.visibleItems.find((entry) => entry.item.id === item.itemId)?.item.productFamily ?? "boiled",
-                          )}
-                          alt=""
-                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        />
-                      </div>
+                            return (
+                              <article key={`${item.itemId}-${index}`} className="cart-drawer__line">
+                                <div className="cart-drawer__line-head">
+                                  <div className="cart-drawer__thumb" aria-hidden="true">
+                                    <Image
+                                      src={getLineProductImage(item, contextSnapshot.visibleItems)}
+                                      alt=""
+                                      fill
+                                      sizes="58px"
+                                      className="cart-drawer__thumb-image"
+                                    />
+                                  </div>
 
-                      <div style={{ minWidth: 0 }}>
-                        <strong style={{ display: "block", fontSize: 15, lineHeight: 1.2, marginBottom: 4 }}>
-                          {item.itemName}
-                        </strong>
-                        {item.summaryLines.length > 0 ? (
-                          <span className="text-muted" style={{ display: "block", fontSize: 11, lineHeight: 1.45 }}>
-                            {item.summaryLines.slice(0, 2).join(" • ")}
-                          </span>
-                        ) : null}
-                      </div>
+                                  <div className="cart-drawer__line-copy">
+                                    <div className="cart-drawer__line-top">
+                                      <strong className="cart-drawer__line-name">{item.itemName}</strong>
+                                      <strong className="cart-drawer__line-price">
+                                        {formatMoney(item.totalPrice)}
+                                      </strong>
+                                    </div>
 
-                      <div style={{ display: "grid", justifyItems: "end", gap: 8 }}>
-                        <strong style={{ fontSize: 15, whiteSpace: "nowrap" }}>
-                          {item.totalPrice.toLocaleString("ru-RU")} ₽
-                        </strong>
-                        {item.quantityEditable === false ? (
-                          <span className="text-muted" style={{ fontSize: 11, whiteSpace: "nowrap" }}>
-                            Весовая позиция
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
+                                    {modifierRows.length > 0 ? (
+                                      <div className="cart-drawer__modifier-list">
+                                        {modifierRows.map((row, rowIndex) => (
+                                          <div
+                                            key={`${row.label}-${row.value}-${rowIndex}`}
+                                            className="cart-drawer__modifier-row"
+                                          >
+                                            <span className="cart-drawer__modifier-label">
+                                              {row.label}
+                                            </span>
+                                            <span className="cart-drawer__modifier-value">
+                                              {row.value}
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : null}
 
-                    <div
-                      className="flex items-center justify-between"
-                      style={{
-                        gap: "var(--space-sm)",
-                        paddingTop: 6,
-                      }}
-                    >
-                      {item.quantityEditable === false ? (
-                        <span className="text-muted" style={{ fontSize: 12 }}>Весовая позиция</span>
-                      ) : (
-                        <div className="flex items-center" style={{ gap: 8 }}>
-                          <button
-                            type="button"
-                            className="cta cta--ghost"
-                            style={{ padding: "5px 9px", minWidth: 34, borderRadius: 14 }}
-                            onClick={() =>
-                              patchDraft({
-                                lineItems: decrementDraftLineItemQuantity(draft.lineItems, index),
-                              })
-                            }
-                          >
-                            −
-                          </button>
-                          <strong style={{ minWidth: 16, textAlign: "center", fontSize: 13 }}>{item.quantity}</strong>
-                          <button
-                            type="button"
-                            className="cta cta--ghost"
-                            style={{ padding: "5px 9px", minWidth: 34, borderRadius: 14 }}
-                            onClick={() =>
-                              patchDraft({
-                                lineItems: incrementDraftLineItemQuantity(draft.lineItems, index),
-                              })
-                            }
-                          >
-                            +
-                          </button>
+                                    {bundledSubItems.length > 0 ? (
+                                      <div className="cart-drawer__bundles">
+                                        <span className="cart-drawer__bundle-title">К блюду</span>
+                                        <div className="cart-drawer__bundle-list">
+                                          {bundledSubItems.map((subItem) => (
+                                            <span
+                                              key={`${subItem.parentItemId}-${subItem.id}`}
+                                              className="cart-drawer__bundle-tag"
+                                            >
+                                              {subItem.title} ×{subItem.quantity}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                </div>
+
+                                <div
+                                  className={`cart-drawer__line-actions${
+                                    item.quantityEditable === false
+                                      ? " cart-drawer__line-actions--static"
+                                      : ""
+                                  }`}
+                                >
+                                  {item.quantityEditable === false ? (
+                                    <div />
+                                  ) : (
+                                    <div className="cart-drawer__stepper">
+                                      <button
+                                        type="button"
+                                        className="cart-drawer__stepper-button"
+                                        onClick={() =>
+                                          patchDraft({
+                                            lineItems: decrementDraftLineItemQuantity(
+                                              draft.lineItems,
+                                              index,
+                                            ),
+                                          })
+                                        }
+                                      >
+                                        −
+                                      </button>
+                                      <strong className="cart-drawer__stepper-value">
+                                        {item.quantity}
+                                      </strong>
+                                      <button
+                                        type="button"
+                                        className="cart-drawer__stepper-button"
+                                        onClick={() =>
+                                          patchDraft({
+                                            lineItems: incrementDraftLineItemQuantity(
+                                              draft.lineItems,
+                                              index,
+                                            ),
+                                          })
+                                        }
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    className="cart-drawer__line-remove"
+                                    onClick={() =>
+                                      patchDraft({
+                                        lineItems: removeDraftLineItem(draft.lineItems, index),
+                                      })
+                                    }
+                                  >
+                                    Убрать
+                                  </button>
+                                </div>
+                              </article>
+                            );
+                          })}
                         </div>
-                      )}
 
+                        {drawerUpsell ? (
+                          <section className="cart-drawer__upsell">
+                            <span className="cart-drawer__eyebrow">Еще к столу</span>
+
+                            <article className="cart-drawer__upsell-item">
+                              <div className="cart-drawer__upsell-thumb" aria-hidden="true">
+                                <Image
+                                  src={getProductFamilyImage(drawerUpsell.item.productFamily)}
+                                  alt=""
+                                  fill
+                                  sizes="54px"
+                                  className="cart-drawer__thumb-image"
+                                />
+                              </div>
+
+                              <div className="cart-drawer__upsell-copy">
+                                <strong className="cart-drawer__upsell-name">
+                                  {drawerUpsell.item.name}
+                                </strong>
+                                <p className="cart-drawer__upsell-note">
+                                  {getUpsellNote(drawerUpsell)}
+                                </p>
+                              </div>
+
+                              <div className="cart-drawer__upsell-meta">
+                                <strong className="cart-drawer__upsell-price">
+                                  от {formatMoney(drawerUpsell.effectiveBasePrice)}
+                                </strong>
+                                <button
+                                  type="button"
+                                  className="cart-drawer__quiet-button"
+                                  onClick={() => handleUpsellAdd(drawerUpsell.item.id)}
+                                >
+                                  Добавить
+                                </button>
+                              </div>
+                            </article>
+                          </section>
+                        ) : null}
+                      </>
+                    )}
+                  </div>
+
+                  <div className="cart-drawer__footer">
+                    {lineCount > 0 ? (
+                      <>
+                        <div className="cart-drawer__totals">
+                          <div className="cart-drawer__total-row">
+                            <span>Позиции</span>
+                            <strong>{cart.subtotalLabel}</strong>
+                          </div>
+                          <div className="cart-drawer__total-row">
+                            <span>
+                              {draft.fulfillmentMode === "pickup" ? "Самовывоз" : "Доставка"}
+                            </span>
+                            <strong>{serviceFeeLabel}</strong>
+                          </div>
+                          <div className="cart-drawer__total-row cart-drawer__total-row--grand">
+                            <span>Итого</span>
+                            <strong>{cart.totalLabel}</strong>
+                          </div>
+                        </div>
+
+                        {primaryHref && primaryLabel ? (
+                          <Link
+                            href={primaryHref}
+                            className="cart-drawer__submit"
+                            onClick={() => setOpen(false)}
+                          >
+                            {primaryLabel}
+                          </Link>
+                        ) : null}
+                      </>
+                    ) : (
                       <button
                         type="button"
-                        className="cta cta--ghost"
-                        style={{ padding: "5px 9px", fontSize: 11, borderRadius: 14 }}
-                        onClick={() =>
-                          patchDraft({
-                            lineItems: removeDraftLineItem(draft.lineItems, index),
-                          })
-                        }
+                        className="cart-drawer__submit"
+                        onClick={handleContinueChoosing}
                       >
-                        Убрать
+                        Смотреть меню
                       </button>
-                    </div>
-                  </article>
-                ))}
-
-                {drawerUpsells.length > 0 ? (
-                  <section
-                    style={{
-                      padding: "14px 14px 6px",
-                      borderRadius: "20px",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      backgroundColor: "rgba(12, 21, 27, 0.9)",
-                      display: "grid",
-                      gap: 10,
-                    }}
-                  >
-                    <div>
-                      <span className="text-eyebrow block" style={{ marginBottom: 4 }}>
-                        Добавить к столу
-                      </span>
-                      <strong style={{ display: "block", fontSize: 17, lineHeight: 1.15, marginBottom: 4 }}>
-                        Ещё пару позиций.
-                      </strong>
-                      <p className="text-muted" style={{ fontSize: 11, lineHeight: 1.5 }}>
-                        Небольшие дополнения без лишнего шума.
-                      </p>
-                    </div>
-
-                    <div style={{ display: "grid", gap: 10 }}>
-                      {drawerUpsells.map((entry) => (
-                        <article
-                          key={entry.item.id}
-                          style={{
-                            padding: "10px 0",
-                            borderTop: "1px solid rgba(255,255,255,0.07)",
-                            display: "grid",
-                            gridTemplateColumns: "52px minmax(0, 1fr) auto",
-                            gap: 10,
-                            alignItems: "center",
-                          }}
-                        >
-                          <div
-                            aria-hidden="true"
-                            style={{
-                              width: 52,
-                              height: 52,
-                              borderRadius: "14px",
-                              overflow: "hidden",
-                              border: "1px solid rgba(255,255,255,0.08)",
-                              backgroundColor: "rgba(22, 34, 41, 0.92)",
-                            }}
-                          >
-                            <img
-                              src={getProductFamilyImage(entry.item.productFamily)}
-                              alt=""
-                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                            />
-                          </div>
-
-                          <div style={{ minWidth: 0 }}>
-                            <span className="text-eyebrow block" style={{ marginBottom: 4 }}>
-                              {entry.item.category}
-                            </span>
-                            <strong style={{ display: "block", fontSize: 14, lineHeight: 1.2, marginBottom: 4 }}>
-                              {entry.item.name}
-                            </strong>
-                            <p className="text-muted" style={{ fontSize: 11, lineHeight: 1.45 }}>
-                              {getUpsellNote(entry)}
-                            </p>
-                          </div>
-
-                          <div style={{ display: "grid", justifyItems: "end", gap: 8 }}>
-                            <strong style={{ fontSize: 14, whiteSpace: "nowrap" }}>
-                              от {entry.effectiveBasePrice.toLocaleString("ru-RU")} ₽
-                            </strong>
-                            <button
-                              type="button"
-                              className="cta cta--ghost"
-                              style={{ padding: "5px 10px", fontSize: 11, borderRadius: 14 }}
-                              onClick={() => handleUpsellAdd(entry.item.id)}
-                            >
-                              Добавить
-                            </button>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </section>
-                ) : null}
-              </div>
-
-              <div
-                style={{
-                  padding: "16px 20px 20px",
-                  borderTop: "1px solid rgba(255,255,255,0.08)",
-                  backgroundColor: "rgba(8, 16, 20, 0.88)",
-                  display: "grid",
-                  gap: 12,
-                }}
-              >
-                <div className="flex items-center justify-between" style={{ gap: "var(--space-sm)" }}>
-                  <span className="text-eyebrow">К оплате</span>
-                  <strong style={{ fontSize: 28, lineHeight: 1 }}>{cart.totalLabel}</strong>
-                </div>
-
-                <div className="flex items-center justify-between" style={{ gap: "var(--space-sm)", flexWrap: "wrap" }}>
-                  <button type="button" className="cta cta--ghost" style={{ padding: "10px 14px" }} onClick={goToCart}>
-                    Корзина
-                  </button>
-                  <Link href="/checkout" className="cta cta--primary" style={{ padding: "10px 16px" }} onClick={() => setOpen(false)}>
-                    Оформить заказ
-                  </Link>
-                </div>
-              </div>
-            </motion.aside>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+                    )}
+                  </div>
+                </motion.aside>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </>,
         document.body,
       )

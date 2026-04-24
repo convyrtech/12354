@@ -15,7 +15,7 @@ function baseContext(): WaiterContext {
 describe("askMock", () => {
   it("null message with no user returns guest greeting + guest chips", () => {
     const response = askMock(null, baseContext());
-    expect(response.reply).toContain("Первый раз");
+    expect(response.reply).toContain("Первый заказ");
     expect(response.suggestedChips[0].primary).toBe(true);
     expect(response.suggestedChips[0].action).toEqual({ type: "scroll-to-triptych" });
   });
@@ -37,7 +37,7 @@ describe("askMock", () => {
   it("'повторить' message routes to repeat ack with dialog mode", () => {
     const response = askMock("Повторить последний", baseContext());
     expect(response.mode).toBe("dialog");
-    expect(response.reply).toContain("Собрал последний");
+    expect(response.reply).toContain("Повторил прошлый заказ");
   });
 
   it("unknown free-form message falls back to deflect (never empty reply)", () => {

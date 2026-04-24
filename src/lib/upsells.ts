@@ -23,19 +23,19 @@ function getUpsellFamilyPriority(families: string[]) {
 export function getUpsellNote(entry: MenuSnapshotItem) {
   switch (entry.item.productFamily) {
     case "shrimp":
-      return "К ракам и крабу часто добавляют креветочную линию с отдельной подачей и соусами.";
+      return "Креветки.";
     case "crab":
-      return "Деликатесная линия для более щедрого заказа и более сильного первого впечатления.";
+      return "Камчатский краб.";
     case "caviar":
-      return "Тихое деликатесное усиление к основному заказу, не перегружая стол.";
+      return "Икра.";
     case "drink":
-      return "Спокойное сопровождение к теплой подаче и вечернему заказу.";
+      return "Вода и соки.";
     case "gift":
-      return "Небольшой подарочный или гостевой акцент, если хочется усилить подачу без шума.";
+      return "Подарочный набор.";
     case "dessert":
-      return "Небольшой финал к заказу, если хочется закончить мягко и аккуратно.";
+      return "Десерт.";
     case "mussels":
-      return "Теплая соседняя линия, если хочется добавить еще один морской акцент.";
+      return "Мидии.";
     default:
       return entry.item.description;
   }

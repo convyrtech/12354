@@ -81,12 +81,24 @@ export function useFakeAuth() {
       existing.phone === phone && existing.isAuthenticated
         ? { ...existing, isAuthenticated: true }
         : { ...DEFAULT, isAuthenticated: true, phone };
+    if (
+      state.isAuthenticated === next.isAuthenticated &&
+      state.phone === next.phone &&
+      state.name === next.name &&
+      state.bonusBalance === next.bonusBalance &&
+      state.paymentPreference === next.paymentPreference &&
+      state.preferredCity === next.preferredCity &&
+      JSON.stringify(state.orderHistory ?? null) === JSON.stringify(next.orderHistory ?? null)
+    ) {
+      return;
+    }
     setState(next);
     writeStorage(next);
-  }, []);
+  }, [state]);
 
   const updateName = useCallback((name: string) => {
     const current = readStorage();
+    if (current.name === name) return;
     const next: FakeAuthState = { ...current, name };
     setState(next);
     writeStorage(next);
@@ -94,6 +106,7 @@ export function useFakeAuth() {
 
   const updateBonus = useCallback((bonusBalance: number) => {
     const current = readStorage();
+    if (current.bonusBalance === bonusBalance) return;
     const next: FakeAuthState = { ...current, bonusBalance };
     setState(next);
     writeStorage(next);

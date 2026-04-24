@@ -133,7 +133,15 @@ export function buildDraftLineItem(
     .map((group) => {
       const selection = selections.find((entry) => entry.groupId === group.id);
       const labels = (selection?.optionIds ?? [])
-        .map((optionId) => group.options.find((option) => option.id === optionId)?.label)
+        .map((optionId) => {
+          const option = group.options.find((candidate) => candidate.id === optionId);
+
+          if (!option) {
+            return null;
+          }
+
+          return option.summaryLabel === undefined ? option.label : option.summaryLabel;
+        })
         .filter((label): label is string => Boolean(label));
 
       if (labels.length === 0) {

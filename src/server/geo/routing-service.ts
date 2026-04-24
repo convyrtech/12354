@@ -45,8 +45,25 @@ export async function quoteRoute(
   const config = dependencies.config ?? getGeoRuntimeConfig();
   const provider = dependencies.provider ?? createRoutingProvider(config);
 
-  return provider.quoteRoute(input, {
-    signal: dependencies.signal,
-    timeoutMs: 3500,
-  });
+  try {
+    return await provider.quoteRoute(input, {
+      signal: dependencies.signal,
+      timeoutMs: 3500,
+    });
+  } catch (error) {
+    // AbortError must propagate so callers see cancellation as cancellation,
+    // not as a degraded route. Any other failure (timeout, 5xx, network) →
+    // graceful degrade to Haversine; quote-service will mark quoteMode "degraded".
+    if (error instanceof Error && error.name === "AbortError") {
+      throw error;
+    }
+    console.warn(
+      JSON.stringify({
+        event: "routing_provider_degraded",
+        provider: config.routingProvider,
+        reason: error instanceof Error ? error.message : String(error),
+      }),
+    );
+    return new FallbackRoutingProvider().quoteRoute(input);
+  }
 }

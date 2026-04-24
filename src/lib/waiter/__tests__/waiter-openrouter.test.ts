@@ -51,8 +51,8 @@ describe("askOpenrouter", () => {
 
     const response = await askOpenrouter("Что взять к ракам?", TEST_CONTEXT);
 
-    expect(response.reply).toContain("короткие запросы");
-    expect(response.signature).toBe("— официант");
+    expect(response.reply).toContain("начинайте с раков");
+    expect(response.signature).toBe("Официант");
     expect(response.mode).toBe("dialog");
   });
 
@@ -77,8 +77,8 @@ describe("askOpenrouter", () => {
 
     const response = await askOpenrouter("Что взять к ракам?", TEST_CONTEXT);
 
-    expect(response.reply).toContain("короткие запросы");
-    expect(response.signature).toBe("— официант");
+    expect(response.reply).toContain("начинайте с раков");
+    expect(response.signature).toBe("Официант");
   });
 
   it("returns the model reply when OpenRouter responds with valid JSON", async () => {
@@ -107,6 +107,6 @@ describe("askOpenrouter", () => {
     expect(response.reply).toBe(
       "К ракам можно тихо добавить мидии или оставить стол как есть.",
     );
-    expect(response.signature).toBe("— официант");
+    expect(response.signature).toBe("Официант");
   });
 });

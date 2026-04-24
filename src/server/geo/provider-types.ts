@@ -3,6 +3,7 @@ import type {
   GeoAddressSuggestRequest,
   GeoAddressSuggestion,
   GeoFindZoneRequest,
+  GeoReverseRequest,
   GeoRoutingProviderName,
   RoutingQuote,
   ZoneMatch,
@@ -27,6 +28,14 @@ export interface AddressProvider {
     input: GeoAddressSuggestRequest,
     options?: GeoProviderRequestOptions,
   ): Promise<GeoAddressSuggestion[]>;
+}
+
+export interface ReverseProvider {
+  readonly name: GeoAddressProviderName;
+  reverse(
+    input: GeoReverseRequest,
+    options?: GeoProviderRequestOptions,
+  ): Promise<GeoAddressSuggestion | null>;
 }
 
 export interface RoutingProvider {

@@ -8,7 +8,7 @@ import {
   type GeoRuntimeConfig,
 } from "@/server/geo/config";
 import { GeoConfigError } from "@/server/geo/errors";
-import { DadataAddressProvider } from "@/server/geo/providers/dadata-address-provider";
+import { DadataProvider } from "@/server/geo/providers/dadata-provider";
 import type { AddressProvider } from "@/server/geo/provider-types";
 
 export const MIN_SUGGEST_QUERY_LENGTH = 3;
@@ -27,7 +27,7 @@ type SuggestAddressesDependencies = {
 
 function createAddressProvider(config: GeoRuntimeConfig): AddressProvider {
   if (config.suggestProvider === "dadata") {
-    return new DadataAddressProvider({
+    return new DadataProvider({
       apiKey: config.dadataApiKey,
     });
   }

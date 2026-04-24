@@ -184,13 +184,13 @@ function getStatusSupportCopy(tracking: PublicTrackingView) {
     case "pending_assignment":
     case "assigned":
     case "accepted":
-      return "Сейчас фиксируем исполнителя и готовим выезд без лишнего шума вокруг заказа.";
+      return "Назначаем курьера и готовим выезд.";
     case "en_route_to_pickup":
     case "waiting_at_pickup":
       return "Точка уже в работе. Как только заказ перейдёт к курьеру, маршрут обновится здесь автоматически.";
     case "picked_up":
     case "en_route_to_customer":
-      return "Заказ уже на маршруте. Здесь остаётся только спокойное сопровождение до вручения.";
+      return "Заказ уже в пути.";
     case "arrived_near_customer":
       return "Курьер уже рядом. Пожалуйста, будьте на связи ближайшие минуты.";
     case "delivered":
@@ -199,7 +199,7 @@ function getStatusSupportCopy(tracking: PublicTrackingView) {
     case "cancelled":
     return "Ситуацию уже разбирает команда. Если нужно, мы быстро перестроим маршрут вручную.";
     default:
-      return "Маршрут сопровождается в реальном времени и обновляется автоматически.";
+      return "Статус маршрута обновляется автоматически.";
   }
 }
 

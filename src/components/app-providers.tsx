@@ -15,6 +15,14 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   const [demoParam, setDemoParam] = useState<string | null>(null);
   const routeMode = getRouteMode(pathname, demoParam);
   const isHome = pathname === "/";
+  const isProduct = pathname.startsWith("/product/");
+  const isCheckout = pathname === "/checkout";
+  const isDeliveryAddress = pathname === "/delivery/address";
+  const isDeliveryResult = pathname === "/delivery/result";
+  const isPickup = pathname === "/pickup";
+  const isPickupPoints = pathname === "/pickup/points";
+  const isContact = pathname === "/contact";
+  const isAccount = pathname === "/account";
 
   useEffect(() => {
     setDemoParam(new URLSearchParams(window.location.search).get("demo"));
@@ -34,7 +42,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         <SmoothScrollProvider>
           {routeMode === "public" ? (
             <>
-              {isHome ? <HomeMenu /> : <Navigation />}
+              {isHome ? <HomeMenu /> : pathname !== "/menu-editorial" && !isProduct && !isCheckout && !isDeliveryAddress && !isDeliveryResult && !isPickup && !isPickupPoints && !isContact && !isAccount ? <Navigation /> : null}
               <CartPill />
             </>
           ) : null}

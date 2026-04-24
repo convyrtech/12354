@@ -5,9 +5,9 @@ import type {
   RoutingProvider,
   RoutingProviderQuoteRouteInput,
 } from "@/server/geo/provider-types";
+import { resolveFetchSignal } from "@/server/geo/utils/fetch-signal";
 
 const TOMTOM_BASE_URL = "https://api.tomtom.com/routing/1/calculateRoute";
-const DEFAULT_TIMEOUT_MS = 3500;
 
 type TomTomRouteSummary = {
   lengthInMeters?: number;
@@ -22,34 +22,6 @@ type TomTomRoute = {
 type TomTomCalculateRouteResponse = {
   routes?: TomTomRoute[];
 };
-
-function resolveFetchSignal(options?: GeoProviderRequestOptions) {
-  const signals: AbortSignal[] = [];
-
-  if (options?.signal) {
-    signals.push(options.signal);
-  }
-
-  const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-
-  if (
-    timeoutMs > 0 &&
-    typeof AbortSignal !== "undefined" &&
-    typeof AbortSignal.timeout === "function"
-  ) {
-    signals.push(AbortSignal.timeout(timeoutMs));
-  }
-
-  if (signals.length === 0) {
-    return undefined;
-  }
-
-  if (signals.length === 1) {
-    return signals[0];
-  }
-
-  return AbortSignal.any(signals);
-}
 
 export class TomTomRoutingProvider implements RoutingProvider {
   readonly name = "tomtom" as const;

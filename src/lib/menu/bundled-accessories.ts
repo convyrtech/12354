@@ -10,10 +10,9 @@ export type BundledSubItem = {
   note?: string;
 };
 
-// Weight-based items (раки/мидии/вонголе) encode the kilo count through a
-// modifier option whose label starts with the numeric kg (e.g. "1 кг",
-// "2 кг"). We read the label rather than priceDelta because a 0 priceDelta
-// option still represents 1 kg.
+// Some items encode weight directly in the option label ("1 кг"), while
+// others expose it through explicit weightAbsoluteKg / weightDeltaKg fields.
+// Support both shapes when counting bundled accessories.
 const KG_LABEL_RE = /(\d+(?:[.,]\d+)?)\s*кг/i;
 
 function parseKgFromLabel(label: string | undefined): number | null {
@@ -25,20 +24,42 @@ function parseKgFromLabel(label: string | undefined): number | null {
 }
 
 function resolveWeightKg(lineItem: DraftLineItem, item: MenuItem): number {
-  // Find the weight group used for this item, if any. Weight groups are
-  // opt-in — fixtures use `mg_*_weight` or variant-specific ids like
-  // `mg_mussels_weight`. We look for a selection whose option label matches
-  // a kg pattern.
+  let fallbackWeightKg: number | null = null;
+  let absoluteWeightKg: number | null = null;
+  let extraWeightKg = 0;
+  let hasExplicitWeightConfig = false;
+
   for (const selection of lineItem.selections) {
     const group = item.modifierGroups.find((g) => g.id === selection.groupId);
     if (!group) continue;
     const first = selection.optionIds[0];
     if (!first) continue;
     const option = group.options.find((o) => o.id === first);
-    const kg = parseKgFromLabel(option?.label);
-    if (kg != null) return kg;
+    if (!option) continue;
+
+    if (typeof option.weightAbsoluteKg === "number") {
+      absoluteWeightKg = option.weightAbsoluteKg;
+      hasExplicitWeightConfig = true;
+      continue;
+    }
+
+    if (typeof option.weightDeltaKg === "number") {
+      extraWeightKg += option.weightDeltaKg;
+      hasExplicitWeightConfig = true;
+      continue;
+    }
+
+    const kg = parseKgFromLabel(option.label);
+    if (kg != null) {
+      fallbackWeightKg = kg;
+    }
   }
-  return 1;
+
+  if (hasExplicitWeightConfig) {
+    return (absoluteWeightKg ?? item.commercialRules?.minimumWeightKg ?? 1) + extraWeightKg;
+  }
+
+  return fallbackWeightKg ?? item.commercialRules?.minimumWeightKg ?? 1;
 }
 
 export function computeBundledSubItems(

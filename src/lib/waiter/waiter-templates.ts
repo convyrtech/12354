@@ -2,13 +2,13 @@ import type { WaiterChip } from "@/lib/waiter/waiter-types";
 
 export const GUEST_GREETING = {
   reply:
-    "Первый раз у нас. Если хотите — соберём стол. Или гляньте, что берут чаще всего.",
-  signature: "— официант",
+    "Первый заказ? Начните с раков или напишите, что хотите взять.",
+  signature: "Официант",
 };
 
 export const RETURNING_GREETING_FALLBACK = {
-  reply: "Рады, что вернулись. Что сегодня собираем?",
-  signature: "— официант",
+  reply: "С возвращением. Повторить прошлый заказ или собрать новый?",
+  signature: "Официант",
 };
 
 export function andreyGreeting(anchorRecipe?: string): {
@@ -17,45 +17,52 @@ export function andreyGreeting(anchorRecipe?: string): {
 } {
   if (anchorRecipe === "recipe_spicy_tomato") {
     return {
-      reply: "Как обычно — томатные L и цезарь? Или поэкспериментируем сегодня?",
-      signature: "— официант",
+      reply: "Могу повторить томатный рецепт и добрать к нему что-то к пиву.",
+      signature: "Официант",
     };
   }
+
   if (anchorRecipe === "recipe_tom_yam") {
     return {
-      reply: "Вижу, вы тянете к том-ям. Оставить как в прошлый раз или попробуем другое?",
-      signature: "— официант",
+      reply: "Могу повторить том-ям или собрать другой заказ.",
+      signature: "Официант",
     };
   }
+
   return {
-    reply: "Рад вас видеть. Повторим прошлый стол или зайдём иначе?",
-    signature: "— официант",
+    reply: "С возвращением. Повторить прошлый заказ или собрать новый?",
+    signature: "Официант",
   };
 }
 
 export const GUEST_CHIPS: WaiterChip[] = [
+  { label: "С чего начать", primary: true, action: { type: "scroll-to-triptych" } },
+  { label: "Подобрать заказ", action: { type: "focus-waiter" } },
   {
-    label: "Что берут чаще всего →",
-    primary: true,
-    action: { type: "scroll-to-triptych" },
+    label: "Сразу к ракам",
+    action: { type: "scroll-to", anchor: "editorial-section-raki" },
   },
-  { label: "Поможете с выбором?", action: { type: "focus-waiter" } },
-  { label: "Соберу сам", action: { type: "scroll-to", anchor: "raki" } },
 ];
 
 export const RETURNING_CHIPS: WaiterChip[] = [
-  { label: "Повторить последний →", primary: true, action: { type: "repeat-last" } },
-  { label: "Другие рецепты раков", action: { type: "scroll-to", anchor: "raki" } },
-  { label: "Что-то новенькое", action: { type: "scroll-to-triptych" } },
+  {
+    label: "Повторить заказ",
+    primary: true,
+    action: { type: "repeat-last" },
+  },
+  {
+    label: "Сразу к ракам",
+    action: { type: "scroll-to", anchor: "editorial-section-raki" },
+  },
+  { label: "Что взять", action: { type: "scroll-to-triptych" } },
 ];
 
 export const REPEAT_LAST_ACK = {
-  reply:
-    "Собрал последний заказ. Проверьте корзину — там можно поправить размер или вес.",
-  signature: "— официант",
+  reply: "Повторил прошлый заказ в корзине. Если нужно, добавлю ещё одну позицию.",
+  signature: "Официант",
 };
 
 export const FREE_FORM_DEFLECT = {
-  reply: "Запомнил. Прямо сейчас я понимаю короткие запросы лучше — попробуйте «Том-ям» или «без остроты».",
-  signature: "— официант",
+  reply: "Напишите коротко: на сколько человек, к чему или без чего.",
+  signature: "Официант",
 };

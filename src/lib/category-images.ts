@@ -10,25 +10,25 @@ export type MenuImage = {
 // catalog CLS while placeholder families are replaced one-by-one.
 const familyImages: Record<string, MenuImage> = {
   boiled: {
-    src: "https://static.tildacdn.com/tild6535-6639-4530-b639-626339396365/_.jpg",
+    src: "/images/menu/editorial/cream-raki-boiled.png",
     width: 1200,
     height: 900,
     alt: "Варёные раки",
   },
   fried: {
-    src: "https://static.tildacdn.com/tild3963-6665-4231-a365-393862666538/_.jpg",
+    src: "/images/menu/editorial/cream-raki-roasted.png",
     width: 1200,
     height: 900,
     alt: "Жареные раки",
   },
   live: {
-    src: "https://static.tildacdn.com/tild3338-3437-4631-b139-666434373931/__.jpg",
+    src: "/images/aquarium/crayfish-alive.png",
     width: 1200,
     height: 900,
     alt: "Живые раки",
   },
   shrimp: {
-    src: "https://static.tildacdn.com/tild6161-6233-4064-b331-353166653966/_.jpg",
+    src: "/images/menu/categories/shrimp-tails.jpg",
     width: 1000,
     height: 1000,
     alt: "Магаданские креветки",
@@ -40,13 +40,13 @@ const familyImages: Record<string, MenuImage> = {
     alt: "Раковые шейки",
   },
   crab: {
-    src: "https://static.tildacdn.com/tild3632-6665-4833-b135-373864636134/_.jpg",
+    src: "/images/menu/editorial/cream-crab.png",
     width: 960,
     height: 1200,
     alt: "Камчатский краб",
   },
   mussels: {
-    src: "https://static.tildacdn.com/tild3935-6265-4461-b639-373233666439/photo.jpg",
+    src: "/images/menu/editorial/cream-mussels.png",
     width: 1000,
     height: 1000,
     alt: "Мидии",

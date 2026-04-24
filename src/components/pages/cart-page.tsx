@@ -17,7 +17,7 @@ import {
   incrementDraftLineItemQuantity,
   removeDraftLineItem,
 } from "@/lib/line-item";
-import { getContextUpsellItems } from "@/lib/upsells";
+import { getContextUpsellItems, getUpsellNote } from "@/lib/upsells";
 
 const EMPTY_CART_HIGHLIGHTS = [
   {
@@ -26,7 +26,7 @@ const EMPTY_CART_HIGHLIGHTS = [
   },
   {
     label: "Оплата",
-    value: "После звонка команды и спокойного подтверждения заказа.",
+    value: "После подтверждения заказа.",
   },
   {
     label: "Сервис",
@@ -36,8 +36,8 @@ const EMPTY_CART_HIGHLIGHTS = [
 
 const EMPTY_CART_START_POINTS = [
   {
-    title: "С чего начать",
-    note: "Обычно начинают с раков — варёных, жареных или живых. Потом уже добирают всё остальное.",
+    title: "Раки",
+    note: "Варёные, жареные или живые.",
   },
   {
     title: "Уточните условия",
@@ -53,25 +53,6 @@ function getStateTone(state: string) {
   if (state === "below-minimum") return "var(--warning)";
   if (state === "invalidated") return "var(--error)";
   return "var(--accent)";
-}
-
-function getUpsellNote(entry: MenuSnapshotItem) {
-  switch (entry.item.productFamily) {
-    case "shrimp":
-      return "К ракам и крабу часто добавляют креветочную линию с отдельной подачей и соусами.";
-    case "crab":
-      return "Деликатесная линия для более щедрого заказа и более сильного первого впечатления.";
-    case "caviar":
-      return "Тихое деликатесное усиление к основному заказу, не перегружая стол.";
-    case "drink":
-      return "Спокойное сопровождение к тёплой подаче и вечернему заказу.";
-    case "dessert":
-      return "Небольшой финал к заказу, если хочется закончить мягко и аккуратно.";
-    case "mussels":
-      return "Тёплая соседняя линия, если хочется добавить ещё один морской акцент.";
-    default:
-      return entry.item.description;
-  }
 }
 
 export function CartPage() {
@@ -152,7 +133,7 @@ export function CartPage() {
         </h1>
         <p className="text-muted" style={{ fontSize: 16, maxWidth: 760, lineHeight: 1.8 }}>
           {isEmpty
-            ? "Сначала выбирают, что будет на столе. Здесь спокойно проверяют итог перед подтверждением."
+            ? "Сначала выберите позиции."
             : "Проверьте состав, сумму и переходите к подтверждению в удобный момент."}
         </p>
       </ScrollReveal>
@@ -174,9 +155,9 @@ export function CartPage() {
                 {isEmpty
                   ? "Корзина пока пустая — сначала выберите, что будет на столе."
                   : cart.state === "ready"
-                  ? "Состав соответствует текущему сервису и можно переходить к оформлению."
+                  ? "Состав готов, можно переходить к оформлению."
                   : cart.state === "below-minimum"
-                    ? "Нужно добрать сумму до сервисного минимума."
+                    ? "Нужно добрать сумму до минимального заказа."
                     : "После смены адреса или точки выдачи часть строк требует перепроверки."}
               </div>
           </div>
@@ -207,10 +188,10 @@ export function CartPage() {
               <Image src="/brand/logo.png" alt="The Raki" width={192} height={136} style={{ filter: "brightness(10)", opacity: 0.78, marginBottom: "var(--space-lg)" }} />
               <span className="text-eyebrow block" style={{ marginBottom: "var(--space-xs)" }}>Пока без позиций</span>
               <h2 className="text-h2" style={{ marginBottom: "var(--space-sm)", maxWidth: 620, lineHeight: 1.04 }}>
-                Сначала стол. Здесь — тихая финальная сверка.
+                Сначала соберите заказ.
               </h2>
               <p className="text-muted" style={{ fontSize: 16, lineHeight: 1.8, maxWidth: 620, marginBottom: "var(--space-lg)" }}>
-                Корзина нужна для одной вещи: без спешки проверить состав, сервис и сумму перед подтверждением заказа.
+                Потом здесь можно проверить состав, сервис и сумму.
               </p>
               <div className="flex" style={{ gap: "var(--space-sm)", flexWrap: "wrap", marginBottom: "var(--space-xl)" }}>
                 <Link href={menuHref} className="cta cta--primary">Открыть каталог</Link>
@@ -305,11 +286,11 @@ export function CartPage() {
                         К заказу часто добавляют
                       </span>
                       <h2 style={{ fontSize: 28, lineHeight: 1.08 }}>
-                        Можно добавить к заказу.
+                        Еще к столу.
                       </h2>
                     </div>
                     <div className="text-muted" style={{ maxWidth: 360, lineHeight: 1.75 }}>
-                      Аккуратные соседние позиции, которые усиливают заказ и не спорят с основным выбором.
+                      Позиции, которые часто берут вместе.
                     </div>
                   </div>
 
@@ -410,10 +391,10 @@ export function CartPage() {
                     После сверки
                   </span>
                   <strong style={{ display: "block", fontSize: 24, lineHeight: 1.16, marginBottom: "var(--space-sm)" }}>
-                    Команда подтверждает контакт, окно и окончательную передачу без лишней спешки.
+                    Дальше остаётся подтвердить контакт и оплату.
                   </strong>
                   <div className="text-muted" style={{ lineHeight: 1.8, maxWidth: 560 }}>
-                    После этого шага остаётся только подтвердить телефон, удобный способ оплаты и дождаться спокойного звонка команды.
+                    После этого шага останется подтвердить телефон и способ оплаты.
                   </div>
                 </div>
 
@@ -430,7 +411,7 @@ export function CartPage() {
                 >
                   <div style={{ paddingBottom: "var(--space-sm)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                     <span className="text-eyebrow block" style={{ marginBottom: 6 }}>
-                      По текущему сервису
+                      Детали подачи
                     </span>
                     <strong style={{ display: "block", fontSize: 18 }}>{serviceLabel}</strong>
                   </div>
@@ -442,7 +423,7 @@ export function CartPage() {
                       {cart.state === "ready"
                         ? "Состав уже можно передавать команде."
                         : cart.state === "below-minimum"
-                          ? "Нужно немного добрать сумму до сервисного минимума."
+                          ? "Нужно немного добрать сумму до минимального заказа."
                           : "Часть позиций стоит перепроверить после смены адреса или точки выдачи."}
                     </div>
                   </div>

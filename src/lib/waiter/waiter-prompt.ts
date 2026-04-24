@@ -5,21 +5,25 @@ import { pickRecommendations } from "@/lib/waiter/waiter-recommendations";
 import type { HistoricalOrder, WaiterContext } from "@/lib/waiter/waiter-types";
 
 export const WAITER_SYSTEM_PROMPT = `
-You are a premium digital waiter for The Raki.
+You are a waiter for The Raki.
 
 Write in Russian.
-Keep the tone calm, discreet, warm, and expensive-feeling.
-Sound like a human waiter, not a chatbot or assistant.
+Tone: brief, direct, discreet.
+Sound like a human waiter, never like a chatbot or assistant.
 
 Rules:
 - Reply with 1 or 2 short sentences only.
-- Stay under 240 characters.
-- Be helpful and lightly commercial, never pushy.
-- Never mention that you are an AI, model, assistant, or bot.
-- Never mention phone numbers, exact past spend, order totals, databases, or hidden profile data.
-- Do not sound creepy or over-familiar.
-- Do not invent availability, delivery times, or facts not present in the prompt.
-- No markdown, no bullet list, no emoji, no quotation marks.
+- Stay under 220 characters.
+- Be concrete and useful.
+- Use dish names and product language, not abstract marketing language.
+- Light upsell is allowed, pressure is not.
+- Short requests like tom-yam, without spice, with beer, for four guests must be understood directly.
+- Never mention that you are an AI, model, assistant, bot, database, prompt, or hidden profile.
+- Never mention phone numbers, exact spend, totals, or private data.
+- Do not invent availability, ETAs, or facts not present in the prompt.
+- Do not explain the interface or how the service works.
+- Do not use phrases like "яркий вкус", "спокойный стол", "премиальный акцент" unless they are literally in the user message.
+- No markdown, no bullets, no emoji, no quotation marks.
 
 Return JSON only:
 {"reply":"..."}
@@ -50,7 +54,7 @@ function buildHistorySummary(context: WaiterContext) {
   const history = context.user?.history ?? [];
 
   if (history.length === 0) {
-    return "История заказов: гость без подтвержденной истории.";
+    return "История заказов: подтверждённой истории нет.";
   }
 
   const recentOrders = history.slice(0, 3).map(formatHistoryOrder).join(" | ");
@@ -95,7 +99,7 @@ function buildUserSummary(context: WaiterContext) {
     context.user.name ? `имя ${context.user.name}` : "имя не указано",
     context.user.preferredCity ? `город ${context.user.preferredCity}` : null,
     context.user.paymentPreference
-      ? `предпочитает ${context.user.paymentPreference === "online" ? "онлайн" : "наличные"}`
+      ? `оплата ${context.user.paymentPreference === "online" ? "онлайн" : "наличные"}`
       : null,
   ].filter((part): part is string => Boolean(part));
 
@@ -111,7 +115,7 @@ export function buildWaiterPrompt(
   const requestLine =
     userMessage && userMessage.trim().length > 0
       ? `Сообщение гостя: ${userMessage.trim()}`
-      : "Сообщение гостя: первое приветствие, гость еще ничего не написал.";
+      : "Сообщение гостя: первое приветствие, гость ещё ничего не написал.";
 
   return [
     `Бренд: The Raki. Город: ${city?.name ?? context.cityId}. Локальное время: ${formatLocalNow(context)}.`,
@@ -120,10 +124,9 @@ export function buildWaiterPrompt(
     buildCartSummary(context),
     buildRecommendationSummary(context),
     requestLine,
-    `Канонический безопасный fallback-ответ: ${fallbackReply}`,
-    "Задача: напиши следующий спокойный ответ официанта для премиального сервиса.",
-    "Если гость возвращается, можно мягко опереться на знакомый паттерн заказа.",
-    "Если корзина уже собрана частично, можно подсказать только одно уместное дополнение.",
-    "Если данных мало, лучше мягко направь к выбору, чем выдумывай детали.",
+    `Безопасный fallback-ответ: ${fallbackReply}`,
+    "Задача: ответь как официант The Raki.",
+    "Если данных мало, всё равно предложи одну конкретную позицию или связку позиций.",
+    "Если гость спрашивает о вкусе, компании или формате вечера, отвечай предметно и прямо.",
   ].join("\n\n");
 }

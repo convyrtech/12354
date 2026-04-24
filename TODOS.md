@@ -1,5 +1,43 @@
 # TODOS
 
+## Delivery map (post-MVP demo follow-ups)
+
+### Block submit when cart is invalidated after address change
+
+**What:** In `src/components/pages/checkout-page.tsx:197-198` add a guard in the submit path that checks `draft.cartState !== "invalidated"` before allowing the order to go through. When invalidated, show "Корзина устарела — пересоберите" copy + CTA back to `/menu` to rebuild.
+
+**Why:** `applyDraftPatch` already marks `cartState: "invalidated"` when address changes after items are in the cart (`draft.ts:709-712`), but nothing downstream reads it. Today a user can change address → applyDraftPatch silently flips the flag → they hit submit → order goes out with stale prices and possibly wrong kitchen routing. Honest checkout is part of the brand promise.
+
+**Context:** The invalidation mechanism is already there, just needs a consumer. CheckoutPage is the right place because it's the last gate before submit. Need a soft UX: don't crash the page, show a banner "ваш адрес изменился, проверьте корзину" and let user either confirm new kitchen/prices or go back to /menu.
+
+**Effort:** S (30 min CC / 0.5 day human)
+**Priority:** P2
+**Depends on:** Delivery map MVP ships (which reintroduces live address change flows)
+
+### Split courierInstructions into structured fields (entrance, apartment, floor, intercom)
+
+**What:** Break `courierInstructions: string` in `OrderDraftContext` (`draft.ts:78`) into `entrance: number | null`, `apartment: string`, `floor: number | null`, `intercomCode: string`, `instructions: string` (remaining free text). Add matching inputs to the address confirmation step after pin placement. Wire iiko mapping accordingly.
+
+**Why:** Integration with iiko/courier tracking requires structured data. Today operators manually parse strings like "подъезд 3 кв 47 этаж 5" from free text — error-prone, blocks automation. DaData reverse already returns `flat` and `house` in its response which we could prefill the fields from.
+
+**Context:** Adding 5 fields to Draft means patching `applyDraftPatch` contextTouched list, adding UI form segment after map commit, updating `submit-order.ts` and `buildStoredOrderRecord` to include the new fields. Medium-size PR. Can be done incrementally: start by showing the fields at the UI level (stored in existing `courierInstructions` as a stringified concat), then migrate the data model.
+
+**Effort:** M (3 hours CC / 1-2 days human)
+**Priority:** P2
+**Depends on:** iiko integration architecture settled; delivery map MVP ships
+
+### Mobile delivery map flow with centered-pin pattern
+
+**What:** Separate iteration that builds the mobile version of `/delivery/address`: centered-pin pattern (Uber Eats / Yandex Go), bottom sheet instead of side panel, `moveend` debounce 600ms, touch inertia handling, iOS Safari geolocation quirks. For now add a phone-viewport redirect to a temporary "Откройте с компьютера или позвоните" placeholder page until this iteration ships.
+
+**Why:** The desktop MVP is explicitly desktop-only. Mobile is the primary channel for a delivery service — without it, the product is incomplete for public launch. `draggable` MapLibre Marker on touch has a 300ms hold delay before drag activates (native OS behaviour, unchangeable), and the finger covers the pin when dragging. Centered-pin solves both.
+
+**Context:** Server side is already done after MVP — `/api/delivery/reverse`, `dadata-provider`, `quote-service`, zone resolution — all reused unchanged. Difference is purely in the carousel + pin UI + bottom sheet layout. Breakpoint `767px` matches existing `use-match-media` usage. Known gotcha: `map.on('moveend')` fires multiple times during iOS inertial scroll — need a debounce + `once`-style guard on the final settle event.
+
+**Effort:** L (4-6 hours CC / 3-5 days human)
+**Priority:** P1 (blocks public launch)
+**Depends on:** Delivery map MVP desktop PR shipped
+
 ## Menu (Phase 2 redesign follow-ups)
 
 ### Replace placeholder imagery with real food photography

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition } from "react";
 import { useDraft } from "@/components/draft-provider";
@@ -25,12 +26,6 @@ const mapBounds = {
   minLat: 55.61,
   maxLat: 55.8,
 };
-
-const serviceTruthLines = [
-  "Маршрут подтверждаем заранее, чтобы каталог уже открывался под ваш адрес и ваше окно.",
-  "Окно, форму оплаты и подачу команда уточняет спокойно, без лишних обещаний по пути.",
-  "Если адрес или условия меняются, сервис перестраиваем заранее, а не в последний момент.",
-] as const;
 
 function projectPoint(lat: number | null, lng: number | null) {
   if (lat === null || lng === null) return { x: 50, y: 50 };
@@ -70,8 +65,6 @@ export function DeliveryResultPage({ demoMode = false }: { demoMode?: boolean })
   const effectiveDecisionState = draft.deliveryDecisionState || null;
   const effectiveConfirmedDropoffSource =
     draft.confirmedDropoffSource || demoScenario?.confirmedDropoffSource || null;
-  const effectiveAddressConfidence =
-    draft.addressConfidence || demoScenario?.addressConfidence || null;
   const effectiveFulfillmentSource =
     draft.deliveryFulfillmentSource || demoScenario?.fulfillmentSource || null;
   const effectiveTimingLabel =
@@ -91,7 +84,17 @@ export function DeliveryResultPage({ demoMode = false }: { demoMode?: boolean })
   const isInZone = effectiveDeliveryState === "in-zone";
   const isCutoff = effectiveDeliveryState === "cutoff";
   const isManual = effectiveDecisionState === "manual_confirmation";
-  const confirmedEtaLabel = effectiveTimingLabel;
+  const canOpenMenu = isInZone || isCutoff;
+  const heroTitle = isInZone
+    ? effectiveTimingLabel
+    : isCutoff
+      ? "Сегодня уже не успеем."
+      : "Сюда пока не возим.";
+  const heroLead = isInZone
+    ? "Адрес подтверждён."
+    : isCutoff
+      ? "Откроем следующее окно."
+      : "Выберите другой адрес или самовывоз.";
   const timingCardLabel =
     draft.timingIntent === "scheduled"
       ? draft.requestedTimeLabel || effectiveTimingLabel || "Подтвердим отдельно"
@@ -107,19 +110,9 @@ export function DeliveryResultPage({ demoMode = false }: { demoMode?: boolean })
       ? `${effectiveQuoteAmount.toLocaleString("ru-RU")} ₽`
       : zone?.feeAmount
         ? `${zone.feeAmount.toLocaleString("ru-RU")} ₽`
-        : "Уточняем";
-  const addressSnapshotCards = [
-    { label: "Маршрут", value: decisionLabel },
-    { label: "Точка вручения", value: dropoffSourceLabel },
-    { label: "Окно", value: timingCardLabel },
-  ];
-  const serviceSnapshotCards = [
-    { label: "Зона", value: zone?.label ?? "Уточняем" },
-    { label: "Кухня", value: location?.name ?? "Уточняем" },
-    { label: "Способ", value: getFulfillmentLabel(draft.fulfillmentMode) },
-    { label: "Подача", value: fulfillmentSourceLabel },
-    { label: "Стоимость", value: quoteLabel },
-  ];
+        : "Уточним";
+  const orderLabel =
+    cart.lineCount > 0 ? `${cart.lineCount} поз. • ${cart.totalLabel}` : "корзина пуста";
 
   const yandexMapsHref = buildYandexMapsHref({
     label: effectiveDropoffLabel || effectiveTypedAddress,
@@ -134,548 +127,319 @@ export function DeliveryResultPage({ demoMode = false }: { demoMode?: boolean })
 
   if (!hasConfirmedAddress) {
     return (
-      <div
-        className="flex items-center justify-center"
-        style={{ minHeight: "100vh", padding: "var(--space-lg)" }}
-      >
-        <div
-          style={{
-            width: "100%",
-            maxWidth: 760,
-            padding: "var(--space-2xl)",
-            borderRadius: "var(--radius-xl)",
-            border: "1px solid var(--border)",
-            backgroundColor: "rgba(15, 26, 34, 0.82)",
-            textAlign: "center",
-          }}
-        >
-          <span className="text-eyebrow block" style={{ marginBottom: "var(--space-xs)" }}>
-            Сервис
-          </span>
-          <h1 className="text-h1" style={{ marginBottom: "var(--space-sm)" }}>
-            Сначала подтвердите адрес.
-          </h1>
-          <p className="text-muted" style={{ marginBottom: "var(--space-lg)", lineHeight: 1.8 }}>
-            Этот экран появляется после проверки адреса, времени и точки вручения.
-          </p>
-          <div
-            className="flex justify-center"
-            style={{ gap: "var(--space-sm)", flexWrap: "wrap" }}
-          >
-            <button
-              type="button"
-              className="cta cta--primary"
-              onClick={() => startTransition(() => router.push("/delivery/address"))}
-            >
-              Перейти к адресу
-            </button>
-            <button
-              type="button"
-              className="cta cta--ghost"
-              onClick={() => startTransition(() => router.push("/menu?fulfillment=delivery"))}
-            >
-              Вернуться к выбору
-            </button>
+      <main className="delivery-result-editorial delivery-result-editorial--empty">
+        <div className="menu-editorial__controls delivery-result-editorial__controls">
+          <Link href="/delivery/address" className="menu-editorial__control menu-editorial__control--menu">
+            <span className="product-editorial__back-arrow" aria-hidden>
+              ←
+            </span>
+            <span>Адрес</span>
+          </Link>
+
+          <div className="menu-editorial__control-stack">
+            <Link href="/pickup" className="menu-editorial__control">
+              <span>Самовывоз</span>
+            </Link>
           </div>
         </div>
-      </div>
+
+        <section className="delivery-result-editorial__empty-shell">
+          <span className="delivery-result-editorial__eyebrow">Доставка</span>
+          <h1 className="delivery-result-editorial__empty-title">Сначала подтвердите адрес.</h1>
+          <p className="delivery-result-editorial__empty-lead">Потом закрепим окно и сервис.</p>
+
+          <div className="delivery-result-editorial__empty-actions">
+            <Link href="/delivery/address" className="delivery-result-editorial__cta">
+              Перейти к адресу
+            </Link>
+            <Link href="/pickup" className="delivery-result-editorial__secondary-action">
+              Самовывоз
+            </Link>
+          </div>
+        </section>
+      </main>
     );
   }
 
   return (
-    <div className="flex" style={{ minHeight: "100vh", paddingTop: 80, flexWrap: "wrap" }}>
-      <div
-        style={{
-          flex: "1 1 760px",
-          minWidth: 0,
-          padding: "var(--space-xl) var(--space-xl) var(--space-xl) var(--space-lg)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--space-lg)",
-        }}
-      >
-        <ScrollReveal>
-          <span className="text-eyebrow block" style={{ marginBottom: "var(--space-xs)" }}>
-            Сервис подтвержден
+    <main className="delivery-result-editorial">
+      <div className="menu-editorial__controls delivery-result-editorial__controls">
+        <Link href="/delivery/address" className="menu-editorial__control menu-editorial__control--menu">
+          <span className="product-editorial__back-arrow" aria-hidden>
+            ←
           </span>
+          <span>Адрес</span>
+        </Link>
 
-          {isInZone ? (
-            <h1
-              className="font-display"
-              style={{
-                fontSize: "clamp(40px, 5vw, 56px)",
-                fontWeight: 700,
-                color: "var(--accent)",
-                lineHeight: 1.08,
-                marginBottom: "var(--space-sm)",
-              }}
-            >
-              {confirmedEtaLabel}
-            </h1>
-          ) : isCutoff ? (
-            <h1 className="text-h1" style={{ color: "var(--warning)" }}>
-              Сегодня окно уже закрыто.
-            </h1>
-          ) : (
-            <h1 className="text-h1" style={{ color: "var(--warning)" }}>
-              Этот адрес пока вне активного контура.
-            </h1>
-          )}
+        <div className="menu-editorial__control-stack">
+          <Link href="/pickup" className="menu-editorial__control">
+            <span>Самовывоз</span>
+          </Link>
+        </div>
+      </div>
 
-          <p className="text-muted" style={{ maxWidth: 760, lineHeight: 1.8 }}>
-            {isInZone
-              ? "Адрес, окно и точка вручения уже закреплены. Дальше каталог и заказ работают уже от этих условий."
-              : isCutoff
-                ? "По этому адресу сервис возможен, но сегодняшнее окно уже завершено. Можно вернуться завтра или выбрать самовывоз."
-                : "По этому адресу сервис пока не подтверждаем. Можно сменить адрес или перейти в самовывоз."}
-          </p>
-        </ScrollReveal>
+      <section className="delivery-result-editorial__hero">
+        <div className="delivery-result-editorial__hero-overlay" />
 
-        <ScrollReveal delay={0.05}>
-          <div
-            style={{
-              padding: "calc(var(--space-lg) + 4px) 0 0",
-              borderRadius: "var(--radius-xl)",
-              borderTop: "1px solid rgba(255,255,255,0.08)",
-              display: "grid",
-              gap: "var(--space-md)",
-            }}
-          >
-            <div
-              className="flex items-start justify-between"
-              style={{ gap: "var(--space-md)", flexWrap: "wrap" }}
-            >
-              <div style={{ maxWidth: 560 }}>
-                <span className="text-eyebrow block" style={{ marginBottom: 4 }}>
-                  Адрес вручения
-                </span>
-                <strong style={{ display: "block", fontSize: 24, lineHeight: 1.2 }}>
-                  {effectiveDropoffLabel || effectiveTypedAddress}
-                </strong>
-                {effectiveTypedAddress && effectiveDropoffLabel && effectiveTypedAddress !== effectiveDropoffLabel ? (
-                  <div className="text-muted" style={{ marginTop: 8, lineHeight: 1.7 }}>
-                    {effectiveTypedAddress}
+        <div className="delivery-result-editorial__hero-inner">
+          <div className="delivery-result-editorial__hero-grid">
+            <ScrollReveal>
+              <div className="delivery-result-editorial__hero-copy">
+                <span className="delivery-result-editorial__brand">The Raki</span>
+                <span className="delivery-result-editorial__eyebrow">Доставка</span>
+                <h1 className="delivery-result-editorial__title">{heroTitle}</h1>
+                <p className="delivery-result-editorial__lead">{heroLead}</p>
+
+                <div className="delivery-result-editorial__hero-meta">
+                  <div className="delivery-result-editorial__hero-stat">
+                    <span className="delivery-result-editorial__label">Адрес</span>
+                    <strong>{effectiveDropoffLabel || effectiveTypedAddress}</strong>
+                    <span>{dropoffSourceLabel}</span>
+                  </div>
+
+                  <div className="delivery-result-editorial__hero-stat">
+                    <span className="delivery-result-editorial__label">Окно</span>
+                    <strong>{timingCardLabel}</strong>
+                    <span>{decisionLabel}</span>
+                  </div>
+
+                  <div className="delivery-result-editorial__hero-stat">
+                    <span className="delivery-result-editorial__label">Стоимость</span>
+                    <strong>{quoteLabel}</strong>
+                    <span>{fulfillmentSourceLabel}</span>
+                  </div>
+                </div>
+
+                {isManual ? (
+                  <div className="delivery-result-editorial__hero-note">
+                    <span className="delivery-result-editorial__label">Команда</span>
+                    <p>{draft.deliveryDecisionNote || "Уточним окно перед передачей заказа на кухню."}</p>
                   </div>
                 ) : null}
               </div>
+            </ScrollReveal>
 
-              <div className="flex" style={{ gap: "var(--space-xs)", flexWrap: "wrap" }}>
-                <a
-                  className="cta cta--secondary"
-                  href={yandexMapsHref}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  Яндекс Карты
-                </a>
-                <a
-                  className="cta cta--ghost"
-                  href={twoGisHref}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  2GIS
-                </a>
-              </div>
-            </div>
+            <ScrollReveal delay={0.06}>
+              <div className="delivery-result-editorial__route-shell">
+                <div className="delivery-result-editorial__route-surface">
+                  <svg
+                    viewBox="0 0 100 100"
+                    preserveAspectRatio="xMidYMid slice"
+                    className="delivery-result-editorial__route-svg"
+                  >
+                    {Array.from({ length: 10 }, (_, index) => (
+                      <line
+                        key={`h-${index}`}
+                        x1={0}
+                        y1={index * 10}
+                        x2={100}
+                        y2={index * 10}
+                        className="delivery-result-editorial__route-grid-line"
+                      />
+                    ))}
+                    {Array.from({ length: 10 }, (_, index) => (
+                      <line
+                        key={`v-${index}`}
+                        x1={index * 10}
+                        y1={0}
+                        x2={index * 10}
+                        y2={100}
+                        className="delivery-result-editorial__route-grid-line"
+                      />
+                    ))}
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                gap: "var(--space-md)",
-              }}
-            >
-              {addressSnapshotCards.map((card) => (
-                <div
-                  key={card.label}
-                  style={{
-                    padding: "14px 0 0",
-                    borderTop: "1px solid rgba(255,255,255,0.08)",
-                  }}
-                >
-                  <span className="text-eyebrow block" style={{ marginBottom: 6 }}>
-                    {card.label}
-                  </span>
-                  <span>{card.value}</span>
+                    <polygon
+                      points="15,25 85,20 90,75 20,80"
+                      className="delivery-result-editorial__route-zone"
+                    />
+
+                    {destination ? (
+                      <motion.path
+                        d={buildRoutePath(origin, destination)}
+                        fill="none"
+                        className="delivery-result-editorial__route-path"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 1.5, delay: 0.3 }}
+                      />
+                    ) : null}
+
+                    <circle cx={origin.x} cy={origin.y} r="1.5" className="delivery-result-editorial__route-origin" />
+
+                    {destination ? (
+                      <motion.g
+                        initial={{ y: -15, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ type: "spring", damping: 12, stiffness: 180, delay: 0.2 }}
+                      >
+                        <circle
+                          cx={destination.x}
+                          cy={destination.y}
+                          r="2"
+                          className="delivery-result-editorial__route-destination"
+                        />
+                        <circle
+                          cx={destination.x}
+                          cy={destination.y}
+                          r="4"
+                          className="delivery-result-editorial__route-ring"
+                        />
+                      </motion.g>
+                    ) : null}
+                  </svg>
+
+                  <div className="delivery-result-editorial__route-card">
+                    <span className="delivery-result-editorial__label">Маршрут</span>
+                    <strong>{zone?.label ?? "Маршрут уточняем"}</strong>
+                    <p>{location?.name ?? "Осоргино, 202"} · {fulfillmentSourceLabel}</p>
+
+                    <div className="delivery-result-editorial__route-actions">
+                      <a
+                        href={yandexMapsHref}
+                        rel="noreferrer"
+                        target="_blank"
+                        className="delivery-result-editorial__secondary-action"
+                      >
+                        Яндекс
+                      </a>
+                      <a
+                        href={twoGisHref}
+                        rel="noreferrer"
+                        target="_blank"
+                        className="delivery-result-editorial__secondary-action"
+                      >
+                        2GIS
+                      </a>
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </ScrollReveal>
-
-        {!isInZone ? (
-          <ScrollReveal delay={0.08}>
-            <div
-              style={{
-                padding: "var(--space-md)",
-                backgroundColor: "rgba(199, 105, 74, 0.1)",
-                border: "1px solid var(--warning)",
-                borderRadius: "var(--radius-md)",
-                color: "var(--warning)",
-                fontSize: 15,
-                lineHeight: 1.7,
-              }}
-            >
-              {isCutoff
-                ? "Прием заказов на сегодня завершен. Вернитесь к сервису завтра после 10:00."
-                : "По этому адресу сервис пока не подтверждаем. Попробуйте другой адрес или перейдите в самовывоз."}
-            </div>
-          </ScrollReveal>
-        ) : null}
-
-        {isManual ? (
-          <ScrollReveal delay={0.1}>
-            <div
-              style={{
-                padding: "var(--space-md)",
-                backgroundColor: "var(--bg-elevated)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-md)",
-                display: "flex",
-                alignItems: "center",
-                gap: "var(--space-sm)",
-              }}
-            >
-              <motion.div
-                animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: "50%",
-                  backgroundColor: "var(--accent)",
-                  flexShrink: 0,
-                }}
-              />
-              <div>
-                <p style={{ fontSize: 15, marginBottom: 4 }}>Ждём подтверждение команды</p>
-                <p className="text-muted" style={{ fontSize: 13, lineHeight: 1.7 }}>
-                  {draft.deliveryDecisionNote ||
-                    "Команда свяжется с вами и спокойно подтвердит финальное окно и подачу."}
-                </p>
               </div>
-            </div>
-          </ScrollReveal>
-        ) : null}
-
-        <ScrollReveal delay={0.12}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
-              gap: "var(--space-md)",
-            }}
-          >
-            {serviceSnapshotCards.map((card) => (
-              <div
-                key={card.label}
-                style={{
-                  padding: "14px 0 0",
-                  borderTop: "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                <span className="text-eyebrow block" style={{ marginBottom: "var(--space-2xs)" }}>
-                  {card.label}
-                </span>
-                <span style={{ fontSize: 16 }}>{card.value}</span>
-              </div>
-            ))}
-          </div>
-        </ScrollReveal>
-
-        <ScrollReveal delay={0.16}>
-          <div
-            style={{
-              padding: "calc(var(--space-lg) + 4px) 0 0",
-              borderTop: "1px solid rgba(255,255,255,0.08)",
-              display: "grid",
-              gap: "var(--space-md)",
-            }}
-          >
-            <div
-              className="flex items-start justify-between"
-              style={{ gap: "var(--space-md)", flexWrap: "wrap" }}
-            >
-              <div>
-                <span className="text-eyebrow block" style={{ marginBottom: "var(--space-2xs)" }}>
-                  Следующий шаг
-                </span>
-                <strong style={{ fontSize: 22 }}>
-                  {isInZone
-                    ? "Каталог уже работает от этого адреса и этого окна."
-                    : "Сначала нужно выбрать другой адрес или самовывоз, потом возвращаться к заказу."}
-                </strong>
-              </div>
-              <div className="text-muted" style={{ fontSize: 14, lineHeight: 1.7 }}>
-                  {cart.lineCount > 0
-                    ? `${cart.lineCount} поз. в заказе • ${cart.totalLabel}`
-                    : demoMode
-                      ? "Сервис подтверждён"
-                      : "Корзина пока пустая"}
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
-                gap: "var(--space-md)",
-              }}
-            >
-              {serviceTruthLines.map((line) => (
-                <div
-                  key={line}
-                  style={{
-                    padding: "14px 0 0",
-                    borderTop: "1px solid rgba(255,255,255,0.08)",
-                    color: "var(--text-muted)",
-                    lineHeight: 1.7,
-                    fontSize: 14,
-                  }}
-                >
-                  {line}
-                </div>
-              ))}
-            </div>
-
-            <div className="flex" style={{ gap: "var(--space-sm)", flexWrap: "wrap" }}>
-              <a href="tel:+79808880588" className="cta cta--secondary">
-                Позвонить команде
-              </a>
-              <a
-                href="https://t.me/The_raki"
-                target="_blank"
-                rel="noreferrer"
-                className="cta cta--ghost"
-              >
-                Telegram
-              </a>
-            </div>
-          </div>
-        </ScrollReveal>
-
-        <ScrollReveal delay={0.18}>
-          <div className="flex" style={{ gap: "var(--space-sm)", marginTop: "var(--space-sm)", flexWrap: "wrap" }}>
-            {isInZone ? (
-              <button
-                type="button"
-                className="cta cta--primary"
-                onClick={() => startTransition(() => router.push("/menu?fulfillment=delivery"))}
-              >
-                Перейти к выбору
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="cta cta--primary"
-                onClick={() => startTransition(() => router.push("/pickup/points"))}
-              >
-                Переключиться на самовывоз
-              </button>
-            )}
-            <button
-              type="button"
-              className="cta cta--ghost"
-              onClick={() => startTransition(() => router.push("/delivery/address"))}
-            >
-              Изменить адрес
-            </button>
-            {cart.lineCount > 0 ? (
-              <button
-                type="button"
-                className="cta cta--ghost"
-                onClick={() => startTransition(() => router.push("/cart"))}
-              >
-                Вернуться к заказу
-              </button>
-            ) : null}
-          </div>
-        </ScrollReveal>
-      </div>
-
-      <div
-        style={{
-          flex: "0 1 520px",
-          minWidth: 320,
-          backgroundColor: "var(--bg)",
-          borderLeft: "1px solid var(--border)",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <svg
-          viewBox="0 0 100 100"
-          preserveAspectRatio="xMidYMid slice"
-          style={{
-            width: "100%",
-            height: "100%",
-            position: "absolute",
-            inset: 0,
-          }}
-        >
-          {Array.from({ length: 10 }, (_, i) => (
-            <line
-              key={`h${i}`}
-              x1={0}
-              y1={i * 10}
-              x2={100}
-              y2={i * 10}
-              stroke="var(--border)"
-              strokeWidth={0.2}
-            />
-          ))}
-          {Array.from({ length: 10 }, (_, i) => (
-            <line
-              key={`v${i}`}
-              x1={i * 10}
-              y1={0}
-              x2={i * 10}
-              y2={100}
-              stroke="var(--border)"
-              strokeWidth={0.2}
-            />
-          ))}
-
-          <polygon
-            points="15,25 85,20 90,75 20,80"
-            fill="rgba(99, 188, 197, 0.05)"
-            stroke="rgba(99, 188, 197, 0.15)"
-            strokeWidth={0.3}
-          />
-
-          {destination ? (
-            <motion.path
-              d={buildRoutePath(origin, destination)}
-              fill="none"
-              stroke="var(--accent)"
-              strokeWidth={0.5}
-              strokeDasharray="2 1.5"
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 1.5, delay: 0.3 }}
-            />
-          ) : null}
-
-          <circle cx={origin.x} cy={origin.y} r={1.5} fill="var(--accent)" />
-          <text
-            x={origin.x}
-            y={origin.y - 3}
-            textAnchor="middle"
-            fill="var(--text-muted)"
-            fontSize={2.2}
-            fontFamily="var(--font-sans), sans-serif"
-          >
-            Кухня
-          </text>
-
-          {destination ? (
-            <motion.g
-              initial={{ y: -15, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ type: "spring", damping: 12, stiffness: 180, delay: 0.2 }}
-            >
-              <circle
-                cx={destination.x}
-                cy={destination.y}
-                r={2}
-                fill="var(--text-primary)"
-                stroke="var(--accent)"
-                strokeWidth={0.5}
-              />
-              <circle
-                cx={destination.x}
-                cy={destination.y}
-                r={4}
-                fill="none"
-                stroke="rgba(99, 188, 197, 0.3)"
-                strokeWidth={0.3}
-              />
-            </motion.g>
-          ) : null}
-        </svg>
-
-        <div
-          style={{
-            position: "relative",
-            zIndex: 1,
-            height: "100%",
-            padding: "var(--space-xl)",
-            display: "grid",
-            alignContent: "start",
-            gap: "var(--space-lg)",
-          }}
-        >
-          <div
-            style={{
-              marginLeft: "auto",
-              width: 380,
-              maxWidth: "100%",
-              padding: "var(--space-lg)",
-              backgroundColor: "rgba(15, 26, 34, 0.72)",
-              backdropFilter: "blur(14px)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius-lg)",
-            }}
-          >
-            <span className="text-eyebrow block" style={{ marginBottom: "var(--space-xs)" }}>
-              Под ваш адрес
-            </span>
-            <h2 style={{ fontSize: 26, fontWeight: 600, marginBottom: "var(--space-sm)" }}>
-              {zone?.label ?? "Маршрут уточняется"}
-            </h2>
-            <div className="text-muted" style={{ display: "grid", gap: 8, lineHeight: 1.7 }}>
-              <span>Кухня: {location?.name ?? "Уточняем"}</span>
-              <span>Подача: {fulfillmentSourceLabel}</span>
-              <span>Точка вручения: {effectiveDropoffLabel || effectiveTypedAddress || "Уточняем"}</span>
-              <span>Окно: {timingCardLabel}</span>
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "var(--space-sm)",
-            }}
-          >
-            <div
-              style={{
-                padding: "var(--space-lg)",
-                backgroundColor: "rgba(15, 26, 34, 0.56)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-lg)",
-              }}
-            >
-              <span className="text-eyebrow block" style={{ marginBottom: "var(--space-xs)" }}>
-                Дальше по заказу
-              </span>
-              <div className="text-muted" style={{ lineHeight: 1.7 }}>
-                {isInZone
-                  ? "Маршрут уже закреплён. Дальше можно спокойно переходить к каталогу и оформлению без повторной проверки."
-                  : "Если адрес не проходит, сразу предложим другой адрес или самовывоз без лишних обещаний."}
-              </div>
-            </div>
-
-            <div
-              style={{
-                padding: "var(--space-lg)",
-                backgroundColor: "rgba(15, 26, 34, 0.56)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-lg)",
-              }}
-            >
-              <span className="text-eyebrow block" style={{ marginBottom: "var(--space-xs)" }}>
-                Связь с командой
-              </span>
-              <div className="text-muted" style={{ lineHeight: 1.7 }}>
-                {draft.deliveryDecisionNote ||
-                  "Если нужно уточнить подъезд, окно или подачу, команда свяжется до передачи заказа на кухню."}
-              </div>
-            </div>
+            </ScrollReveal>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+
+      <section className="delivery-result-editorial__workbench">
+        <div className="delivery-result-editorial__workbench-inner">
+          <ScrollReveal className="delivery-result-editorial__summary-shell">
+            <aside className="delivery-result-editorial__summary">
+              <span className="delivery-result-editorial__label">Подтверждено</span>
+              <h2 className="delivery-result-editorial__summary-title">
+                {effectiveDropoffLabel || effectiveTypedAddress}
+              </h2>
+
+              <div className="delivery-result-editorial__summary-block">
+                <span className="delivery-result-editorial__label">Окно</span>
+                <strong>{timingCardLabel}</strong>
+                <p>{quoteLabel}</p>
+              </div>
+
+              <div className="delivery-result-editorial__summary-grid">
+                <div className="delivery-result-editorial__summary-row">
+                  <span>Зона</span>
+                  <strong>{zone?.label ?? "Уточним"}</strong>
+                </div>
+                <div className="delivery-result-editorial__summary-row">
+                  <span>Кухня</span>
+                  <strong>{location?.name ?? "Осоргино, 202"}</strong>
+                </div>
+                <div className="delivery-result-editorial__summary-row">
+                  <span>Способ</span>
+                  <strong>{getFulfillmentLabel(draft.fulfillmentMode)}</strong>
+                </div>
+                <div className="delivery-result-editorial__summary-row">
+                  <span>Подача</span>
+                  <strong>{fulfillmentSourceLabel}</strong>
+                </div>
+              </div>
+
+              <div className="delivery-result-editorial__summary-actions">
+                <button
+                  type="button"
+                  className="delivery-result-editorial__cta"
+                  onClick={() =>
+                    startTransition(() => router.push(canOpenMenu ? "/menu-editorial" : "/pickup"))
+                  }
+                >
+                  {canOpenMenu ? (cart.lineCount > 0 ? "К заказу" : "Открыть меню") : "Самовывоз"}
+                </button>
+
+                <Link href="/delivery/address" className="delivery-result-editorial__secondary-action">
+                  Изменить адрес
+                </Link>
+              </div>
+            </aside>
+          </ScrollReveal>
+
+          <div className="delivery-result-editorial__content">
+            <ScrollReveal delay={0.06}>
+              <section className="delivery-result-editorial__section">
+                <div className="delivery-result-editorial__section-head">
+                  <div>
+                    <span className="delivery-result-editorial__label">Адрес</span>
+                    <h2>{effectiveDropoffLabel || effectiveTypedAddress}</h2>
+                  </div>
+                </div>
+
+                <div className="delivery-result-editorial__detail-grid">
+                  <div className="delivery-result-editorial__detail-row">
+                    <span>Маршрут</span>
+                    <strong>{decisionLabel}</strong>
+                  </div>
+                  <div className="delivery-result-editorial__detail-row">
+                    <span>Точка вручения</span>
+                    <strong>{dropoffSourceLabel}</strong>
+                  </div>
+                  <div className="delivery-result-editorial__detail-row">
+                    <span>Окно</span>
+                    <strong>{timingCardLabel}</strong>
+                  </div>
+                  <div className="delivery-result-editorial__detail-row">
+                    <span>Стоимость</span>
+                    <strong>{quoteLabel}</strong>
+                  </div>
+                </div>
+              </section>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.1}>
+              <section className="delivery-result-editorial__section delivery-result-editorial__section--quiet">
+                <div className="delivery-result-editorial__section-head">
+                  <div>
+                    <span className="delivery-result-editorial__label">Дальше</span>
+                    <h2>{canOpenMenu ? "Меню уже под этот адрес." : "Сначала нужен другой маршрут."}</h2>
+                  </div>
+                </div>
+
+                <div className="delivery-result-editorial__detail-grid">
+                  <div className="delivery-result-editorial__detail-row">
+                    <span>Заказ</span>
+                    <strong>{orderLabel}</strong>
+                  </div>
+                  <div className="delivery-result-editorial__detail-row">
+                    <span>Команда</span>
+                    <strong>{isManual ? "подтверждаем вручную" : "готово к меню"}</strong>
+                  </div>
+                </div>
+
+                <div className="delivery-result-editorial__contact-actions">
+                  <a href="tel:+79808880588" className="delivery-result-editorial__secondary-action">
+                    Позвонить
+                  </a>
+                  <a
+                    href="https://t.me/The_raki"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="delivery-result-editorial__secondary-action"
+                  >
+                    Telegram
+                  </a>
+                </div>
+              </section>
+            </ScrollReveal>
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }
