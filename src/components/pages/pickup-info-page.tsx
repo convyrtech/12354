@@ -6,12 +6,16 @@ import { buildTwoGisHref, buildYandexMapsHref } from "@/lib/map-links";
 
 const PICKUP_LOCATION_ID = "loc_lesnoy_01";
 
-export function PickupInfoPage() {
+export function PickupInfoPage({ demoMode = false }: { demoMode?: boolean }) {
   const pickupLocation = getLocation(PICKUP_LOCATION_ID);
-  const pickupAddress = pickupLocation?.addressLabel ?? "Осоргино, 202";
+  const pickupTitle = pickupLocation?.name ?? "Осоргино, 202";
+  const pickupAddress = pickupLocation?.addressLabel ?? pickupTitle;
   const pickupHours = pickupLocation?.operatingHours
     ? `${pickupLocation.operatingHours.open}–${pickupLocation.operatingHours.close}`
     : "12:00–23:00";
+  const demoSuffix = demoMode ? "?demo=investor" : "";
+  const pickupPointsHref = `/pickup/points${demoSuffix}`;
+  const deliveryHref = `/delivery/address${demoSuffix}`;
 
   const yandexMapsHref = buildYandexMapsHref({
     label: pickupAddress,
@@ -35,7 +39,7 @@ export function PickupInfoPage() {
         </Link>
 
         <div className="menu-editorial__control-stack">
-          <Link href="/delivery/address" className="menu-editorial__control">
+          <Link href={deliveryHref} className="menu-editorial__control">
             <span>Доставка</span>
           </Link>
         </div>
@@ -50,8 +54,8 @@ export function PickupInfoPage() {
               <div className="pickup-entry__hero-copy">
                 <span className="pickup-entry__brand">The Raki</span>
                 <span className="pickup-entry__eyebrow">Самовывоз</span>
-                <h1 className="pickup-entry__title">{pickupAddress}</h1>
-                <p className="pickup-entry__lead">Самовывоз в Осоргино, 202.</p>
+                <h1 className="pickup-entry__title">{pickupTitle}</h1>
+                <p className="pickup-entry__lead">Заберите заказ из активной кухни.</p>
 
                 <div className="pickup-entry__hero-meta">
                   <div className="pickup-entry__hero-stat">
@@ -67,14 +71,14 @@ export function PickupInfoPage() {
                   </div>
 
                   <div className="pickup-entry__hero-stat">
-                    <span className="pickup-entry__label">Точка</span>
+                    <span className="pickup-entry__label">Адрес</span>
                     <strong>{pickupAddress}</strong>
-                    <span>самовывоз</span>
+                    <span>точка выдачи</span>
                   </div>
                 </div>
 
                 <div className="pickup-entry__hero-actions">
-                  <Link href="/pickup/points" className="pickup-entry__submit">
+                  <Link href={pickupPointsHref} className="pickup-entry__submit">
                     Выбрать окно
                   </Link>
                 </div>
@@ -87,13 +91,13 @@ export function PickupInfoPage() {
                   <PickupMaplibreCanvas
                     lat={pickupLocation?.lat ?? null}
                     lng={pickupLocation?.lng ?? null}
-                    label={pickupLocation?.name ?? pickupAddress}
+                    label={pickupTitle}
                     address={pickupAddress}
                   />
 
                   <div className="pickup-entry__map-card">
                     <span className="pickup-entry__label">Точка</span>
-                    <strong>{pickupLocation?.name ?? pickupAddress}</strong>
+                    <strong>{pickupTitle}</strong>
                     <p>{pickupAddress}</p>
 
                     <div className="pickup-entry__map-links">
@@ -117,7 +121,7 @@ export function PickupInfoPage() {
           <ScrollReveal className="pickup-entry__summary-shell">
             <aside className="pickup-entry__summary">
               <span className="pickup-entry__label">Самовывоз</span>
-              <h2 className="pickup-entry__summary-title">{pickupAddress}</h2>
+              <h2 className="pickup-entry__summary-title">{pickupTitle}</h2>
 
               <div className="pickup-entry__summary-block">
                 <span className="pickup-entry__label">Сейчас</span>
@@ -141,10 +145,10 @@ export function PickupInfoPage() {
                 </div>
 
               <div className="pickup-entry__summary-actions">
-                <Link href="/pickup/points" className="pickup-entry__submit">
+                <Link href={pickupPointsHref} className="pickup-entry__submit">
                   Выбрать окно
                 </Link>
-                <Link href="/delivery/address" className="pickup-entry__secondary-action">
+                <Link href={deliveryHref} className="pickup-entry__secondary-action">
                   Доставка
                 </Link>
               </div>
@@ -157,7 +161,7 @@ export function PickupInfoPage() {
                 <div className="pickup-entry__section-head">
                   <div>
                     <span className="pickup-entry__label">Точка</span>
-                    <h2>{pickupLocation?.name ?? pickupAddress}</h2>
+                    <h2>{pickupTitle}</h2>
                   </div>
                 </div>
 
@@ -206,7 +210,7 @@ export function PickupInfoPage() {
                   </div>
                   <div className="pickup-entry__detail-row">
                     <span>Дальше</span>
-                    <strong>меню после подтверждения</strong>
+                    <strong>меню после выбора окна</strong>
                   </div>
                 </div>
               </section>

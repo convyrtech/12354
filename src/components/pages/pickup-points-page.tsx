@@ -28,8 +28,8 @@ function getPickupScenarioCopy(scenarioId: string) {
   if (scenarioId === "pickup_kitchen_delay") {
     return {
       title: "Осоргино, 202",
-      lead: "Кухня загружена. Выберите другое окно.",
-      note: "Время уточним.",
+      lead: "Кухня загружена. Выберите более позднее окно.",
+      note: "Подскажем ближайшее удобное время.",
     };
   }
 
@@ -37,13 +37,13 @@ function getPickupScenarioCopy(scenarioId: string) {
     return {
       title: "Осоргино, 202",
       lead: "Сегодня точка закрыта.",
-      note: "Откроем следующее окно.",
+      note: "Выберите окно на завтра.",
     };
   }
 
   return {
     title: "Осоргино, 202",
-    lead: "Выберите окно.",
+    lead: "Выберите удобное окно выдачи.",
     note: "12:00–23:00",
   };
 }
@@ -65,6 +65,11 @@ export function PickupPointsPage() {
   );
 
   const scenarioFromQuery = searchParams.get("scenario");
+  const demoMode = searchParams.get("demo") === "investor";
+  const demoSuffix = demoMode ? "?demo=investor" : "";
+  const pickupHref = `/pickup${demoSuffix}`;
+  const deliveryHref = `/delivery/address${demoSuffix}`;
+  const menuHref = `/menu-editorial${demoSuffix}`;
   const fallbackScenarioId =
     scenarioFromQuery && pickupScenarios.some((scenario) => scenario.id === scenarioFromQuery)
       ? scenarioFromQuery
@@ -93,15 +98,20 @@ export function PickupPointsPage() {
   const selectedSlot =
     availableSlots.find((slot) => slot.id === selectedSlotId) ?? availableSlots[0] ?? null;
   const pickupLocation = getLocation(PICKUP_LOCATION_ID);
+  const pickupTitle = pickupLocation?.name ?? selectedScenarioCopy.title;
+  const pickupAddress = pickupLocation?.addressLabel ?? pickupTitle;
+  const pickupHours = pickupLocation?.operatingHours
+    ? `${pickupLocation.operatingHours.open}–${pickupLocation.operatingHours.close}`
+    : "12:00–23:00";
   const stateTone = getPickupStateTone(selectedScenario.state);
   const canConfirm = selectedScenario.state !== "closed" && selectedSlot !== null;
   const yandexMapsHref = buildYandexMapsHref({
-    label: pickupLocation?.addressLabel ?? pickupLocation?.name ?? selectedScenarioCopy.title,
+    label: pickupAddress,
     lat: pickupLocation?.lat ?? null,
     lng: pickupLocation?.lng ?? null,
   });
   const twoGisHref = buildTwoGisHref({
-    label: pickupLocation?.addressLabel ?? pickupLocation?.name ?? selectedScenarioCopy.title,
+    label: pickupAddress,
     lat: pickupLocation?.lat ?? null,
     lng: pickupLocation?.lng ?? null,
   });
@@ -116,7 +126,7 @@ export function PickupPointsPage() {
       zoneId: null,
       locationId: PICKUP_LOCATION_ID,
       servicePointId: PICKUP_SERVICE_POINT_ID,
-      serviceLabel: selectedScenarioCopy.title,
+      serviceLabel: pickupTitle,
       serviceTimingLabel: selectedSlot.label,
       requestedTimeSlotId: selectedSlot.id,
       requestedTimeLabel: selectedSlot.label,
@@ -125,14 +135,14 @@ export function PickupPointsPage() {
     });
 
     startTransition(() => {
-      router.push("/menu-editorial");
+      router.push(menuHref);
     });
   };
 
   return (
     <main className="pickup-editorial">
       <div className="menu-editorial__controls pickup-editorial__controls">
-        <Link href="/pickup" className="menu-editorial__control menu-editorial__control--menu">
+        <Link href={pickupHref} className="menu-editorial__control menu-editorial__control--menu">
           <span className="product-editorial__back-arrow" aria-hidden>
             ←
           </span>
@@ -140,7 +150,7 @@ export function PickupPointsPage() {
         </Link>
 
         <div className="menu-editorial__control-stack">
-          <Link href="/delivery/address" className="menu-editorial__control">
+          <Link href={deliveryHref} className="menu-editorial__control">
             <span>Доставка</span>
           </Link>
         </div>
@@ -155,7 +165,7 @@ export function PickupPointsPage() {
               <div className="pickup-editorial__hero-copy">
                 <span className="pickup-editorial__brand">The Raki</span>
                 <span className="pickup-editorial__eyebrow">Самовывоз</span>
-                <h1 className="pickup-editorial__title">{selectedScenarioCopy.title}</h1>
+                <h1 className="pickup-editorial__title">{pickupTitle}</h1>
                 <p className="pickup-editorial__lead">{selectedScenarioCopy.lead}</p>
 
                 <div className="pickup-editorial__hero-meta">
@@ -174,7 +184,7 @@ export function PickupPointsPage() {
                   <div className="pickup-editorial__hero-stat">
                     <span className="pickup-editorial__label">Режим</span>
                     <strong>Самовывоз</strong>
-                    <span>{pickupLocation?.addressLabel ?? "Осоргино, 202"}</span>
+                    <span>{pickupAddress}</span>
                   </div>
                 </div>
               </div>
@@ -186,14 +196,14 @@ export function PickupPointsPage() {
                   <PickupMaplibreCanvas
                     lat={pickupLocation?.lat ?? null}
                     lng={pickupLocation?.lng ?? null}
-                    label={pickupLocation?.name ?? selectedScenarioCopy.title}
-                    address={pickupLocation?.addressLabel ?? selectedScenarioCopy.title}
+                    label={pickupTitle}
+                    address={pickupAddress}
                   />
 
                   <div className="pickup-editorial__map-card">
                     <span className="pickup-editorial__label">Точка</span>
-                    <strong>{pickupLocation?.name ?? selectedScenarioCopy.title}</strong>
-                    <p>{pickupLocation?.addressLabel ?? "Осоргино, 202"}</p>
+                    <strong>{pickupTitle}</strong>
+                    <p>{pickupAddress}</p>
 
                     <div className="pickup-editorial__map-links">
                       <a href={yandexMapsHref} rel="noreferrer" target="_blank" className="pickup-editorial__map-link">
@@ -216,7 +226,7 @@ export function PickupPointsPage() {
           <ScrollReveal className="pickup-editorial__summary-shell">
             <aside className="pickup-editorial__summary">
               <span className="pickup-editorial__label">Подтверждение</span>
-              <h2 className="pickup-editorial__summary-title">{selectedScenarioCopy.title}</h2>
+              <h2 className="pickup-editorial__summary-title">{pickupTitle}</h2>
 
               <div className="pickup-editorial__summary-block">
                 <span className="pickup-editorial__label">Сейчас</span>
@@ -231,7 +241,7 @@ export function PickupPointsPage() {
                 </div>
                 <div className="pickup-editorial__summary-row">
                   <span>Часы</span>
-                  <strong>{pickupLocation?.operatingHours ? `${pickupLocation.operatingHours.open}–${pickupLocation.operatingHours.close}` : "12:00–23:00"}</strong>
+                  <strong>{pickupHours}</strong>
                 </div>
                 <div className="pickup-editorial__summary-row">
                   <span>Оплата</span>
@@ -249,7 +259,7 @@ export function PickupPointsPage() {
                   {canConfirm ? "Подтвердить самовывоз" : "Сегодня недоступно"}
                 </button>
 
-                <Link href="/delivery/address" className="pickup-editorial__secondary-action">
+                <Link href={deliveryHref} className="pickup-editorial__secondary-action">
                   Перейти к доставке
                 </Link>
               </div>
@@ -299,18 +309,18 @@ export function PickupPointsPage() {
                 <div className="pickup-editorial__section-head">
                   <div>
                     <span className="pickup-editorial__label">По точке</span>
-                    <h2>{pickupLocation?.name ?? selectedScenarioCopy.title}</h2>
+                    <h2>{pickupTitle}</h2>
                   </div>
                 </div>
 
                 <div className="pickup-editorial__detail-grid">
                   <div className="pickup-editorial__detail-row">
                     <span>Адрес</span>
-                    <strong>{pickupLocation?.addressLabel ?? "Осоргино, 202"}</strong>
+                    <strong>{pickupAddress}</strong>
                   </div>
                   <div className="pickup-editorial__detail-row">
                     <span>Точка</span>
-                    <strong>{pickupLocation?.addressLabel ?? "Осоргино, 202"}</strong>
+                    <strong>{pickupTitle}</strong>
                   </div>
                   <div className="pickup-editorial__detail-row">
                     <span>Режим</span>

@@ -62,8 +62,8 @@ export function PickupMaplibreCanvas({
           container: containerRef.current,
           style: DEFAULT_MAP_STYLE_URL,
           center: [lng, lat],
-          zoom: 11.5,
-          minZoom: 8,
+          zoom: 13.2,
+          minZoom: 10,
           maxZoom: 17,
           attributionControl: {
             compact: true,
@@ -105,7 +105,7 @@ export function PickupMaplibreCanvas({
   if (lat === null || lng === null || failed) {
     return (
       <div className="pickup-maplibre-canvas pickup-maplibre-canvas--fallback" role="status">
-        <span>Карта временно недоступна.</span>
+        <span>Точка самовывоза</span>
         {address ? <strong>{address}</strong> : null}
       </div>
     );

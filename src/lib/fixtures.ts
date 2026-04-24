@@ -295,7 +295,7 @@ export const legalEntities: LegalEntity[] = [
 export const locations: Location[] = [
   {
     id: "loc_lesnoy_01",
-    name: "деревня Осоргино, 202",
+    name: "Осоргино, 202",
     addressLabel: "деревня Осоргино, 202",
     regionLabel: "Запад Подмосковья",
     lat: 55.6584,
@@ -866,7 +866,7 @@ export const timingSlots: TimingSlot[] = [
     startTime: "19:00",
     endTime: "19:15",
     dayOffset: 0,
-    note: "Готовность самовывоза к 19:00 на текущей базовой точке.",
+    note: "Будет готово к 19:00. Команда держит это окно выдачи.",
   },
   {
     id: "slot_pickup_lesnoy_today_2000",
@@ -879,7 +879,7 @@ export const timingSlots: TimingSlot[] = [
     startTime: "20:00",
     endTime: "20:15",
     dayOffset: 0,
-    note: "Стандартное время самовывоза на сегодня в Лесном Городке.",
+    note: "Удобное окно на сегодня: кухня соберёт заказ к этому времени.",
   },
   {
     id: "slot_pickup_lesnoy_today_2130",
@@ -892,7 +892,7 @@ export const timingSlots: TimingSlot[] = [
     startTime: "21:30",
     endTime: "21:45",
     dayOffset: 0,
-    note: "Позднее время самовывоза на сегодня перед закрытием.",
+    note: "Позднее окно на сегодня перед закрытием кухни.",
   },
   {
     id: "slot_pickup_lesnoy_tomorrow_1200",
@@ -905,7 +905,7 @@ export const timingSlots: TimingSlot[] = [
     startTime: "12:00",
     endTime: "12:15",
     dayOffset: 1,
-    note: "Самое раннее время самовывоза на завтра на текущей точке.",
+    note: "Первое окно самовывоза на завтра.",
   },
   {
     id: "slot_pickup_lesnoy_tomorrow_1400",
@@ -918,7 +918,7 @@ export const timingSlots: TimingSlot[] = [
     startTime: "14:00",
     endTime: "14:15",
     dayOffset: 1,
-    note: "Подтверждённое время самовывоза на завтра, которое держит модель времени честной после закрытия дня.",
+    note: "Дневное окно на завтра с комфортным запасом по сборке.",
   },
 ];
 
