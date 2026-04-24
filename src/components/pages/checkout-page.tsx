@@ -125,16 +125,18 @@ function getLineProductImage(
 
 function CheckoutControls({
   contextHref,
+  menuHref,
   lineCount,
   showOrderButton = true,
 }: {
   contextHref: string;
+  menuHref: string;
   lineCount: number;
   showOrderButton?: boolean;
 }) {
   return (
     <div className="menu-editorial__controls product-editorial__controls checkout-editorial__controls">
-      <Link href="/menu-editorial" className="menu-editorial__control menu-editorial__control--menu">
+      <Link href={menuHref} className="menu-editorial__control menu-editorial__control--menu">
         <span className="product-editorial__back-arrow" aria-hidden>
           ←
         </span>
@@ -172,6 +174,7 @@ function CheckoutControls({
 
 function CheckoutStateScreen({
   contextHref,
+  menuHref,
   lineCount,
   heroImage,
   eyebrow,
@@ -184,6 +187,7 @@ function CheckoutStateScreen({
   children,
 }: {
   contextHref: string;
+  menuHref: string;
   lineCount: number;
   heroImage: string;
   eyebrow: string;
@@ -197,7 +201,7 @@ function CheckoutStateScreen({
 }) {
   return (
     <main className="checkout-editorial checkout-editorial--state">
-      <CheckoutControls contextHref={contextHref} lineCount={lineCount} />
+      <CheckoutControls contextHref={contextHref} menuHref={menuHref} lineCount={lineCount} />
 
       <section className="checkout-editorial__state-hero">
         <div
@@ -242,8 +246,9 @@ export function CheckoutPage() {
   const { draft, patchDraft } = useDraft();
   const cart = getDraftCartView(draft);
   const serviceResolved = hasResolvedServiceContext(draft);
-  const contextHref = getContextHref(draft.fulfillmentMode);
-  const menuHref = "/menu-editorial";
+  const [demoSuffix, setDemoSuffix] = useState("");
+  const contextHref = `${getContextHref(draft.fulfillmentMode)}${demoSuffix}`;
+  const menuHref = `/menu-editorial${demoSuffix}`;
 
   const [name, setName] = useState(draft.customerName);
   const [phone, setPhone] = useState(draft.customerPhone);
@@ -256,6 +261,11 @@ export function CheckoutPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { hydrated: authHydrated, lookup: lookupAuth, login: loginAuth } = useFakeAuth();
+
+  useEffect(() => {
+    const isInvestorDemo = new URLSearchParams(window.location.search).get("demo") === "investor";
+    setDemoSuffix(isInvestorDemo ? "?demo=investor" : "");
+  }, []);
 
   useEffect(() => {
     setName(draft.customerName);
@@ -441,6 +451,7 @@ export function CheckoutPage() {
     return (
       <CheckoutStateScreen
         contextHref={contextHref}
+        menuHref={menuHref}
         lineCount={0}
         heroImage={heroImage}
         eyebrow="Оформление"
@@ -474,6 +485,7 @@ export function CheckoutPage() {
     return (
       <CheckoutStateScreen
         contextHref={contextHref}
+        menuHref={menuHref}
         lineCount={cart.lineCount}
         heroImage={heroImage}
         eyebrow="Оформление"
@@ -512,7 +524,12 @@ export function CheckoutPage() {
   if (submittedOrder) {
     return (
       <main className="checkout-editorial checkout-editorial--complete">
-        <CheckoutControls contextHref={contextHref} lineCount={0} showOrderButton={false} />
+        <CheckoutControls
+          contextHref={contextHref}
+          menuHref={menuHref}
+          lineCount={0}
+          showOrderButton={false}
+        />
 
         <section className="checkout-editorial__hero checkout-editorial__hero--complete">
           <div
@@ -601,7 +618,7 @@ export function CheckoutPage() {
 
   return (
     <main className="checkout-editorial">
-      <CheckoutControls contextHref={contextHref} lineCount={cart.lineCount} />
+      <CheckoutControls contextHref={contextHref} menuHref={menuHref} lineCount={cart.lineCount} />
 
       <section className="checkout-editorial__hero">
         <motion.div

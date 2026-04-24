@@ -1,9 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { startTransition } from "react";
 import { useDraft } from "@/components/draft-provider";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { getDraftCartView, getFulfillmentLabel } from "@/lib/draft-view";
@@ -20,36 +17,16 @@ import {
 } from "@/lib/delivery-policy";
 import { buildTwoGisHref, buildYandexMapsHref } from "@/lib/map-links";
 
-const mapBounds = {
-  minLng: 37.16,
-  maxLng: 37.66,
-  minLat: 55.61,
-  maxLat: 55.8,
-};
-
-function projectPoint(lat: number | null, lng: number | null) {
-  if (lat === null || lng === null) return { x: 50, y: 50 };
-  const xRatio = (lng - mapBounds.minLng) / (mapBounds.maxLng - mapBounds.minLng);
-  const yRatio = (lat - mapBounds.minLat) / (mapBounds.maxLat - mapBounds.minLat);
-
-  return {
-    x: Math.min(Math.max(10 + xRatio * 80, 10), 90),
-    y: Math.min(Math.max(86 - yRatio * 68, 16), 86),
-  };
-}
-
-function buildRoutePath(start: { x: number; y: number }, end: { x: number; y: number }) {
-  const cx = (start.x + end.x) / 2;
-  const cy = Math.min(start.y, end.y) - 14;
-  return `M ${start.x} ${start.y} Q ${cx} ${cy} ${end.x} ${end.y}`;
-}
-
 export function DeliveryResultPage({ demoMode = false }: { demoMode?: boolean }) {
-  const router = useRouter();
   const { draft } = useDraft();
   const cart = getDraftCartView(draft);
   const demoScenario = demoMode ? getDeliveryScenario("delivery_tverskaya_7") : null;
   const hasConfirmedAddress = Boolean(draft.typedAddress || draft.confirmedDropoffLabel || demoScenario);
+  const demoSuffix = demoMode ? "?demo=investor" : "";
+  const addressHref = `/delivery/address${demoSuffix}`;
+  const pickupHref = `/pickup${demoSuffix}`;
+  const menuHref = `/menu-editorial${demoSuffix}`;
+  const checkoutHref = `/checkout${demoSuffix}`;
 
   const location = getLocation(
     draft.locationId || demoScenario?.assignment?.locationId || null,
@@ -75,23 +52,17 @@ export function DeliveryResultPage({ demoMode = false }: { demoMode?: boolean })
   const effectiveQuoteAmount =
     draft.liveDeliveryQuoteAmount ?? zone?.feeAmount ?? null;
 
-  const origin = location ? projectPoint(location.lat, location.lng) : { x: 18, y: 34 };
-  const destination =
-    effectiveDropoffLat !== null && effectiveDropoffLng !== null
-      ? projectPoint(effectiveDropoffLat, effectiveDropoffLng)
-      : null;
-
   const isInZone = effectiveDeliveryState === "in-zone";
   const isCutoff = effectiveDeliveryState === "cutoff";
   const isManual = effectiveDecisionState === "manual_confirmation";
   const canOpenMenu = isInZone || isCutoff;
   const heroTitle = isInZone
-    ? effectiveTimingLabel
+    ? "Доставка подтверждена."
     : isCutoff
       ? "Сегодня уже не успеем."
       : "Сюда пока не возим.";
   const heroLead = isInZone
-    ? "Адрес подтверждён."
+    ? `Будем у вас ${effectiveTimingLabel}.`
     : isCutoff
       ? "Откроем следующее окно."
       : "Выберите другой адрес или самовывоз.";
@@ -113,6 +84,26 @@ export function DeliveryResultPage({ demoMode = false }: { demoMode?: boolean })
         : "Уточним";
   const orderLabel =
     cart.lineCount > 0 ? `${cart.lineCount} поз. • ${cart.totalLabel}` : "корзина пуста";
+  const primaryHref = canOpenMenu
+    ? cart.lineCount > 0
+      ? checkoutHref
+      : menuHref
+    : pickupHref;
+  const primaryLabel = canOpenMenu
+    ? cart.lineCount > 0
+      ? "Оформить заказ"
+      : "Открыть меню"
+    : "Самовывоз";
+  const nextStepTitle = canOpenMenu
+    ? cart.lineCount > 0
+      ? "Осталось оформить заказ."
+      : "Теперь можно выбрать позиции."
+    : "Выберите самовывоз или другой адрес.";
+  const nextStepCopy = canOpenMenu
+    ? cart.lineCount > 0
+      ? "На оформлении останутся контакт, способ оплаты и финальная передача команде."
+      : "Меню откроется уже с доставкой под этот адрес."
+    : "По этому маршруту сейчас не обещаем доставку.";
 
   const yandexMapsHref = buildYandexMapsHref({
     label: effectiveDropoffLabel || effectiveTypedAddress,
@@ -129,7 +120,7 @@ export function DeliveryResultPage({ demoMode = false }: { demoMode?: boolean })
     return (
       <main className="delivery-result-editorial delivery-result-editorial--empty">
         <div className="menu-editorial__controls delivery-result-editorial__controls">
-          <Link href="/delivery/address" className="menu-editorial__control menu-editorial__control--menu">
+          <Link href={addressHref} className="menu-editorial__control menu-editorial__control--menu">
             <span className="product-editorial__back-arrow" aria-hidden>
               ←
             </span>
@@ -137,7 +128,7 @@ export function DeliveryResultPage({ demoMode = false }: { demoMode?: boolean })
           </Link>
 
           <div className="menu-editorial__control-stack">
-            <Link href="/pickup" className="menu-editorial__control">
+            <Link href={pickupHref} className="menu-editorial__control">
               <span>Самовывоз</span>
             </Link>
           </div>
@@ -149,10 +140,10 @@ export function DeliveryResultPage({ demoMode = false }: { demoMode?: boolean })
           <p className="delivery-result-editorial__empty-lead">Потом закрепим окно и сервис.</p>
 
           <div className="delivery-result-editorial__empty-actions">
-            <Link href="/delivery/address" className="delivery-result-editorial__cta">
+            <Link href={addressHref} className="delivery-result-editorial__cta">
               Перейти к адресу
             </Link>
-            <Link href="/pickup" className="delivery-result-editorial__secondary-action">
+            <Link href={pickupHref} className="delivery-result-editorial__secondary-action">
               Самовывоз
             </Link>
           </div>
@@ -164,7 +155,7 @@ export function DeliveryResultPage({ demoMode = false }: { demoMode?: boolean })
   return (
     <main className="delivery-result-editorial">
       <div className="menu-editorial__controls delivery-result-editorial__controls">
-        <Link href="/delivery/address" className="menu-editorial__control menu-editorial__control--menu">
+        <Link href={addressHref} className="menu-editorial__control menu-editorial__control--menu">
           <span className="product-editorial__back-arrow" aria-hidden>
             ←
           </span>
@@ -172,7 +163,7 @@ export function DeliveryResultPage({ demoMode = false }: { demoMode?: boolean })
         </Link>
 
         <div className="menu-editorial__control-stack">
-          <Link href="/pickup" className="menu-editorial__control">
+          <Link href={pickupHref} className="menu-editorial__control">
             <span>Самовывоз</span>
           </Link>
         </div>
@@ -221,79 +212,31 @@ export function DeliveryResultPage({ demoMode = false }: { demoMode?: boolean })
 
             <ScrollReveal delay={0.06}>
               <div className="delivery-result-editorial__route-shell">
-                <div className="delivery-result-editorial__route-surface">
-                  <svg
-                    viewBox="0 0 100 100"
-                    preserveAspectRatio="xMidYMid slice"
-                    className="delivery-result-editorial__route-svg"
-                  >
-                    {Array.from({ length: 10 }, (_, index) => (
-                      <line
-                        key={`h-${index}`}
-                        x1={0}
-                        y1={index * 10}
-                        x2={100}
-                        y2={index * 10}
-                        className="delivery-result-editorial__route-grid-line"
-                      />
-                    ))}
-                    {Array.from({ length: 10 }, (_, index) => (
-                      <line
-                        key={`v-${index}`}
-                        x1={index * 10}
-                        y1={0}
-                        x2={index * 10}
-                        y2={100}
-                        className="delivery-result-editorial__route-grid-line"
-                      />
-                    ))}
+                <div className="delivery-result-editorial__route-surface delivery-result-editorial__service-panel">
+                  <div className="delivery-result-editorial__service-card">
+                    <span className="delivery-result-editorial__label">Следующий шаг</span>
+                    <strong>{nextStepTitle}</strong>
+                    <p>{nextStepCopy}</p>
 
-                    <polygon
-                      points="15,25 85,20 90,75 20,80"
-                      className="delivery-result-editorial__route-zone"
-                    />
-
-                    {destination ? (
-                      <motion.path
-                        d={buildRoutePath(origin, destination)}
-                        fill="none"
-                        className="delivery-result-editorial__route-path"
-                        initial={{ pathLength: 0 }}
-                        animate={{ pathLength: 1 }}
-                        transition={{ duration: 1.5, delay: 0.3 }}
-                      />
-                    ) : null}
-
-                    <circle cx={origin.x} cy={origin.y} r="1.5" className="delivery-result-editorial__route-origin" />
-
-                    {destination ? (
-                      <motion.g
-                        initial={{ y: -15, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ type: "spring", damping: 12, stiffness: 180, delay: 0.2 }}
-                      >
-                        <circle
-                          cx={destination.x}
-                          cy={destination.y}
-                          r="2"
-                          className="delivery-result-editorial__route-destination"
-                        />
-                        <circle
-                          cx={destination.x}
-                          cy={destination.y}
-                          r="4"
-                          className="delivery-result-editorial__route-ring"
-                        />
-                      </motion.g>
-                    ) : null}
-                  </svg>
-
-                  <div className="delivery-result-editorial__route-card">
-                    <span className="delivery-result-editorial__label">Маршрут</span>
-                    <strong>{zone?.label ?? "Маршрут уточняем"}</strong>
-                    <p>{location?.name ?? "Осоргино, 202"} · {fulfillmentSourceLabel}</p>
+                    <div className="delivery-result-editorial__service-steps">
+                      <div>
+                        <span>Адрес</span>
+                        <strong>{effectiveDropoffLabel || effectiveTypedAddress}</strong>
+                      </div>
+                      <div>
+                        <span>Время</span>
+                        <strong>{timingCardLabel}</strong>
+                      </div>
+                      <div>
+                        <span>Доставка</span>
+                        <strong>{quoteLabel}</strong>
+                      </div>
+                    </div>
 
                     <div className="delivery-result-editorial__route-actions">
+                      <Link href={primaryHref} className="delivery-result-editorial__cta">
+                        {primaryLabel}
+                      </Link>
                       <a
                         href={yandexMapsHref}
                         rel="noreferrer"
@@ -354,17 +297,11 @@ export function DeliveryResultPage({ demoMode = false }: { demoMode?: boolean })
               </div>
 
               <div className="delivery-result-editorial__summary-actions">
-                <button
-                  type="button"
-                  className="delivery-result-editorial__cta"
-                  onClick={() =>
-                    startTransition(() => router.push(canOpenMenu ? "/menu-editorial" : "/pickup"))
-                  }
-                >
-                  {canOpenMenu ? (cart.lineCount > 0 ? "К заказу" : "Открыть меню") : "Самовывоз"}
-                </button>
+                <Link href={primaryHref} className="delivery-result-editorial__cta">
+                  {primaryLabel}
+                </Link>
 
-                <Link href="/delivery/address" className="delivery-result-editorial__secondary-action">
+                <Link href={addressHref} className="delivery-result-editorial__secondary-action">
                   Изменить адрес
                 </Link>
               </div>
@@ -407,7 +344,7 @@ export function DeliveryResultPage({ demoMode = false }: { demoMode?: boolean })
                 <div className="delivery-result-editorial__section-head">
                   <div>
                     <span className="delivery-result-editorial__label">Дальше</span>
-                    <h2>{canOpenMenu ? "Меню уже под этот адрес." : "Сначала нужен другой маршрут."}</h2>
+                    <h2>{nextStepTitle}</h2>
                   </div>
                 </div>
 
@@ -418,7 +355,7 @@ export function DeliveryResultPage({ demoMode = false }: { demoMode?: boolean })
                   </div>
                   <div className="delivery-result-editorial__detail-row">
                     <span>Команда</span>
-                    <strong>{isManual ? "подтверждаем вручную" : "готово к меню"}</strong>
+                    <strong>{isManual ? "подтвердим вручную" : "готово к оформлению"}</strong>
                   </div>
                 </div>
 

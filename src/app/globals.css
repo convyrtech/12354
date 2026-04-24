@@ -9370,6 +9370,74 @@ body[data-menu-open="true"] .trusted-by {
     linear-gradient(180deg, rgba(8, 14, 18, 0.94) 0%, rgba(7, 13, 17, 0.98) 100%);
 }
 
+.delivery-result-editorial__service-panel {
+  display: flex;
+  align-items: stretch;
+  padding: 24px;
+}
+
+.delivery-result-editorial__service-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-content: end;
+  gap: 18px;
+  width: 100%;
+  min-height: 100%;
+  padding: 28px;
+  border-radius: 28px;
+  border: 1px solid rgba(231, 215, 186, 0.12);
+  background:
+    radial-gradient(circle at 20% 0%, rgba(99, 188, 197, 0.16) 0%, rgba(99, 188, 197, 0) 42%),
+    linear-gradient(180deg, rgba(7, 13, 17, 0.5) 0%, rgba(6, 12, 15, 0.84) 100%);
+}
+
+.delivery-result-editorial__service-card strong {
+  margin: 0;
+  font-family: var(--font-display), serif;
+  font-size: clamp(2.5rem, 4vw, 4rem);
+  line-height: 0.96;
+  letter-spacing: -0.045em;
+  color: rgba(249, 242, 230, 0.98);
+}
+
+.delivery-result-editorial__service-card p {
+  margin: 0;
+  max-width: 48ch;
+  color: rgba(231, 215, 186, 0.7);
+  line-height: 1.7;
+}
+
+.delivery-result-editorial__service-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.delivery-result-editorial__service-steps div {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(231, 215, 186, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.delivery-result-editorial__service-steps span {
+  color: rgba(201, 173, 120, 0.78);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.delivery-result-editorial__service-steps strong {
+  overflow-wrap: anywhere;
+  font-size: 1.06rem;
+  line-height: 1.18;
+  letter-spacing: 0;
+}
+
 .delivery-result-editorial__route-svg {
   position: absolute;
   inset: 0;
@@ -9650,6 +9718,19 @@ body[data-menu-open="true"] .trusted-by {
 
   .delivery-result-editorial__route-surface {
     min-height: 440px;
+  }
+
+  .delivery-result-editorial__service-panel {
+    min-height: auto;
+    padding: 14px;
+  }
+
+  .delivery-result-editorial__service-card {
+    padding: 22px;
+  }
+
+  .delivery-result-editorial__service-steps {
+    grid-template-columns: 1fr;
   }
 
   .delivery-result-editorial__summary-actions,
