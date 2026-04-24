@@ -23,13 +23,28 @@
 /tilt-*.png
 /tilt-2d*.png
 /ripple-*.png
+/qa-*.png
+/menu-after-scroll-fix-*.png
+/menu-editorial-controls-*.png
+/pickup-*.png
 
 # Design exploration screenshots — not part of the shipping site
 /.gstack/design-reports/screenshots/
+/.gstack/qa-reports/
+/.gstack/design-reports/*.md
 /.gstack/design-reports/menu-variants.html
+/public/menu-variants*.html
+
+# Local notes and generated scratch reports
+/docs/
+/start-*.log
+/tmp-dev-*.log
+/waiter-smoke.json
 
 # Local Claude / IDE-specific files
+/.claude/
 /.claude/settings.local.json
+/.playwright-cli/
 
 # Build artifacts (Vercel rebuilds these, no need to upload)
 /.next/
